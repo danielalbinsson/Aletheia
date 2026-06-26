@@ -1,0 +1,272 @@
+:root {
+  /* Warm near-black, light surfacing from the dark. */
+  --bg: #18181a;
+  --bg-deep: #141416;
+  --ink: #ece6dc;        /* warm off-white — headings */
+  --ink-soft: #cbc4b8;   /* body */
+  --muted: #8f877c;      /* labels, secondary */
+  --faint: #5b564f;      /* hairlines, captions */
+  --hair: rgba(236, 230, 220, 0.1);
+  --hair-strong: rgba(236, 230, 220, 0.18);
+  --accent: #d9a368;     /* warm amber, used sparingly */
+  --accent-dim: rgba(217, 163, 104, 0.16);
+  --accent-glow: rgba(217, 163, 104, 0.05);
+  --sans: "Karla", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink-soft);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background:
+    radial-gradient(1200px 700px at 28% 12%, var(--accent-glow), transparent 60%),
+    radial-gradient(900px 900px at 80% 120%, rgba(120, 130, 160, 0.04), transparent 60%),
+    var(--bg);
+  min-height: 100vh;
+}
+
+code { font-family: var(--sans); color: var(--muted); }
+
+/* ── Layout ─────────────────────────────────────────────────────────── */
+.app {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 40px 96px;
+}
+
+.topbar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 34px 0 26px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid var(--hair);
+}
+
+.wordmark {
+  font-family: var(--sans);
+  font-size: 14px;
+  letter-spacing: 0.14em;
+  text-transform: lowercase;
+  color: var(--ink);
+}
+.wordmark-sub {
+  margin-left: 14px;
+  color: var(--faint);
+  letter-spacing: 0.18em;
+}
+
+.agent-tabs { display: flex; gap: 4px; }
+.agent-tab {
+  appearance: none;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.agent-tab:hover { color: var(--tab-accent, var(--ink-soft)); border-color: var(--hair); }
+.agent-tab.active {
+  color: var(--accent);
+  border-color: var(--accent-dim);
+  background: var(--accent-dim);
+}
+
+/* ── The self-portrait ──────────────────────────────────────────────── */
+.self-portrait {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  gap: 64px;
+  align-items: start;
+}
+
+.portrait-col {
+  position: sticky;
+  top: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.portrait {
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.0;
+  letter-spacing: 0.5px;
+  margin: 8px 0 0;
+  color: #f3ecdf;
+  text-shadow:
+    0 0 1px rgba(243, 236, 223, 0.5),
+    0 0 14px var(--accent-dim);
+  white-space: pre;
+  user-select: none;
+  animation: surface 1.1s ease-out both;
+}
+@keyframes surface {
+  from { opacity: 0; filter: blur(6px); }
+  to   { opacity: 1; filter: blur(0); }
+}
+
+.runs-on {
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--faint);
+  margin-top: 26px;
+  text-transform: lowercase;
+}
+
+/* ── Intro ──────────────────────────────────────────────────────────── */
+.intro-col { padding-top: 4px; max-width: 560px; }
+
+.agent-name {
+  font-size: 56px;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0 0 14px;
+}
+.essence {
+  font-size: 19px;
+  line-height: 1.5;
+  color: var(--accent);
+  margin: 0 0 36px;
+  font-weight: 400;
+}
+
+.intro-body p {
+  font-size: 17px;
+  line-height: 1.62;
+  color: var(--ink-soft);
+  margin: 0 0 18px;
+}
+.intro-body p:first-of-type {
+  font-size: 18px;
+  color: var(--ink);
+}
+
+/* ── Sections ───────────────────────────────────────────────────────── */
+.section {
+  margin-top: 44px;
+  padding-top: 26px;
+  border-top: 1px solid var(--hair);
+}
+.section-label {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 20px;
+}
+
+/* What I can do */
+.can-do { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+.can-do li { display: grid; gap: 3px; }
+.cap-label {
+  font-size: 16px;
+  color: var(--ink);
+  font-weight: 500;
+}
+.cap-detail {
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* What I can touch */
+.can-touch { list-style: none; margin: 0; padding: 0; display: grid; gap: 11px; }
+.reach-item {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  font-size: 15px;
+}
+.reach-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--muted);
+  flex: none;
+}
+.kind-data .reach-dot { background: #7fa6b8; }
+.kind-api .reach-dot { background: #b89a7f; }
+.kind-channel .reach-dot { background: var(--accent); }
+.reach-label { color: var(--ink-soft); }
+.reach-access {
+  margin-left: auto;
+  font-family: var(--sans);
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  color: var(--faint);
+}
+.access-write, .access-read-write { color: color-mix(in srgb, var(--accent) 75%, var(--ink-soft)); }
+
+/* When I act on my own */
+.autonomy { display: grid; gap: 22px; }
+.autonomy-kind {
+  font-family: var(--sans);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  margin: 0 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.autonomy-kind::before {
+  content: "";
+  width: 8px; height: 8px; border-radius: 50%;
+}
+.autonomy-kind.on-own { color: var(--accent); }
+.autonomy-kind.on-own::before { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+.autonomy-kind.asks { color: var(--muted); }
+.autonomy-kind.asks::before { border: 1.5px solid var(--muted); }
+
+.autonomy-line {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 16px;
+  margin: 0 0 9px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.autonomy-when { color: var(--ink); font-variant-numeric: tabular-nums; }
+.autonomy-does { color: var(--muted); }
+.autonomy-none { color: var(--muted); font-size: 15px; }
+
+/* ── Footer ─────────────────────────────────────────────────────────── */
+.footer {
+  margin-top: 80px;
+  padding-top: 22px;
+  border-top: 1px solid var(--hair);
+  font-family: var(--sans);
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  color: var(--faint);
+}
+
+.app.empty { padding-top: 120px; text-align: center; color: var(--muted); }
+
+/* ── Responsive ─────────────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .app { padding: 0 22px 64px; }
+  .self-portrait { grid-template-columns: 1fr; gap: 40px; }
+  .portrait-col { position: static; }
+  .agent-name { font-size: 42px; }
+  .topbar { flex-direction: column; gap: 18px; align-items: flex-start; }
+  .autonomy-line { grid-template-columns: 1fr; gap: 2px; }
+}
