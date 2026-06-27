@@ -1,8 +1,18 @@
-import type { AgentModel, Autonomy, Reach } from "../model";
+import type { AgentModel, Autonomy, Capability, Reach } from "../model";
 import { Portrait } from "./Portrait";
 
-/** The hero. An agent presenting itself in the first person. */
-export function SelfPortrait({ agent }: { agent: AgentModel }) {
+/**
+ * The hero. An agent presenting itself in the first person.
+ * `verified` is true when the trust facts came from a built agent's eve
+ * manifest rather than the source-parsed fallback.
+ */
+export function SelfPortrait({
+  agent,
+  verified = false,
+}: {
+  agent: AgentModel;
+  verified?: boolean;
+}) {
   const introParas = agent.intro.split(/\n\s*\n/).filter(Boolean);
   const actsOnOwn = agent.autonomy.filter((a) => a.consent === "acts-on-its-own");
   const asksFirst = agent.autonomy.filter((a) => a.consent === "asks-first");
@@ -26,23 +36,34 @@ export function SelfPortrait({ agent }: { agent: AgentModel }) {
           ))}
         </div>
 
-        <Section label="What I can do">
+        <Section
+          label="What I can do"
+          note={verified ? "verified from build" : "from source — build to verify"}
+        >
           <ul className="can-do">
             {agent.capabilities.map((c) => (
-              <li key={c.source}>
-                <span className="cap-label">{c.label}</span>
-                <span className="cap-detail">{c.detail}</span>
-              </li>
+              <CapabilityItem key={c.source} cap={c} />
             ))}
           </ul>
         </Section>
 
-        <Section label="What I can touch">
-          <ul className="can-touch">
-            {agent.reach.map((r) => (
-              <ReachItem key={r.label} reach={r} />
-            ))}
-          </ul>
+        <Section
+          label="What I can touch"
+          note={verified ? "verified from build" : "from source — build to verify"}
+        >
+          {agent.reach.length === 0 ? (
+            <p className="reach-none">
+              {verified
+                ? "I reach nothing outside myself — no connections, no channels."
+                : "Nothing declared yet."}
+            </p>
+          ) : (
+            <ul className="can-touch">
+              {agent.reach.map((r) => (
+                <ReachItem key={r.label} reach={r} />
+              ))}
+            </ul>
+          )}
         </Section>
 
         <Section label="When I act on my own">
@@ -75,12 +96,45 @@ export function SelfPortrait({ agent }: { agent: AgentModel }) {
   );
 }
 
-function Section({ label, children }: { label: string; children: React.ReactNode }) {
+function Section({
+  label,
+  note,
+  children,
+}: {
+  label: string;
+  note?: string;
+  children: React.ReactNode;
+}) {
   return (
     <section className="section">
-      <h2 className="section-label">{label}</h2>
+      <h2 className="section-label">
+        {label}
+        {note && <span className="section-note">{note}</span>}
+      </h2>
       {children}
     </section>
+  );
+}
+
+function CapabilityItem({ cap }: { cap: Capability }) {
+  return (
+    <li>
+      <span className="cap-label">
+        {cap.label}
+        {cap.requiresApproval === true && (
+          <span className="cap-approval" title="Requires your approval before running">
+            asks first
+          </span>
+        )}
+        {cap.requiresApproval === false && (
+          <span className="cap-approval auto" title="Runs without asking">
+            no approval
+          </span>
+        )}
+      </span>
+      <span className="cap-detail">{cap.detail}</span>
+      {cap.takes && <span className="cap-takes">takes: {cap.takes}</span>}
+    </li>
   );
 }
 
@@ -94,7 +148,10 @@ function ReachItem({ reach }: { reach: Reach }) {
   return (
     <li className={`reach-item kind-${reach.kind}`}>
       <span className="reach-dot" aria-hidden />
-      <span className="reach-label">{reach.label}</span>
+      <span className="reach-label">
+        {reach.label}
+        {reach.detail && <span className="reach-detail">{reach.detail}</span>}
+      </span>
       <span className={`reach-access access-${reach.access}`}>
         {ACCESS_GLYPH[reach.access]}
       </span>

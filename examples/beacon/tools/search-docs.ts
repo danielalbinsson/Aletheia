@@ -1,7 +1,14 @@
-import { tool } from "eve";
-export default tool({
-  name: "search_docs",
+import { defineTool } from "eve/tools";
+import { z } from "zod";
+
+// Read-only lookup — runs without approval.
+export default defineTool({
   description: "Search the help center and internal docs for an answer.",
-  reach: { label: "Help center", kind: "data", access: "read" },
-  run: async ({ q }: { q: string }) => ({ q }),
+  inputSchema: z.object({
+    query: z.string().describe("What to search for"),
+    limit: z.number().optional().describe("Max results to return"),
+  }),
+  async execute({ query, limit }) {
+    return { query, limit: limit ?? 5, results: [] };
+  },
 });

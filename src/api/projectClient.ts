@@ -5,6 +5,7 @@ import type { EveDevStatus } from "../server/eveDevServer";
 import type { ModelCredentialStatus } from "../server/modelCredentials";
 import type {
   EveInfoSnapshot,
+  EveManifestResult,
   VercelObservabilityLinks,
 } from "../server/eveObservability";
 import type { EveDiagnostic } from "../server/eveBuild";
@@ -44,6 +45,11 @@ export async function initProject(project: RawProject): Promise<RawProject> {
     body: JSON.stringify({ files: project.files }),
   });
   return parseResponse<RawProject>(res);
+}
+
+export async function fetchManifest(): Promise<EveManifestResult> {
+  const res = await fetch("/api/project/manifest");
+  return parseResponse<EveManifestResult>(res);
 }
 
 export async function buildProject(): Promise<EveBuildResult> {
@@ -169,6 +175,7 @@ export type {
   EveDevStatus,
   EveDiagnostic,
   EveInfoSnapshot,
+  EveManifestResult,
   VercelObservabilityLinks,
   ModelCredentialStatus,
 };

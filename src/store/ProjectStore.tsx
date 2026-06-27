@@ -11,6 +11,7 @@ import {
 import type { AgentModel } from "../model";
 import {
   fetchProject,
+  fetchManifest,
   initProject as apiInitProject,
   buildProject as apiBuildProject,
   isProjectApiAvailable,
@@ -18,6 +19,7 @@ import {
 } from "../api/projectClient";
 import type { EveBuildResult } from "../server/eveBuild";
 import { parseAgent } from "../parser/eveAdapter";
+import { applyAgentInfo, type AgentInfoFacts } from "../parser/eveInfoAdapter";
 import { loadRawProject, type RawProject } from "../parser/loadProject";
 import {
   rebuildAgentTs,
@@ -28,6 +30,8 @@ import {
 interface ProjectStoreValue {
   project: RawProject | null;
   model: AgentModel | null;
+  /** True when `model`'s trust facts come from a built agent's eve manifest. */
+  verified: boolean;
   apiAvailable: boolean;
   loading: boolean;
   draft: RawProject | null;
@@ -51,6 +55,7 @@ const ProjectStoreContext = createContext<ProjectStoreValue | null>(null);
 
 export function ProjectStoreProvider({ children }: { children: ReactNode }) {
   const [project, setProject] = useState<RawProject | null>(() => loadRawProject());
+  const [manifestFacts, setManifestFacts] = useState<AgentInfoFacts | null>(null);
   const [apiAvailable, setApiAvailable] = useState(false);
   const [loading, setLoading] = useState(true);
   const [draft, setDraftState] = useState<RawProject | null>(null);
@@ -60,10 +65,15 @@ export function ProjectStoreProvider({ children }: { children: ReactNode }) {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const model = useMemo(
-    () => (project ? parseAgent(project) : null),
-    [project]
-  );
+  // The source-parsed model is the narrative base (intro, motif, theme). When a
+  // built agent's manifest is available, overlay its verified trust facts.
+  const model = useMemo(() => {
+    if (!project) return null;
+    const base = parseAgent(project);
+    return manifestFacts ? applyAgentInfo(base, manifestFacts) : base;
+  }, [project, manifestFacts]);
+
+  const verified = manifestFacts !== null;
 
   const dirty = useMemo(() => {
     if (!draft) return false;
@@ -84,8 +94,17 @@ export function ProjectStoreProvider({ children }: { children: ReactNode }) {
       if (available) {
         const fetched = await fetchProject();
         setProject(fetched ?? loadRawProject());
+        // Overlay verified facts from the built agent's manifest, if any.
+        // Best-effort: a missing/unbuilt manifest just leaves the source model.
+        try {
+          const manifest = await fetchManifest();
+          setManifestFacts(manifest.built && manifest.facts ? manifest.facts : null);
+        } catch {
+          setManifestFacts(null);
+        }
       } else {
         setProject(loadRawProject());
+        setManifestFacts(null);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load project");
@@ -222,6 +241,7 @@ export function ProjectStoreProvider({ children }: { children: ReactNode }) {
   const value: ProjectStoreValue = {
     project,
     model,
+    verified,
     apiAvailable,
     loading,
     draft,

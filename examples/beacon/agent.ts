@@ -1,21 +1,19 @@
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { defineAgent } from "eve";
 
+// Reference agent — real eve shape. eve discovers tools, skills, connections,
+// and schedules by directory convention; there is no `name` or `tools` list.
+// Identity is the package / folder name. Copy this folder into `agent/` to run
+// it.
+
+const openrouter = createOpenRouter({
+  apiKey: process.env.OPENROUTER_API_KEY!,
+});
+
 export default defineAgent({
-  name: "Beacon",
-  model: "claude-sonnet-4",
-  description:
-    "A front-line support agent that answers what it can, routes what it can't, and keeps every conversation warm.",
-  instructions: "./instructions.md",
-  tools: [
-    "./tools/search-docs.ts",
-    "./tools/draft-reply.ts",
-    "./tools/route-ticket.ts",
-  ],
-  skills: ["./skills/tone"],
-  channels: [
-    "./channels/intercom.ts",
-    "./channels/slack.ts",
-    "./channels/zendesk.ts",
-  ],
-  schedules: ["./schedules/sla-watch.ts"],
+  model: openrouter("anthropic/claude-sonnet-4"),
+  modelContextWindowTokens: 200_000,
+  build: {
+    externalDependencies: ["@openrouter/ai-sdk-provider"],
+  },
 });

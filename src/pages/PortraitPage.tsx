@@ -5,7 +5,7 @@ import { usePersonalityTheme } from "../theme/usePersonalityTheme";
 import { useProjectStore } from "../store/ProjectStore";
 
 export function PortraitPage() {
-  const { model, loading, apiAvailable } = useProjectStore();
+  const { model, verified, loading, apiAvailable } = useProjectStore();
 
   usePersonalityTheme(model?.theme ?? themeForMotif("form"));
 
@@ -56,7 +56,7 @@ export function PortraitPage() {
         )}
       </nav>
 
-      <SelfPortrait agent={model} key={model.id} />
+      <SelfPortrait agent={model} verified={verified} key={model.id} />
 
       <footer className="footer">
         <span>

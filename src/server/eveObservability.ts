@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import type { EveDiagnostic } from "./eveBuild";
 import { runEveCommand } from "./eveCli";
+import { mapAgentInfo, type AgentInfo, type AgentInfoFacts } from "../parser/eveInfoAdapter";
 
 export interface EveInfoSnapshot {
   ok: boolean;
@@ -75,6 +76,31 @@ export async function runEveInfo(workspaceRoot: string): Promise<EveInfoSnapshot
   } catch {
     return { ok: false, stdout: result.stdout, stderr: result.stderr || "Invalid JSON from eve info" };
   }
+}
+
+export interface EveManifestResult {
+  ok: boolean;
+  /** True when eve info resolved a built agent and facts were mapped. */
+  built: boolean;
+  facts?: AgentInfoFacts;
+  error?: string;
+}
+
+/**
+ * Run `eve info --json` and map it into the AgentModel's verified trust facts.
+ * `built: false` means eve could not resolve the agent (usually: not built yet,
+ * or wrong Node version) — callers should fall back to the source-parsed model.
+ */
+export async function runEveManifest(workspaceRoot: string): Promise<EveManifestResult> {
+  const info = await runEveInfo(workspaceRoot);
+  if (!info.ok || info.raw == null) {
+    return {
+      ok: false,
+      built: false,
+      error: info.stderr || "eve info did not return a manifest",
+    };
+  }
+  return { ok: true, built: true, facts: mapAgentInfo(info.raw as AgentInfo) };
 }
 
 export interface VercelObservabilityLinks {

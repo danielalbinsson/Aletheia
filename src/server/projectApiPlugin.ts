@@ -12,6 +12,7 @@ import {
   readDiscoveryManifest,
   readEveDiagnostics,
   runEveInfo,
+  runEveManifest,
 } from "./eveObservability";
 
 const FILE_RE = /^[\w./-]+\.(ts|md)$/;
@@ -165,6 +166,11 @@ export function projectApiPlugin(agentRoot: string, workspaceRoot: string): Plug
           if (sub === "build" && method === "POST") {
             const result = await runEveBuild(workspaceRoot);
             return sendJson(res, result.ok ? 200 : 422, result);
+          }
+
+          if (sub === "manifest" && method === "GET") {
+            const result = await runEveManifest(workspaceRoot);
+            return sendJson(res, 200, result);
           }
 
           if (sub === "deploy" && parts[3] === "status" && method === "GET") {
