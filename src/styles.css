@@ -709,6 +709,63 @@ code { font-family: var(--sans); color: var(--muted); }
   margin-top: 8px;
 }
 
+/* Capability review (diff-on-deploy) */
+.capability-review {
+  margin: 14px 0;
+  display: grid;
+  gap: 14px;
+}
+.diff-note {
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+.diff-note.muted { color: var(--faint); }
+.diff-group { display: grid; gap: 6px; }
+.diff-group-label {
+  font-family: var(--sans);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 2px;
+}
+.diff-group.elevated .diff-group-label {
+  color: color-mix(in srgb, var(--accent) 80%, var(--ink-soft));
+}
+.diff-line {
+  display: flex;
+  gap: 9px;
+  align-items: baseline;
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+.diff-glyph {
+  font-family: var(--mono);
+  width: 1ch;
+  flex: none;
+  color: var(--faint);
+}
+.diff-line.elevated {
+  color: var(--ink);
+  padding-left: 10px;
+  border-left: 2px solid var(--accent-dim);
+}
+.diff-line.elevated .diff-glyph {
+  color: color-mix(in srgb, var(--accent) 80%, var(--ink-soft));
+}
+.diff-ack {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 8px 0 14px;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.diff-ack input { margin-top: 2px; }
+
 .chat-log {
   min-height: 200px;
   max-height: 360px;

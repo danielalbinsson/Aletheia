@@ -10,6 +10,7 @@ import type {
 } from "../server/eveObservability";
 import type { EveDiagnostic } from "../server/eveBuild";
 import type { RawProject } from "../parser/loadProject";
+import type { CapabilityDiff, CapabilitySnapshot } from "../parser/capabilityDiff";
 
 export interface ProjectErrorResponse {
   error: string;
@@ -64,6 +65,20 @@ export async function buildProject(): Promise<EveBuildResult> {
 export async function fetchDeployStatus(): Promise<DeployLinkStatus> {
   const res = await fetch("/api/project/deploy/status");
   return parseResponse<DeployLinkStatus>(res);
+}
+
+export interface DeployDiffResponse {
+  ok: boolean;
+  built: boolean;
+  error?: string;
+  hadBaseline?: boolean;
+  diff?: CapabilityDiff;
+  current?: CapabilitySnapshot;
+}
+
+export async function fetchDeployDiff(): Promise<DeployDiffResponse> {
+  const res = await fetch("/api/project/deploy/diff");
+  return parseResponse<DeployDiffResponse>(res);
 }
 
 /**

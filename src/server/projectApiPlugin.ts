@@ -6,6 +6,8 @@ import { runEveBuild } from "./eveBuild";
 import { readDeployLinkStatus } from "./deployStatus";
 import { readModelCredentialStatus } from "./modelCredentials";
 import { runEveDeploy } from "./eveDeploy";
+import { readDeployedSnapshot, writeDeployedSnapshot } from "./capabilitySnapshot";
+import { snapshotFromFacts, diffSnapshots } from "../parser/capabilityDiff";
 import { getEveDevStatus, startEveDev, stopEveDev } from "./eveDevServer";
 import {
   buildVercelObservabilityLinks,
@@ -178,6 +180,28 @@ export function projectApiPlugin(agentRoot: string, workspaceRoot: string): Plug
             return sendJson(res, 200, status);
           }
 
+          if (sub === "deploy" && parts[3] === "diff" && method === "GET") {
+            // Capability review: diff the current built manifest against the
+            // last deployed snapshot. Drives the pre-deploy review gate.
+            const manifest = await runEveManifest(workspaceRoot);
+            if (!manifest.built || !manifest.facts) {
+              return sendJson(res, 200, {
+                ok: false,
+                built: false,
+                error: manifest.error ?? "Build the agent to review capability changes.",
+              });
+            }
+            const prev = await readDeployedSnapshot(agentRoot);
+            const current = snapshotFromFacts(manifest.facts);
+            return sendJson(res, 200, {
+              ok: true,
+              built: true,
+              hadBaseline: prev !== null,
+              diff: diffSnapshots(prev, current),
+              current,
+            });
+          }
+
           if (sub === "deploy" && method === "POST") {
             // Stream NDJSON: {type:"log",...} chunks as eve deploy runs, then a
             // final {type:"result", result}. Status is always 200 because the
@@ -191,6 +215,23 @@ export function projectApiPlugin(agentRoot: string, workspaceRoot: string): Plug
             const result = await runEveDeploy(workspaceRoot, (data, stream) =>
               writeEvent({ type: "log", stream, data })
             );
+            // On a successful deploy, record the capability snapshot so the
+            // next deploy diffs against what actually shipped.
+            if (result.ok) {
+              try {
+                const manifest = await runEveManifest(workspaceRoot);
+                if (manifest.built && manifest.facts) {
+                  await writeDeployedSnapshot(agentRoot, snapshotFromFacts(manifest.facts));
+                  writeEvent({ type: "log", stream: "stdout", data: "\n[aletheia] recorded capability snapshot.\n" });
+                }
+              } catch {
+                writeEvent({
+                  type: "log",
+                  stream: "stderr",
+                  data: "\n[aletheia] deploy succeeded but capability snapshot could not be recorded.\n",
+                });
+              }
+            }
             writeEvent({ type: "result", result });
             res.end();
             return;

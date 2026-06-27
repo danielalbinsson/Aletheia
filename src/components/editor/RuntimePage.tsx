@@ -3,13 +3,16 @@ import { Link } from "react-router-dom";
 import {
   deployProject,
   fetchDeployStatus,
+  fetchDeployDiff,
   fetchDevStatus,
   startDevServer,
   stopDevServer,
+  type DeployDiffResponse,
   type DeployLinkStatus,
   type EveDevStatus,
   type ModelCredentialStatus,
 } from "../../api/projectClient";
+import type { DiffEntry } from "../../parser/capabilityDiff";
 import { chatWithEve, type EveSessionCursor } from "../../lib/eveSessionChat";
 import { findFailureMessage } from "../../lib/eveStream";
 import {
@@ -35,6 +38,8 @@ export function RuntimePage() {
   const [deployBusy, setDeployBusy] = useState(false);
   const [deployLog, setDeployLog] = useState<string | null>(null);
   const [deployedUrl, setDeployedUrl] = useState<string | null>(null);
+  const [deployDiff, setDeployDiff] = useState<DeployDiffResponse | null>(null);
+  const [diffAck, setDiffAck] = useState(false);
   const [devLog, setDevLog] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -55,11 +60,34 @@ export function RuntimePage() {
     }
   }, [apiAvailable]);
 
+  // The capability diff runs `eve info`, so it's loaded on demand (mount + after
+  // a deploy), not on the 5s status poll.
+  const loadDiff = useCallback(async () => {
+    if (!apiAvailable) return;
+    try {
+      const diff = await fetchDeployDiff();
+      setDeployDiff(diff);
+      setDiffAck(false);
+    } catch (err) {
+      setDeployDiff({
+        ok: false,
+        built: false,
+        error: err instanceof Error ? err.message : "Could not load capability review",
+      });
+    }
+  }, [apiAvailable]);
+
   useEffect(() => {
     void refreshStatus();
+    void loadDiff();
     const interval = setInterval(() => void refreshStatus(), 5000);
     return () => clearInterval(interval);
-  }, [refreshStatus]);
+  }, [refreshStatus, loadDiff]);
+
+  // Whether the review gate must be acknowledged before deploying.
+  const reviewBlocks =
+    deployDiff?.ok === true &&
+    (deployDiff.diff?.isInitial === true || deployDiff.diff?.hasElevated === true);
 
   async function handleStartDev() {
     setDevBusy(true);
@@ -120,6 +148,8 @@ export function RuntimePage() {
         setError(result.stderr || "eve deploy failed");
       }
       await refreshStatus();
+      // The snapshot just moved to what we shipped — refresh the diff.
+      await loadDiff();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Deploy failed");
     } finally {
@@ -303,12 +333,35 @@ export function RuntimePage() {
               <code className="runtime-url">{deployStatus.projectName}</code>
             )}
           </div>
+          <CapabilityReview diff={deployDiff} />
+
+          {reviewBlocks && (
+            <label className="diff-ack">
+              <input
+                type="checkbox"
+                checked={diffAck}
+                onChange={(e) => setDiffAck(e.target.checked)}
+              />
+              <span>
+                {deployDiff?.diff?.isInitial
+                  ? "I've reviewed the initial capabilities."
+                  : "I've reviewed these capability changes."}
+              </span>
+            </label>
+          )}
+
           <div className="runtime-actions">
             <button
               type="button"
               className="btn-primary"
               onClick={() => void handleDeploy()}
-              disabled={!apiAvailable || deployBusy || !deployStatus?.linked || dirty}
+              disabled={
+                !apiAvailable ||
+                deployBusy ||
+                !deployStatus?.linked ||
+                dirty ||
+                (reviewBlocks && !diffAck)
+              }
             >
               {deployBusy ? "Deploying…" : "eve deploy"}
             </button>
@@ -374,5 +427,76 @@ export function RuntimePage() {
         )}
       </section>
     </main>
+  );
+}
+
+const CHANGE_GLYPH: Record<DiffEntry["change"], string> = {
+  added: "+",
+  removed: "−",
+  changed: "~",
+};
+
+/** The pre-deploy capability review: what's changing about what the agent can do. */
+function CapabilityReview({ diff }: { diff: DeployDiffResponse | null }) {
+  if (!diff) return null;
+
+  if (!diff.ok) {
+    return (
+      <p className="diff-note muted">
+        {diff.error ?? "Build the agent to review capability changes before deploying."}
+      </p>
+    );
+  }
+
+  const d = diff.diff;
+  if (!d) return null;
+
+  if (d.isInitial) {
+    return (
+      <div className="capability-review">
+        <p className="diff-note">
+          First deploy — review what this agent will be able to do, touch, and decide.
+        </p>
+      </div>
+    );
+  }
+
+  if (!d.hasChanges) {
+    return <p className="diff-note muted">No capability changes since last deploy.</p>;
+  }
+
+  const elevated = d.entries.filter((e) => e.risk === "elevated");
+  const routine = d.entries.filter((e) => e.risk === "routine");
+
+  return (
+    <div className="capability-review">
+      {elevated.length > 0 && (
+        <div className="diff-group elevated">
+          <p className="diff-group-label">Needs your attention</p>
+          {elevated.map((e, i) => (
+            <DiffLine key={`e${i}`} entry={e} />
+          ))}
+        </div>
+      )}
+      {routine.length > 0 && (
+        <div className="diff-group">
+          <p className="diff-group-label">Other changes</p>
+          {routine.map((e, i) => (
+            <DiffLine key={`r${i}`} entry={e} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DiffLine({ entry }: { entry: DiffEntry }) {
+  return (
+    <p className={`diff-line ${entry.risk} change-${entry.change}`}>
+      <span className="diff-glyph" aria-hidden>
+        {CHANGE_GLYPH[entry.change]}
+      </span>
+      <span className="diff-summary">{entry.summary}</span>
+    </p>
   );
 }
