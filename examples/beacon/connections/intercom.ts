@@ -4,6 +4,7 @@ import { defineOpenAPIConnection } from "eve/connections";
 // manifest reports `hasAuthorization: true`. The filename ("intercom") is the
 // connection's runtime name.
 export default defineOpenAPIConnection({
+  description: "Reads and replies to live customer conversations in Intercom.",
   spec: "https://api.intercom.io/openapi.json",
   baseUrl: "https://api.intercom.io",
   auth: {

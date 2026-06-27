@@ -14,12 +14,11 @@ import type { AgentModel, Autonomy, Reach } from "../model";
 export interface SnapshotCapability {
   source: string;
   label: string;
-  requiresApproval?: boolean;
 }
 export interface SnapshotReach {
   label: string;
   kind: Reach["kind"];
-  access: Reach["access"];
+  access?: Reach["access"];
   detail?: string;
 }
 export interface SnapshotAutonomy {
@@ -84,7 +83,6 @@ export function snapshotFromFacts(
     capabilities: facts.capabilities.map((c) => ({
       source: c.source,
       label: c.label,
-      requiresApproval: c.requiresApproval,
     })),
     reach: facts.reach.map((r) => ({
       label: r.label,
@@ -101,11 +99,16 @@ export function snapshotFromFacts(
   };
 }
 
-const ACCESS_RANK: Record<Reach["access"], number> = {
+const ACCESS_RANK: Record<NonNullable<Reach["access"]>, number> = {
   read: 0,
   write: 1,
   "read-write": 2,
 };
+
+/** Access rank, or -1 when access is unknown (manifest reach declares none). */
+function rank(access: Reach["access"]): number {
+  return access ? ACCESS_RANK[access] : -1;
+}
 
 /** Reach that touches an external system (vs internal data). */
 function isExternal(r: SnapshotReach): boolean {
@@ -130,17 +133,17 @@ function diffReach(prev: SnapshotReach[], next: SnapshotReach[]): DiffEntry[] {
       entries.push({
         kind: "reach",
         change: "added",
-        summary: `Can now reach ${r.label} (${r.access})`,
+        summary: `Can now reach ${r.label}${r.access ? ` (${r.access})` : ""}`,
         risk: isExternal(r) ? "elevated" : "routine",
       });
-    } else if (ACCESS_RANK[r.access] > ACCESS_RANK[before.access]) {
+    } else if (rank(r.access) > rank(before.access)) {
       entries.push({
         kind: "reach",
         change: "changed",
         summary: `${r.label}: access widened from ${before.access} to ${r.access}`,
         risk: "elevated",
       });
-    } else if (ACCESS_RANK[r.access] < ACCESS_RANK[before.access]) {
+    } else if (rank(r.access) < rank(before.access)) {
       entries.push({
         kind: "reach",
         change: "changed",
@@ -171,29 +174,11 @@ function diffCapabilities(
   const entries: DiffEntry[] = [];
 
   for (const [key, c] of nextBy) {
-    const before = prevBy.get(key);
-    if (!before) {
+    if (!prevBy.has(key)) {
       entries.push({
         kind: "capability",
         change: "added",
-        summary: `New capability: ${c.label}${
-          c.requiresApproval === false ? " (runs without approval)" : ""
-        }`,
-        risk: "routine",
-      });
-    } else if (before.requiresApproval === true && c.requiresApproval === false) {
-      // An action that used to ask now runs unattended — elevated.
-      entries.push({
-        kind: "capability",
-        change: "changed",
-        summary: `${c.label}: no longer asks for approval`,
-        risk: "elevated",
-      });
-    } else if (before.requiresApproval !== true && c.requiresApproval === true) {
-      entries.push({
-        kind: "capability",
-        change: "changed",
-        summary: `${c.label}: now asks for approval`,
+        summary: `New capability: ${c.label}`,
         risk: "routine",
       });
     }

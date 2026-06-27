@@ -1,15 +1,18 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { defineAgent } from "eve";
 
-// Reference agent — real eve shape. Tools, skills, connections, schedules, and
-// subagents are discovered by directory convention; identity is the folder
-// name, so there is no `name` or `tools` list. Copy into `agent/` to run.
+// A local subagent is itself an agent package — a folder under `subagents/`
+// with its own agent.ts, instructions, and tools, discovered recursively.
+// Ledger delegates entry review to it.
 
 const openrouter = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY!,
 });
 
 export default defineAgent({
+  // A subagent must describe itself so the parent knows when to delegate.
+  description:
+    "Reviews posted journal entries and confirms each traces back to a source transaction.",
   model: openrouter("anthropic/claude-opus-4"),
   modelContextWindowTokens: 200_000,
   build: {

@@ -1,6 +1,9 @@
-import { schedule } from "eve";
-export default schedule({
-  name: "month_close", cron: "0 6 1 * *", when: "The 1st of each month",
-  does: "Runs the full month-end close and posts the summary for your review.",
-  consent: "asks-first",
+import { defineSchedule } from "eve/schedules";
+
+// Fires on the 1st of each month. Runs the close and posts a summary; the
+// posting tool's approval gate is where you review before anything lands.
+export default defineSchedule({
+  cron: "0 6 1 * *",
+  markdown:
+    "Run the full month-end close and post the summary to #finance for review.",
 });

@@ -119,26 +119,14 @@ function Section({
 function CapabilityItem({ cap }: { cap: Capability }) {
   return (
     <li>
-      <span className="cap-label">
-        {cap.label}
-        {cap.requiresApproval === true && (
-          <span className="cap-approval" title="Requires your approval before running">
-            asks first
-          </span>
-        )}
-        {cap.requiresApproval === false && (
-          <span className="cap-approval auto" title="Runs without asking">
-            no approval
-          </span>
-        )}
-      </span>
+      <span className="cap-label">{cap.label}</span>
       <span className="cap-detail">{cap.detail}</span>
       {cap.takes && <span className="cap-takes">takes: {cap.takes}</span>}
     </li>
   );
 }
 
-const ACCESS_GLYPH: Record<Reach["access"], string> = {
+const ACCESS_GLYPH: Record<NonNullable<Reach["access"]>, string> = {
   read: "reads",
   write: "writes",
   "read-write": "reads + writes",
@@ -152,9 +140,11 @@ function ReachItem({ reach }: { reach: Reach }) {
         {reach.label}
         {reach.detail && <span className="reach-detail">{reach.detail}</span>}
       </span>
-      <span className={`reach-access access-${reach.access}`}>
-        {ACCESS_GLYPH[reach.access]}
-      </span>
+      {reach.access && (
+        <span className={`reach-access access-${reach.access}`}>
+          {ACCESS_GLYPH[reach.access]}
+        </span>
+      )}
     </li>
   );
 }

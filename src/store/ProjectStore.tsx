@@ -19,7 +19,7 @@ import {
 } from "../api/projectClient";
 import type { EveBuildResult } from "../server/eveBuild";
 import { parseAgent } from "../parser/eveAdapter";
-import { applyAgentInfo, type AgentInfoFacts } from "../parser/eveInfoAdapter";
+import { applyManifest, type ManifestFacts } from "../parser/manifestAdapter";
 import { loadRawProject, type RawProject } from "../parser/loadProject";
 import {
   rebuildAgentTs,
@@ -55,7 +55,7 @@ const ProjectStoreContext = createContext<ProjectStoreValue | null>(null);
 
 export function ProjectStoreProvider({ children }: { children: ReactNode }) {
   const [project, setProject] = useState<RawProject | null>(() => loadRawProject());
-  const [manifestFacts, setManifestFacts] = useState<AgentInfoFacts | null>(null);
+  const [manifestFacts, setManifestFacts] = useState<ManifestFacts | null>(null);
   const [apiAvailable, setApiAvailable] = useState(false);
   const [loading, setLoading] = useState(true);
   const [draft, setDraftState] = useState<RawProject | null>(null);
@@ -70,7 +70,7 @@ export function ProjectStoreProvider({ children }: { children: ReactNode }) {
   const model = useMemo(() => {
     if (!project) return null;
     const base = parseAgent(project);
-    return manifestFacts ? applyAgentInfo(base, manifestFacts) : base;
+    return manifestFacts ? applyManifest(base, manifestFacts) : base;
   }, [project, manifestFacts]);
 
   const verified = manifestFacts !== null;

@@ -2,7 +2,11 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import type { EveDiagnostic } from "./eveBuild";
 import { runEveCommand } from "./eveCli";
-import { mapAgentInfo, type AgentInfo, type AgentInfoFacts } from "../parser/eveInfoAdapter";
+import {
+  mapManifest,
+  type CompiledManifest,
+  type ManifestFacts,
+} from "../parser/manifestAdapter";
 
 export interface EveInfoSnapshot {
   ok: boolean;
@@ -80,27 +84,34 @@ export async function runEveInfo(workspaceRoot: string): Promise<EveInfoSnapshot
 
 export interface EveManifestResult {
   ok: boolean;
-  /** True when eve info resolved a built agent and facts were mapped. */
+  /** True when a compiled manifest was found and mapped. */
   built: boolean;
-  facts?: AgentInfoFacts;
+  facts?: ManifestFacts;
   error?: string;
 }
 
 /**
- * Run `eve info --json` and map it into the AgentModel's verified trust facts.
- * `built: false` means eve could not resolve the agent (usually: not built yet,
- * or wrong Node version) — callers should fall back to the source-parsed model.
+ * Read eve's compiled manifest (written by `eve build`) and map it into the
+ * AgentModel's verified trust facts. This is the authoritative, server-free
+ * source — see manifestAdapter for why we don't use `eve info --json` or the
+ * /eve/v1/info endpoint. `built: false` means the agent hasn't been built yet;
+ * callers fall back to the source-parsed model.
  */
 export async function runEveManifest(workspaceRoot: string): Promise<EveManifestResult> {
-  const info = await runEveInfo(workspaceRoot);
-  if (!info.ok || info.raw == null) {
+  const manifestPath = path.join(
+    workspaceRoot,
+    ".eve/compile/compiled-agent-manifest.json"
+  );
+  try {
+    const raw = JSON.parse(await fs.readFile(manifestPath, "utf8")) as CompiledManifest;
+    return { ok: true, built: true, facts: mapManifest(raw) };
+  } catch {
     return {
       ok: false,
       built: false,
-      error: info.stderr || "eve info did not return a manifest",
+      error: "No compiled manifest found. Build the agent first.",
     };
   }
-  return { ok: true, built: true, facts: mapAgentInfo(info.raw as AgentInfo) };
 }
 
 export interface VercelObservabilityLinks {

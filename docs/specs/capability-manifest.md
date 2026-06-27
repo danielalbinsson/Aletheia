@@ -77,27 +77,26 @@ available).
 - Given a connection exists, then its target and (if present) auth provider are
   shown in plain language.
 
-**P0-3 — Consent from approval + schedule kind.**
-- Capability gains an `approval` signal (`always` | `once` | `never` | `none`)
-  read from the tool definition.
-- `Autonomy.consent` is derived: a `markdown` schedule ⇒ `acts-on-its-own`; a
-  `run` schedule ⇒ classify by whether it requires approval / acts as the agent.
-  No hand-written `consent` strings.
-- Given a tool with `approval: always`, then the capability is marked "asks
-  before acting"; given `never`/absent, "acts without asking".
+**P0-3 — Autonomy from schedules. (Approval DROPPED — not exposed by eve.)**
+- `Autonomy.consent` is `acts-on-its-own` for every schedule: eve schedules
+  fire unattended, and the human-in-the-loop (tool `approval`) is **not exposed
+  by any eve artifact** in 0.15.5 (verified live). We therefore do **not** render
+  per-tool approval/consent at all, rather than render a value we can't trust.
+- ~~Capability gains an approval signal~~ — removed. If a future eve version
+  exposes approval in the compiled manifest, reintroduce it here.
 
 **P0-4 — Plain-language capability card + agent-level reach.**
-For each capability render: human label (from slug), description, what it
-accepts (summarized from `inputSchema` — field names + types, not raw JSON), and
-its approval state (`requiresApproval`). Reach is rendered **once at the agent
-level** (not per card), since eve exposes connections agent-wide with no
-tool binding — list each connection's name, protocol, url, and whether it's
-authenticated (`hasAuthorization`).
+For each capability render: human label (from slug), description, and what it
+accepts (summarized from `inputSchema` — field names + types, not raw JSON).
+**No approval state** (not available). Reach is rendered **once at the agent
+level** (not per card): list each connection's name, protocol, and url. eve does
+**not** declare a connection's read/write access or auth state in the compiled
+manifest, so we show protocol + url and leave access unstated rather than
+inventing it.
 - Given a tool with an input schema, then required inputs are listed in plain
   language ("needs: a since-timestamp").
 - Given the agent has connections, then a "What it can reach" section lists them
-  with protocol and auth state; given none, it states the agent reaches nothing
-  external.
+  with protocol and url; given none, it states the agent reaches nothing external.
 
 **P0-5 — Provenance + honesty.**
 Every rendered fact links to its source (`logicalPath`) and is labelled as
@@ -125,14 +124,20 @@ verified-from-build. Nothing is inferred silently; if a value is unknown, say
 
 ## Design Decisions (resolved defaults — flag if you disagree)
 
-- **Extraction source (RESOLVED by spike, 2026-06-27):** `eve info --json`
-  (the `AgentInfoResponse`) is authoritative — Aletheia *already* calls it via
-  `runEveInfo`. It is the resolved/runtime view and is the only one that carries
-  approval. The static `agent-discovery-manifest.json` does **not** (its
-  builder hardcodes `requiresApproval: false`), and `.eve/agent-summary.json`
-  (the Vercel CDN summary) is too slim (name/description/path only). So: map the
-  `eve info --json` response; source-file regex is retained only for human
-  niceties (humanized labels), never for trust facts.
+- **Extraction source (RESOLVED by LIVE run on Node 24, 2026-06-27):** the
+  authoritative source is **`.eve/compile/compiled-agent-manifest.json`**,
+  written by `eve build`. It needs no running server and carries the
+  decision-grade facts: tool name/description/inputSchema, connection
+  name/description/protocol/url, schedule cron/markdown/hasRun, skills,
+  subagents. Two earlier candidates were ruled out by running them:
+  - `eve info --json` (CLI) returns a **slim** shape — tools/skills as bare name
+    strings, no schemas. Not enough.
+  - `GET /eve/v1/info` (running agent) returns the rich `AgentInfoResponse` but
+    **does not expose approval or getToken-auth** — `requiresApproval` and
+    `hasAuthorization` read `false` even for `always()`-gated tools with real
+    `getToken` auth (function-valued fields don't survive serialization), in
+    both `eve start` and `eve dev`.
+  Source-file regex is retained only for human niceties (labels), never trust.
 - **Build dependency:** the manifest requires a successful `eve build`. The
   portrait's trust claims are only shown for built state; unbuilt shows a prompt
   to build. This is acceptable because deploy already builds.
@@ -161,19 +166,18 @@ verified-from-build. Nothing is inferred silently; if a value is unknown, say
 
 ## Open Questions
 
-- ~~**(eng)** Does the manifest expose tool `approval`?~~ **RESOLVED (spike):**
-  Yes, but only as a **boolean** — `requiresApproval` on tools, `hasApproval` on
-  connections (`approval !== undefined`). The mode (`always`/`once`/`never`) is
-  a runtime function and does not serialize, so P0-3 surfaces *whether* a gate
-  exists, not which kind. **Caveat:** `never()` is still a defined function, so a
-  tool gated with `never()` reads as `requiresApproval: true`. Acceptable for v1
-  (presence ≈ "author thought about approval"); note it in the UI copy.
-- ~~**(eng)** Can we attribute a connection to a specific tool?~~ **RESOLVED
-  (spike):** No. Connections are exposed at the **agent level** only; there is no
-  tool→connection binding (connection operations are dynamic, via
-  `connection_search`). So P0-4 shows touch/reach as an **agent-level rollup**,
-  not per-capability. Reach moves out of the per-tool card. *(P0-4 updated
-  accordingly — see Requirements.)*
+- ~~**(eng)** Does the manifest expose tool `approval`?~~ **RESOLVED by live
+  run (Node 24):** No. The compiled manifest omits it; `/eve/v1/info` has a
+  `requiresApproval` field but it reads `false` even for `always()`-gated tools
+  (the function doesn't serialize), in both `eve start` and `eve dev`. Approval
+  is **dropped** from the manifest until eve exposes it. Same for connection
+  auth (`hasAuthorization` only reflects `vercelConnect`, not `getToken`).
+- ~~**(eng)** Can we attribute a connection to a specific tool?~~ **RESOLVED:**
+  No — connections are agent-level only. Reach is an agent-level section, not a
+  per-card field. *(P0-4 updated accordingly.)*
+- **(future)** If a later eve version serializes tool approval into the compiled
+  manifest, reintroduce the consent signal (model field + portrait badge + the
+  diff's "no longer asks for approval" escalation, which is currently removed).
 - **(eng)** How reliable is static drift detection (P1) given tools can build
   hosts dynamically? Likely best-effort with a clear "advisory" label.
 - **(eng)** `eve info --json` requires Node 24 and a resolvable agent; confirm it

@@ -1,6 +1,9 @@
-import { schedule } from "eve";
-export default schedule({
-  name: "nightly_reconcile", cron: "0 2 * * *", when: "Every night at 2am",
-  does: "Pulls the day's transactions, categorizes, reconciles, and posts clean entries.",
-  consent: "acts-on-its-own",
+import { defineSchedule } from "eve/schedules";
+
+// Fires every night with no human in the loop (acts on its own). It can post
+// clean entries because post-entry still asks for approval per write.
+export default defineSchedule({
+  cron: "0 2 * * *",
+  markdown:
+    "Pull the day's transactions, categorize and reconcile them, and post the clean entries.",
 });

@@ -17,12 +17,6 @@ export interface Capability {
   origin: "tool" | "skill" | "subagent";
   /** The underlying file/symbol name, kept for the system view. */
   source: string;
-  /**
-   * Whether this capability has an approval gate (eve `requiresApproval`).
-   * Boolean only — eve does not serialize the mode (always/once/never).
-   * Undefined when unknown (e.g. skills, or a manifest that didn't resolve it).
-   */
-  requiresApproval?: boolean;
   /** Plain-language summary of inputs, derived from the tool's input schema. */
   takes?: string;
 }
@@ -32,11 +26,16 @@ export interface Reach {
   /** e.g. "Gmail", "Slack #support", "your calendar". */
   label: string;
   kind: "data" | "api" | "channel";
-  /** "read" | "write" | "read-write" — how much it can do there. */
-  access: "read" | "write" | "read-write";
+  /**
+   * "read" | "write" | "read-write" — how much it can do there. Optional:
+   * eve's compiled manifest does not declare read/write on a connection, so
+   * manifest-derived reach leaves this unset rather than inventing it. The
+   * source-parsed fallback may still set it from `@reach` annotations.
+   */
+  access?: "read" | "write" | "read-write";
   /**
    * Optional provenance detail for connection-backed reach, e.g.
-   * "OpenAPI · authenticated". Shown beneath the label; never a trust claim.
+   * "OPENAPI · https://api.intercom.io". Shown beneath the label.
    */
   detail?: string;
 }

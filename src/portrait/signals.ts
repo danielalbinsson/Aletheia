@@ -27,8 +27,12 @@ function hashString(s: string): number {
 }
 
 export function deriveSignals(agent: AgentModel): PortraitSignals {
-  // reach: number of distinct things it touches, weighted by write access.
-  const writes = agent.reach.filter((r) => r.access !== "read").length;
+  // reach: number of distinct things it touches, weighted by known write
+  // access. Unknown access (manifest reach declares none) is not counted as a
+  // write, so we don't overstate.
+  const writes = agent.reach.filter(
+    (r) => r.access === "write" || r.access === "read-write"
+  ).length;
   const reach = saturate(agent.reach.length + writes, 4);
 
   // autonomy: how much it acts on its own vs. asks first.

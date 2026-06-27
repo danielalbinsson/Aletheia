@@ -1,7 +1,13 @@
-import { tool } from "eve";
-export default tool({
-  name: "fetch_transactions",
+import { defineTool } from "eve/tools";
+import { z } from "zod";
+
+// Read-only pull from the bank feed — no approval.
+export default defineTool({
   description: "Pull the day's transactions from connected bank and card accounts.",
-  reach: { label: "Bank feed", kind: "data", access: "read" },
-  run: async ({ date }: { date: string }) => ({ date }),
+  inputSchema: z.object({
+    date: z.string().describe("The day to fetch, as an ISO date"),
+  }),
+  async execute({ date }) {
+    return { date, transactions: [] };
+  },
 });

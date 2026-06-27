@@ -1,0 +1,179 @@
+// manifestAdapter: eve's compiled manifest (.eve/compile/compiled-agent-manifest.json)
+// -> the verified trust slice of the AgentModel.
+//
+// ── WHY THIS, AND NOT `eve info --json` ─────────────────────────────────────
+// Verified live against eve 0.15.5 (see docs/specs/capability-manifest.md):
+//   • The CLI `eve info --json` returns a SLIM shape (tools/skills as bare name
+//     strings, no schemas) — not enough.
+//   • The rich `AgentInfoResponse` at GET /eve/v1/info needs a running agent AND
+//     still does NOT expose approval or getToken-auth (function-valued fields
+//     don't survive serialization), so `requiresApproval`/`hasAuthorization`
+//     read false even for gated tools.
+//   • The compiled manifest, written by `eve build`, carries the decision-grade
+//     facts with no server needed: tool name/description/inputSchema, connection
+//     name/description/protocol/url, schedule cron/markdown/hasRun, skills,
+//     subagents. It does NOT carry approval or connection read/write — so we do
+//     not render those as fact.
+// ─────────────────────────────────────────────────────────────────────────────
+
+import type { AgentModel, Capability, Reach, Autonomy } from "../model";
+
+/** The subset of the compiled manifest this adapter relies on. */
+export interface CompiledManifest {
+  config?: { model?: { id?: string }; description?: string };
+  tools?: ManifestTool[];
+  skills?: ManifestSkill[];
+  connections?: ManifestConnection[];
+  channels?: ManifestChannel[];
+  schedules?: ManifestSchedule[];
+  subagents?: { name?: string }[];
+}
+
+interface ManifestTool {
+  name?: string;
+  description?: string;
+  logicalPath?: string;
+  inputSchema?: unknown;
+}
+interface ManifestSkill {
+  name?: string;
+  description?: string;
+  logicalPath?: string;
+}
+interface ManifestConnection {
+  connectionName?: string;
+  description?: string;
+  protocol?: string;
+  url?: string;
+  logicalPath?: string;
+}
+interface ManifestChannel {
+  name?: string;
+  logicalPath?: string;
+}
+interface ManifestSchedule {
+  name?: string;
+  cron?: string;
+  markdown?: string;
+  hasRun?: boolean;
+}
+
+/** The slice of AgentModel this adapter is authoritative for. */
+export type ManifestFacts = Pick<
+  AgentModel,
+  "capabilities" | "reach" | "autonomy" | "subagents"
+> & { runsOn?: string; description?: string };
+
+function humanize(slug: string): string {
+  const s = slug.replace(/[_/-]+/g, " ").trim();
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/** Turn a JSON Schema object into a short plain-language input summary. */
+export function summarizeInputs(schema: unknown): string | undefined {
+  if (!schema || typeof schema !== "object") return undefined;
+  const s = schema as {
+    properties?: Record<string, { type?: string }>;
+    required?: string[];
+  };
+  const props = s.properties;
+  if (!props || Object.keys(props).length === 0) return undefined;
+  const required = new Set(s.required ?? []);
+  const parts = Object.entries(props).map(([key, def]) => {
+    const type = def?.type ? ` (${def.type})` : "";
+    const opt = required.has(key) ? "" : " — optional";
+    return `${humanize(key).toLowerCase()}${type}${opt}`;
+  });
+  return parts.join(", ");
+}
+
+function mapCapabilities(m: CompiledManifest): Capability[] {
+  const caps: Capability[] = [];
+  for (const t of m.tools ?? []) {
+    const name = t.name ?? t.logicalPath ?? "tool";
+    caps.push({
+      label: humanize(name),
+      detail: t.description ?? "",
+      origin: "tool",
+      source: t.logicalPath ?? `tools/${name}.ts`,
+      takes: summarizeInputs(t.inputSchema),
+    });
+  }
+  for (const sk of m.skills ?? []) {
+    const name = sk.name ?? "skill";
+    caps.push({
+      label: humanize(name),
+      detail: sk.description ?? "",
+      origin: "skill",
+      source: sk.logicalPath ?? `skills/${name}/SKILL.md`,
+    });
+  }
+  return caps;
+}
+
+/**
+ * Reach is the real external surface: connections (with protocol + url) and
+ * channels. eve does not declare read/write granularity on a connection, so we
+ * leave `access` unset rather than inventing one — the protocol/url in `detail`
+ * is what's actually known.
+ */
+function mapReach(m: CompiledManifest): Reach[] {
+  const reach: Reach[] = [];
+  for (const c of m.connections ?? []) {
+    const protocol = c.protocol ? c.protocol.toUpperCase() : "API";
+    reach.push({
+      label: c.connectionName ?? c.url ?? "connection",
+      kind: "api",
+      detail: c.url ? `${protocol} · ${c.url}` : protocol,
+    });
+  }
+  for (const ch of m.channels ?? []) {
+    reach.push({ label: ch.name ?? ch.logicalPath ?? "channel", kind: "channel" });
+  }
+  return reach;
+}
+
+/**
+ * Autonomy from schedules. eve schedules fire unattended, so each is
+ * acts-on-its-own; human-in-the-loop, when present, lives at the tool level
+ * (which eve does not expose) — not on the schedule.
+ */
+function mapAutonomy(m: CompiledManifest): Autonomy[] {
+  return (m.schedules ?? []).map((s) => ({
+    when: s.cron ? `On schedule (${s.cron})` : "On a schedule",
+    does: s.markdown?.replace(/\s+/g, " ").trim() || "Runs authored code.",
+    consent: "acts-on-its-own" as const,
+  }));
+}
+
+/** Map the compiled manifest into the AgentModel's verified trust facts. */
+export function mapManifest(m: CompiledManifest): ManifestFacts {
+  return {
+    runsOn: m.config?.model?.id,
+    description: m.config?.description,
+    capabilities: mapCapabilities(m),
+    reach: mapReach(m),
+    autonomy: mapAutonomy(m),
+    subagents: (m.subagents ?? [])
+      .map((s) => s.name)
+      .filter((n): n is string => Boolean(n))
+      .map(humanize),
+  };
+}
+
+/**
+ * Overlay verified manifest facts onto the source-parsed base model. Trust
+ * facts come from the manifest; narrative identity (intro, essence, motif,
+ * theme, name) stays from the base, which reads instructions.md. Empty arrays
+ * still overwrite — "verifiably zero connections" is a real fact.
+ */
+export function applyManifest<T extends AgentModel>(base: T, facts: ManifestFacts): T {
+  return {
+    ...base,
+    runsOn: facts.runsOn ?? base.runsOn,
+    capabilities: facts.capabilities,
+    reach: facts.reach,
+    autonomy: facts.autonomy,
+    subagents: facts.subagents,
+  };
+}

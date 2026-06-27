@@ -27,7 +27,7 @@ const base: CapabilitySnapshot = snapshotFromModel(
   model({
     capabilities: [
       { label: "Search docs", detail: "", origin: "tool", source: "tools/search-docs.ts" },
-      { label: "Draft reply", detail: "", origin: "tool", source: "tools/draft-reply.ts", requiresApproval: true },
+      { label: "Draft reply", detail: "", origin: "tool", source: "tools/draft-reply.ts" },
     ],
     reach: [{ label: "Zendesk", kind: "api", access: "read" }],
     autonomy: [],
@@ -98,19 +98,19 @@ describe("diffSnapshots", () => {
     expect(d.entries[0].risk).toBe("elevated"); // elevated sorted first
   });
 
-  it("escalates a tool that stops asking for approval", () => {
+  it("reports a new capability as routine", () => {
     const next = snapshotFromModel(
       model({
         capabilities: [
-          { label: "Search docs", detail: "", origin: "tool", source: "tools/search-docs.ts" },
-          { label: "Draft reply", detail: "", origin: "tool", source: "tools/draft-reply.ts", requiresApproval: false },
+          ...snapCaps(),
+          { label: "Escalate", detail: "", origin: "tool", source: "tools/escalate.ts" },
         ],
         reach: [{ label: "Zendesk", kind: "api", access: "read" }],
       })
     );
     const d = diffSnapshots(base, next);
-    const c = d.entries.find((e) => e.summary.includes("no longer asks"));
-    expect(c?.risk).toBe("elevated");
+    const c = d.entries.find((e) => e.summary.includes("New capability"));
+    expect(c?.risk).toBe("routine");
   });
 
   it("treats removed capability/reach as routine", () => {
@@ -125,6 +125,6 @@ describe("diffSnapshots", () => {
 function snapCaps() {
   return [
     { label: "Search docs", detail: "", origin: "tool" as const, source: "tools/search-docs.ts" },
-    { label: "Draft reply", detail: "", origin: "tool" as const, source: "tools/draft-reply.ts", requiresApproval: true },
+    { label: "Draft reply", detail: "", origin: "tool" as const, source: "tools/draft-reply.ts" },
   ];
 }
