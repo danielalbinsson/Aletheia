@@ -1,4 +1,4 @@
-// eveAdapter: RawAgent (files on disk) -> AgentModel (what Aletheia renders).
+// eveAdapter: RawProject (files on disk) -> AgentModel (what Aletheia renders).
 //
 // ── THE SWAP POINT ──────────────────────────────────────────────────────────
 // This module is the ONLY thing that understands eve's on-disk file format.
@@ -14,7 +14,8 @@ import type {
   Reach,
   Autonomy,
 } from "../model";
-import type { RawAgent } from "./loadAgents";
+import type { RawProject } from "./loadProject";
+import { extractOpenRouterModelId } from "../serializer/openRouterAgent";
 import { themeForMotif } from "../theme/personalityTheme";
 
 /** Pull a quoted string value for `key:` from a blob (single or double quotes). */
@@ -68,12 +69,12 @@ function parseIntro(md: string): { intro: string; essence: string } {
   return { intro, essence: firstSentence };
 }
 
-function parseCapabilities(raw: RawAgent): Capability[] {
+function parseCapabilities(raw: RawProject): Capability[] {
   const caps: Capability[] = [];
 
   for (const [path, src] of Object.entries(raw.files)) {
     if (/^tools\/.+\.ts$/.test(path)) {
-      const name = field(src, "name") ?? path;
+      const name = field(src, "name") ?? toolLabelFromPath(path);
       const detail = field(src, "description") ?? "";
       caps.push({
         label: humanizeToolName(name),
@@ -104,12 +105,33 @@ function parseCapabilities(raw: RawAgent): Capability[] {
   return caps;
 }
 
-function humanizeToolName(name: string): string {
-  const s = name.replace(/[_-]+/g, " ").trim();
-  return s.charAt(0).toUpperCase() + s.slice(1);
+function toolLabelFromPath(filePath: string): string {
+  const base = filePath.replace(/^tools\//, "").replace(/\.ts$/, "");
+  return humanizeToolName(base);
 }
 
-function parseReach(raw: RawAgent): Reach[] {
+function parseReachComment(src: string): Reach | null {
+  const m = src.match(
+    /\/\/\s*@reach\s+label:\s*([^|]+)\|\s*kind:\s*(\w+)\s*\|\s*access:\s*([\w-]+)/
+  );
+  if (!m) return null;
+  return {
+    label: m[1].trim(),
+    kind: m[2].trim() as Reach["kind"],
+    access: m[3].trim() as Reach["access"],
+  };
+}
+
+function parseMetaComment(src: string, key: string): string | undefined {
+  const m = src.match(new RegExp(`//\\s*@${key}\\s+(.+)$`, "m"));
+  return m?.[1]?.trim();
+}
+
+function titleFromInstructions(md: string): string | undefined {
+  return md.match(/^#\s+(.+)$/m)?.[1]?.trim();
+}
+
+function parseReach(raw: RawProject): Reach[] {
   const seen = new Map<string, Reach>();
   const add = (r: Reach) => {
     const key = r.label.toLowerCase();
@@ -126,7 +148,8 @@ function parseReach(raw: RawAgent): Reach[] {
       add({ label, kind: "channel", access });
     }
     if (/^tools\/.+\.ts$/.test(path)) {
-      // Tools may declare a reach: { label, kind, access } block.
+      const fromComment = parseReachComment(src);
+      if (fromComment) add(fromComment);
       const block = src.match(/reach\s*:\s*\{([^}]*)\}/);
       if (block) {
         const b = block[1];
@@ -144,14 +167,23 @@ function parseReach(raw: RawAgent): Reach[] {
   return [...seen.values()];
 }
 
-function parseAutonomy(raw: RawAgent): Autonomy[] {
+function parseAutonomy(raw: RawProject): Autonomy[] {
   const out: Autonomy[] = [];
   for (const [path, src] of Object.entries(raw.files)) {
     if (!/^schedules\/.+\.ts$/.test(path)) continue;
-    const when = field(src, "when") ?? field(src, "cron") ?? "On a schedule";
-    const does = field(src, "does") ?? "";
+    const when =
+      parseMetaComment(src, "when") ??
+      field(src, "when") ??
+      field(src, "cron") ??
+      "On a schedule";
+    const does =
+      field(src, "does") ??
+      field(src, "markdown") ??
+      "";
     const consent =
-      (field(src, "consent") as Autonomy["consent"]) ?? "asks-first";
+      (parseMetaComment(src, "consent") as Autonomy["consent"]) ??
+      (field(src, "consent") as Autonomy["consent"]) ??
+      "asks-first";
     out.push({ when, does, consent });
   }
   // Acts-on-its-own first — it's the more striking fact.
@@ -160,7 +192,7 @@ function parseAutonomy(raw: RawAgent): Autonomy[] {
   );
 }
 
-function parseSubagents(raw: RawAgent): string[] {
+function parseSubagents(raw: RawProject): string[] {
   const names: string[] = [];
   for (const [path, src] of Object.entries(raw.files)) {
     if (/^subagents\/.+\.ts$/.test(path)) {
@@ -170,12 +202,20 @@ function parseSubagents(raw: RawAgent): string[] {
   return names;
 }
 
-export function parseAgent(raw: RawAgent): AgentModel {
+function humanizeToolName(name: string): string {
+  const s = name.replace(/[_-]+/g, " ").trim();
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+export function parseAgent(raw: RawProject): AgentModel {
   const agentTs = raw.files["agent.ts"] ?? "";
   const instructions = raw.files["instructions.md"] ?? "";
 
-  const name = field(agentTs, "name") ?? titleCase(raw.id);
-  const runsOn = field(agentTs, "model");
+  const name =
+    field(agentTs, "name") ??
+    titleFromInstructions(instructions) ??
+    titleCase(raw.id);
+  const runsOn = extractOpenRouterModelId(agentTs) || field(agentTs, "model");
   const description = field(agentTs, "description") ?? "";
 
   const { intro, essence } = parseIntro(instructions);
