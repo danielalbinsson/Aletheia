@@ -62,6 +62,20 @@ describe("mapManifest", () => {
     expect(facts.reach.find((r) => r.label === "slack")?.detail).toContain("MCP");
   });
 
+  it("dedupes channels by name and skips the built-in eve chat endpoint", () => {
+    const f = mapManifest({
+      channels: [
+        { name: "eve", logicalPath: "channels/eve.ts" },
+        { name: "eve", logicalPath: "channels/eve.ts" },
+        { name: "eve", logicalPath: "channels/eve.ts" },
+        { name: "slack", logicalPath: "channels/slack.ts" },
+        { name: "slack", logicalPath: "channels/slack.ts" },
+      ],
+    });
+    const channels = f.reach.filter((r) => r.kind === "channel");
+    expect(channels.map((c) => c.label)).toEqual(["slack"]);
+  });
+
   it("maps schedules to acts-on-its-own autonomy", () => {
     expect(facts.autonomy).toHaveLength(1);
     expect(facts.autonomy[0].consent).toBe("acts-on-its-own");

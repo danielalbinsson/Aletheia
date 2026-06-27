@@ -127,8 +127,15 @@ function mapReach(m: CompiledManifest): Reach[] {
       detail: c.url ? `${protocol} · ${c.url}` : protocol,
     });
   }
+  // Channels appear once per HTTP route in the manifest, so dedupe by name. The
+  // built-in "eve" channel is the agent's own inbound chat endpoint (how you
+  // reach it, present on every agent) — not outbound reach, so skip it.
+  const seenChannels = new Set<string>();
   for (const ch of m.channels ?? []) {
-    reach.push({ label: ch.name ?? ch.logicalPath ?? "channel", kind: "channel" });
+    const name = ch.name ?? ch.logicalPath ?? "channel";
+    if (name === "eve" || seenChannels.has(name)) continue;
+    seenChannels.add(name);
+    reach.push({ label: name, kind: "channel" });
   }
   return reach;
 }
