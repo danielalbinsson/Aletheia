@@ -8,6 +8,18 @@ import { readModelCredentialStatus } from "./modelCredentials";
 import { runEveDeploy } from "./eveDeploy";
 import { readDeployedSnapshot, writeDeployedSnapshot } from "./capabilitySnapshot";
 import { snapshotFromFacts, diffSnapshots } from "../parser/capabilityDiff";
+import { parsePolicy, type Policy } from "../parser/policy";
+
+async function readPolicy(workspaceRoot: string): Promise<Policy> {
+  try {
+    const raw = JSON.parse(
+      await fs.readFile(path.join(workspaceRoot, ".aletheia/policy.json"), "utf8")
+    );
+    return parsePolicy(raw);
+  } catch {
+    return { rules: [] };
+  }
+}
 import { getEveDevStatus, startEveDev, stopEveDev } from "./eveDevServer";
 import {
   buildVercelObservabilityLinks,
@@ -193,11 +205,12 @@ export function projectApiPlugin(agentRoot: string, workspaceRoot: string): Plug
             }
             const prev = await readDeployedSnapshot(agentRoot);
             const current = snapshotFromFacts(manifest.facts);
+            const policy = await readPolicy(workspaceRoot);
             return sendJson(res, 200, {
               ok: true,
               built: true,
               hadBaseline: prev !== null,
-              diff: diffSnapshots(prev, current),
+              diff: diffSnapshots(prev, current, { rules: policy.rules }),
               current,
             });
           }

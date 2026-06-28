@@ -17,6 +17,7 @@ import {
   snapshotFromFacts,
   type CapabilitySnapshot,
 } from "../parser/capabilityDiff";
+import { parsePolicy, type Policy } from "../parser/policy";
 import { renderJson, renderMarkdown, verdict, type DiffMeta } from "./renderDiff";
 
 const execFileAsync = promisify(execFile);
@@ -27,6 +28,7 @@ interface Options {
   baseline: string;
   format: "markdown" | "json";
   failOn: "elevated" | "any" | "never";
+  failOnExplicit: boolean;
   out?: string;
   build: boolean;
   agentDir: string;
@@ -37,6 +39,7 @@ function parseArgs(argv: string[]): Options {
     baseline: `file:${SNAPSHOT_REL}`,
     format: "markdown",
     failOn: "elevated",
+    failOnExplicit: false,
     build: true,
     agentDir: process.cwd(),
   };
@@ -45,12 +48,23 @@ function parseArgs(argv: string[]): Options {
     const next = () => argv[++i];
     if (a === "--baseline") o.baseline = next();
     else if (a === "--format") o.format = next() as Options["format"];
-    else if (a === "--fail-on") o.failOn = next() as Options["failOn"];
-    else if (a === "--out") o.out = next();
+    else if (a === "--fail-on") {
+      o.failOn = next() as Options["failOn"];
+      o.failOnExplicit = true;
+    } else if (a === "--out") o.out = next();
     else if (a === "--no-build") o.build = false;
     else if (a === "--agent-dir") o.agentDir = path.resolve(next());
   }
   return o;
+}
+
+async function loadPolicy(root: string): Promise<Policy> {
+  try {
+    const raw = JSON.parse(await fs.readFile(path.join(root, ".aletheia/policy.json"), "utf8"));
+    return parsePolicy(raw);
+  } catch {
+    return { rules: [] };
+  }
 }
 
 async function readJsonSnapshot(file: string): Promise<CapabilitySnapshot | null> {
@@ -137,15 +151,18 @@ async function runDiff(opts: Options): Promise<number> {
     return 2;
   }
 
+  const policy = await loadPolicy(root);
+  const failOn = opts.failOnExplicit ? opts.failOn : policy.failOn ?? opts.failOn;
+
   const current = snapshotFromFacts(manifest.facts);
   const baseline = await resolveBaseline(opts.baseline, root);
-  const diff = diffSnapshots(baseline, current);
+  const diff = diffSnapshots(baseline, current, { rules: policy.rules });
 
   const meta: DiffMeta = {
     headSha: await gitShortSha(root),
     manifestSha: await manifestSha(root),
     baseline: opts.baseline,
-    failOn: opts.failOn,
+    failOn,
   };
 
   const text =
@@ -154,7 +171,7 @@ async function runDiff(opts: Options): Promise<number> {
       : renderMarkdown(diff, current, meta);
   await emit(text, opts.out);
 
-  return verdict(diff, opts.failOn).failing ? 1 : 0;
+  return verdict(diff, failOn).failing ? 1 : 0;
 }
 
 async function main(): Promise<void> {

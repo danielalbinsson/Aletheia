@@ -131,9 +131,29 @@ or `2` (build/manifest error) — so CI can block on it.
 The shipped GitHub Action (`.github/workflows/capability-review.yml`) runs on any
 PR touching `agent/`: it posts a single sticky comment with the capability diff
 and fails a required check when authority expands (new external reach, a new
-acts-on-its-own schedule, a new delegation). Acknowledge an intended change with
-the `capability-change-ack` label to merge. See
-[docs/specs/pr-check-headless-diff.md](docs/specs/pr-check-headless-diff.md).
+acts-on-its-own schedule, a new delegation, a model swap, or a system-prompt
+change). Acknowledge an intended change with the `capability-change-ack` label to
+merge. See [docs/specs/pr-check-headless-diff.md](docs/specs/pr-check-headless-diff.md).
+
+### Blast radius and policy
+
+New reach is classified by consequence — payments, secrets & identity,
+infrastructure, and data stores rank **high**; communications, repos, and
+docs/calendar rank **medium** — so the review leads with "now reaches payments,"
+not "+1 connection." A repo can tune this with `.aletheia/policy.json`:
+
+```json
+{
+  "failOn": "elevated",
+  "rules": [
+    { "category": "customer records", "severity": "high", "pattern": "zendesk|intercom" }
+  ]
+}
+```
+
+`rules` teach Aletheia about systems it wouldn't recognize (and take precedence
+over the defaults); `failOn` (`elevated` | `any` | `never`) sets the default gate
+strictness. Both the CLI and the `/run` gate read it.
 
 **API routes** (dev server only):
 

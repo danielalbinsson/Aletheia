@@ -10,7 +10,12 @@
 // and compares them. See docs/specs/diff-on-deploy.md.
 
 import type { AgentModel, Autonomy, Reach } from "../model";
-import { classifyReach } from "./consequence";
+import { classifyReach, type ConsequenceRule } from "./consequence";
+
+/** Options for diffSnapshots — e.g. team-defined consequence rules from policy. */
+export interface DiffOptions {
+  rules?: ConsequenceRule[];
+}
 
 export interface SnapshotCapability {
   source: string;
@@ -139,7 +144,11 @@ function indexBy<T>(items: T[], key: (t: T) => string): Map<string, T> {
   return m;
 }
 
-function diffReach(prev: SnapshotReach[], next: SnapshotReach[]): DiffEntry[] {
+function diffReach(
+  prev: SnapshotReach[],
+  next: SnapshotReach[],
+  rules: ConsequenceRule[]
+): DiffEntry[] {
   const prevByLabel = indexBy(prev, (r) => r.label.toLowerCase());
   const nextByLabel = indexBy(next, (r) => r.label.toLowerCase());
   const entries: DiffEntry[] = [];
@@ -149,7 +158,7 @@ function diffReach(prev: SnapshotReach[], next: SnapshotReach[]): DiffEntry[] {
     if (!before) {
       // New reach is elevated when it touches an external system; its blast
       // radius (payments, secrets, infra…) drives emphasis and the headline.
-      const c = isExternal(r) ? classifyReach(r.label, r.detail) : null;
+      const c = isExternal(r) ? classifyReach(r.label, r.detail, rules) : null;
       entries.push({
         kind: "reach",
         change: "added",
@@ -318,7 +327,8 @@ function diffMind(prev?: SnapshotMind, next?: SnapshotMind): DiffEntry[] {
  */
 export function diffSnapshots(
   prev: CapabilitySnapshot | null,
-  next: CapabilitySnapshot
+  next: CapabilitySnapshot,
+  opts: DiffOptions = {}
 ): CapabilityDiff {
   if (!prev) {
     return { isInitial: true, entries: [], hasElevated: false, hasChanges: false };
@@ -326,7 +336,7 @@ export function diffSnapshots(
   const entries = [
     ...diffMind(prev.mind, next.mind),
     ...diffCapabilities(prev.capabilities, next.capabilities),
-    ...diffReach(prev.reach, next.reach),
+    ...diffReach(prev.reach, next.reach, opts.rules ?? []),
     ...diffAutonomy(prev.autonomy, next.autonomy),
     ...diffSubagents(prev.subagents, next.subagents),
   ];
