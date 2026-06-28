@@ -1,0 +1,73 @@
+name: Capability review
+
+# Posts a plain-language capability diff on every PR that touches the agent, and
+# blocks merge when the agent's authority expands (new external reach, a new
+# acts-on-its-own schedule, a new delegation) unless the change is acknowledged
+# with the "capability-change-ack" label.
+
+on:
+  pull_request:
+    paths:
+      - "agent/**"
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  capability-diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # need the base ref to diff against
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install
+        run: npm ci
+
+      - name: Build the diff CLI
+        run: npm run build:cli
+
+      - name: Capability diff
+        id: diff
+        continue-on-error: true # always post the comment, decide pass/fail after
+        run: |
+          node bin/aletheia.mjs diff \
+            --baseline "git:origin/${{ github.base_ref }}" \
+            --format markdown \
+            --fail-on elevated \
+            --out "$RUNNER_TEMP/diff.md"
+          echo "exit=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Post sticky comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync(process.env.RUNNER_TEMP + '/diff.md', 'utf8');
+            const marker = '<!-- aletheia-capability-diff -->';
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const { data: comments } = await github.rest.issues.listComments({ owner, repo, issue_number });
+            const existing = comments.find(c => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
+      - name: Gate
+        env:
+          DIFF_EXIT: ${{ steps.diff.outputs.exit }}
+          ACK: ${{ contains(github.event.pull_request.labels.*.name, 'capability-change-ack') }}
+        run: |
+          if [ "$DIFF_EXIT" = "1" ] && [ "$ACK" != "true" ]; then
+            echo "::error::Agent authority expanded. Review the capability diff, then add the 'capability-change-ack' label to acknowledge and merge."
+            exit 1
+          fi
+          echo "Capability review passed (exit=$DIFF_EXIT, acknowledged=$ACK)."

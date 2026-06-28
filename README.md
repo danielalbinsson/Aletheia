@@ -112,6 +112,29 @@ pnpm exec eve deploy  # or use /run
 
 See [eve deployment docs](https://eve.dev/docs/guides/deployment).
 
+## Capability review in CI (`aletheia diff`)
+
+The same diff that gates `/run` also runs headless, so the review lands on the
+**pull request** — automatic, shareable, and blocking, the way a Vercel preview
+made deploys feel safe. It compares what the agent can do, reach, and do
+unprompted against a baseline, and every fact traces to eve's compiled manifest.
+
+```bash
+pnpm build:cli                       # bundle bin/aletheia.mjs
+aletheia diff --baseline git:main    # build, diff vs main's snapshot, print markdown
+  # --format markdown|json   --fail-on elevated|any|never   --out <file>   --no-build
+```
+
+Exit code is `0` (no/routine changes), `1` (authority expanded, per `--fail-on`),
+or `2` (build/manifest error) — so CI can block on it.
+
+The shipped GitHub Action (`.github/workflows/capability-review.yml`) runs on any
+PR touching `agent/`: it posts a single sticky comment with the capability diff
+and fails a required check when authority expands (new external reach, a new
+acts-on-its-own schedule, a new delegation). Acknowledge an intended change with
+the `capability-change-ack` label to merge. See
+[docs/specs/pr-check-headless-diff.md](docs/specs/pr-check-headless-diff.md).
+
 **API routes** (dev server only):
 
 | Method | Route | Behavior |
