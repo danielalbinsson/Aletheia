@@ -31,6 +31,39 @@ export interface CompiledManifest {
   subagents?: { name?: string }[];
 }
 
+// Narrative (name, essence, motif) is derived from the manifest's own
+// instructions text — enough to render the portrait headless. Mirrors the
+// source parser's intent without coupling to it.
+const MOTIF_RULES: Array<{ motif: string; words: RegExp }> = [
+  { motif: "correspondence", words: /\b(inbox|email|mail|message|correspond)/i },
+  { motif: "ledger", words: /\b(book|ledger|reconcil|transaction|account|invoice|finance)/i },
+  { motif: "hearth", words: /\b(support|customer|ticket|help|reply|conversation)/i },
+  { motif: "atlas", words: /\b(research|search|web|gather|brief|read)/i },
+];
+
+function deriveMotif(text: string): string {
+  let motif = "form";
+  let best = 0;
+  for (const rule of MOTIF_RULES) {
+    const hits = (text.match(new RegExp(rule.words, "gi")) || []).length;
+    if (hits > best) {
+      best = hits;
+      motif = rule.motif;
+    }
+  }
+  return motif;
+}
+
+function parseName(md: string): string | undefined {
+  return md.match(/^#\s+(.+)$/m)?.[1]?.trim();
+}
+
+function parseEssence(md: string): string | undefined {
+  const body = md.replace(/^#\s+.*$/m, "").trim();
+  const firstPara = body.split(/\n\s*\n/)[0]?.replace(/\s+/g, " ").trim() ?? "";
+  return firstPara.split(/(?<=[.!?])\s/)[0] || undefined;
+}
+
 /** Small stable non-crypto hash (FNV-1a) — enough to detect prompt changes. */
 function hashString(s: string): string {
   let h = 0x811c9dc5;
@@ -74,7 +107,15 @@ interface ManifestSchedule {
 export type ManifestFacts = Pick<
   AgentModel,
   "capabilities" | "reach" | "autonomy" | "subagents"
-> & { runsOn?: string; description?: string; mind?: SnapshotMind };
+> & {
+  runsOn?: string;
+  description?: string;
+  mind?: SnapshotMind;
+  /** Narrative bits for rendering the portrait headless. */
+  name?: string;
+  essence?: string;
+  motif?: string;
+};
 
 function humanize(slug: string): string {
   const s = slug.replace(/[_/-]+/g, " ").trim();
@@ -167,10 +208,14 @@ function mapAutonomy(m: CompiledManifest): Autonomy[] {
 
 /** Map the compiled manifest into the AgentModel's verified trust facts. */
 export function mapManifest(m: CompiledManifest): ManifestFacts {
-  const instructions = m.instructions?.markdown;
+  const instructions = m.instructions?.markdown ?? "";
+  const description = m.config?.description ?? "";
   return {
     runsOn: m.config?.model?.id,
     description: m.config?.description,
+    name: instructions ? parseName(instructions) : undefined,
+    essence: instructions ? parseEssence(instructions) : undefined,
+    motif: deriveMotif(`${instructions}\n${description}`),
     mind: {
       model: m.config?.model?.id,
       instructionsHash: instructions ? hashString(instructions) : undefined,

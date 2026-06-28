@@ -18,7 +18,17 @@ import {
   type CapabilitySnapshot,
 } from "../parser/capabilityDiff";
 import { parsePolicy, type Policy } from "../parser/policy";
-import { renderJson, renderMarkdown, verdict, type DiffMeta } from "./renderDiff";
+import type { ManifestFacts } from "../parser/manifestAdapter";
+import { deriveSignals } from "../portrait/signals";
+import { renderPortrait } from "../portrait/portrait";
+import {
+  renderJson,
+  renderMarkdown,
+  verdict,
+  type DiffMeta,
+  type PortraitView,
+} from "./renderDiff";
+import type { AgentModel } from "../model";
 
 const execFileAsync = promisify(execFile);
 const SNAPSHOT_REL = "agent/.aletheia/deployed-capabilities.json";
@@ -122,6 +132,26 @@ async function manifestSha(root: string): Promise<string | undefined> {
   }
 }
 
+/** Render the deterministic portrait from manifest facts, for the PR comment. */
+function portraitView(facts: ManifestFacts): PortraitView {
+  const name = facts.name ?? "Agent";
+  const model: AgentModel = {
+    id: name.toLowerCase(),
+    name,
+    essence: facts.essence ?? "",
+    motif: facts.motif ?? "form",
+    intro: "",
+    domain: [],
+    theme: {} as AgentModel["theme"],
+    runsOn: facts.runsOn,
+    capabilities: facts.capabilities,
+    reach: facts.reach,
+    autonomy: facts.autonomy,
+    subagents: facts.subagents,
+  };
+  return { name, rows: renderPortrait(deriveSignals(model)) };
+}
+
 async function emit(text: string, out?: string): Promise<void> {
   if (out) await fs.writeFile(out, text.endsWith("\n") ? text : `${text}\n`, "utf8");
   else process.stdout.write(`${text}\n`);
@@ -168,7 +198,7 @@ async function runDiff(opts: Options): Promise<number> {
   const text =
     opts.format === "json"
       ? renderJson(diff, current, meta)
-      : renderMarkdown(diff, current, meta);
+      : renderMarkdown(diff, current, meta, portraitView(manifest.facts));
   await emit(text, opts.out);
 
   return verdict(diff, failOn).failing ? 1 : 0;

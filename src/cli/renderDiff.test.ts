@@ -62,4 +62,14 @@ describe("renderMarkdown", () => {
     const md = renderMarkdown(diffSnapshots(baseSnap, baseSnap), baseSnap, meta);
     expect(md).toContain("No capability changes");
   });
+
+  it("embeds the portrait in a collapsed details block when provided", () => {
+    const md = renderMarkdown(diffSnapshots(baseSnap, baseSnap), baseSnap, meta, {
+      name: "Beacon",
+      rows: ["  ▒▒  ", " ▓██▓ "],
+    });
+    expect(md).toContain("<details><summary>Portrait</summary>");
+    expect(md).toContain("Beacon");
+    expect(md).toContain("▓██▓");
+  });
 });

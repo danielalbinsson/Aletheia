@@ -59,14 +59,36 @@ export function verdict(diff: CapabilityDiff, failOn: DiffMeta["failOn"]): {
   return { failing: failOn === "any", headline: "Routine capability changes only." };
 }
 
+/** Optional portrait rows + the agent's display name, for the collapsed block. */
+export interface PortraitView {
+  name: string;
+  rows: string[];
+}
+
+function portraitBlock(p: PortraitView): string[] {
+  return [
+    "",
+    "<details><summary>Portrait</summary>",
+    "",
+    "```",
+    p.name,
+    ...p.rows,
+    "```",
+    "",
+    "</details>",
+  ];
+}
+
 export function renderMarkdown(
   diff: CapabilityDiff,
   current: CapabilitySnapshot,
-  meta: DiffMeta
+  meta: DiffMeta,
+  portrait?: PortraitView
 ): string {
   const v = verdict(diff, meta.failOn);
   const out: string[] = [STICKY_MARKER, "", "### Aletheia — capability review", ""];
   out.push(`**${v.headline}**`, "");
+  if (portrait) out.push(...portraitBlock(portrait));
 
   if (diff.isInitial) {
     out.push("This agent has no prior deployed baseline. It will be able to:", "");
