@@ -93,10 +93,11 @@ At `/run`, Aletheia can:
 - **Start local agent** — runs `eve build` then `eve start`, proxies `/eve` through Vite.
 - **Test chat** — send messages to the local eve HTTP API (sessions are tracked for the trace viewer).
 - **Review capability changes** — before deploying, see a plain-language diff of
-  what's changing about what the agent can do, touch, and decide, compared to the
-  last deployed version. Changes that raise risk (new external reach, a new
-  autonomous schedule, a new delegation) are escalated and must be acknowledged
-  before deploy proceeds. First deploy shows the initial capabilities.
+  what's changing about what the agent can do, reach, and do unprompted, compared
+  to the last deployed version. Changes that raise risk — new external reach, a
+  new acts-on-its-own schedule, a new delegation, a **model swap**, or a
+  **system-prompt change** — are escalated and must be acknowledged before deploy
+  proceeds. First deploy shows the initial capabilities.
 - **Deploy** — runs `eve deploy` (output streams live) when the project is linked
   to Vercel, then records a snapshot of what shipped.
 
@@ -116,8 +117,11 @@ See [eve deployment docs](https://eve.dev/docs/guides/deployment).
 
 The same diff that gates `/run` also runs headless, so the review lands on the
 **pull request** — automatic, shareable, and blocking, the way a Vercel preview
-made deploys feel safe. It compares what the agent can do, reach, and do
-unprompted against a baseline, and every fact traces to eve's compiled manifest.
+made deploys feel safe. It compares what the agent can do, reach, do unprompted,
+and how it thinks (model + system prompt) against a baseline, and every fact
+traces to eve's compiled manifest. The PR comment also carries the agent's
+**portrait** in a collapsed block — the same deterministic likeness the app
+renders.
 
 ```bash
 pnpm build:cli                       # bundle bin/aletheia.mjs
@@ -204,7 +208,12 @@ src/
   │   ├─ loadProject.ts      reads agent/ at build time (import.meta.glob)
   │   ├─ eveAdapter.ts       source parse — the pre-build fallback
   │   ├─ manifestAdapter.ts  ★ maps eve's compiled manifest → verified facts
-  │   └─ capabilityDiff.ts   snapshot + diff for the deploy review gate
+  │   ├─ capabilityDiff.ts   snapshot + diff (reach, autonomy, mind, delegation)
+  │   ├─ consequence.ts      classifies reach by blast radius (payments, infra…)
+  │   └─ policy.ts           reads .aletheia/policy.json (custom rules + failOn)
+  ├─ cli/                    `aletheia diff` — the headless PR-check entry
+  │   ├─ aletheia.ts         build → manifest → diff vs baseline → exit code
+  │   └─ renderDiff.ts       PR-comment markdown (+ portrait) / JSON
   ├─ serializer/
   │   └─ eveSerializer.ts    inverse adapter — writes eve files from edits
   ├─ server/                 Vite dev middleware: build, run, deploy, manifest
