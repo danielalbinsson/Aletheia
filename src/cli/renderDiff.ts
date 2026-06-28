@@ -48,9 +48,12 @@ export function verdict(diff: CapabilityDiff, failOn: DiffMeta["failOn"]): {
     return { failing: false, headline: "No capability changes since the baseline." };
   }
   if (diff.hasElevated) {
+    const topHigh = diff.entries.find((e) => e.severity === "high");
     return {
       failing: failOn === "elevated" || failOn === "any",
-      headline: "Authority expanded — review required.",
+      headline: topHigh
+        ? `Authority expanded — now reaches ${topHigh.category}. Review required.`
+        : "Authority expanded — review required.",
     };
   }
   return { failing: failOn === "any", headline: "Routine capability changes only." };

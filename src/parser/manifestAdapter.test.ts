@@ -41,6 +41,14 @@ describe("mapManifest", () => {
     expect(facts.runsOn).toBe("openrouter/anthropic/claude-sonnet-4");
   });
 
+  it("captures the behavior levers (model + instructions hash) as mind", () => {
+    expect(facts.mind?.model).toBe("openrouter/anthropic/claude-sonnet-4");
+    const withInstr = mapManifest({ ...manifest, instructions: { markdown: "# Beacon\nBe kind." } });
+    const changed = mapManifest({ ...manifest, instructions: { markdown: "# Beacon\nBe ruthless." } });
+    expect(withInstr.mind?.instructionsHash).toBeDefined();
+    expect(withInstr.mind?.instructionsHash).not.toBe(changed.mind?.instructionsHash);
+  });
+
   it("maps tools and skills to capabilities (no approval field)", () => {
     const draft = facts.capabilities.find((c) => c.source === "tools/draft-reply.ts");
     expect(draft?.origin).toBe("tool");

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   snapshotFromModel,
+  snapshotFromFacts,
   diffSnapshots,
   type CapabilitySnapshot,
 } from "./capabilityDiff";
@@ -111,6 +112,54 @@ describe("diffSnapshots", () => {
     const d = diffSnapshots(base, next);
     const c = d.entries.find((e) => e.summary.includes("New capability"));
     expect(c?.risk).toBe("routine");
+  });
+
+  it("classifies new reach by consequence and leads with high severity", () => {
+    const next = snapshotFromFacts({
+      capabilities: snapCaps(),
+      reach: [
+        { label: "zendesk", kind: "api" },
+        { label: "slack", kind: "api" },
+        { label: "stripe", kind: "api", detail: "OPENAPI · https://api.stripe.com" },
+      ],
+      autonomy: [],
+      subagents: [],
+    });
+    const d = diffSnapshots(base, next);
+    const stripe = d.entries.find((e) => e.summary.includes("stripe"));
+    expect(stripe?.category).toBe("payments");
+    expect(stripe?.severity).toBe("high");
+    expect(stripe?.summary).toContain("— payments");
+    // high-severity reach sorts ahead of the medium-severity slack add
+    const reachAdds = d.entries.filter((e) => e.kind === "reach" && e.change === "added");
+    expect(reachAdds[0].severity).toBe("high");
+  });
+
+  it("escalates a model swap and a system-prompt change", () => {
+    const prev = snapshotFromFacts({
+      capabilities: [], reach: [], autonomy: [], subagents: [],
+      mind: { model: "anthropic/claude-sonnet-4", instructionsHash: "aaaa" },
+    });
+    const next = snapshotFromFacts({
+      capabilities: [], reach: [], autonomy: [], subagents: [],
+      mind: { model: "minimax/minimax-m3", instructionsHash: "bbbb" },
+    });
+    const d = diffSnapshots(prev, next);
+    const mind = d.entries.filter((e) => e.kind === "mind");
+    expect(mind).toHaveLength(2);
+    expect(mind.every((e) => e.risk === "elevated")).toBe(true);
+    expect(d.entries.some((e) => e.summary.includes("Model changed"))).toBe(true);
+    expect(d.entries.some((e) => e.summary.includes("system prompt"))).toBe(true);
+  });
+
+  it("does not flag mind when the baseline predates mind tracking", () => {
+    const prev = snapshotFromFacts({ capabilities: [], reach: [], autonomy: [], subagents: [] });
+    const next = snapshotFromFacts({
+      capabilities: [], reach: [], autonomy: [], subagents: [],
+      mind: { model: "x", instructionsHash: "y" },
+    });
+    const d = diffSnapshots(prev, next);
+    expect(d.entries.some((e) => e.kind === "mind")).toBe(false);
   });
 
   it("treats removed capability/reach as routine", () => {

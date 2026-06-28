@@ -17,16 +17,28 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { AgentModel, Capability, Reach, Autonomy } from "../model";
+import type { SnapshotMind } from "./capabilityDiff";
 
 /** The subset of the compiled manifest this adapter relies on. */
 export interface CompiledManifest {
   config?: { model?: { id?: string }; description?: string };
+  instructions?: { markdown?: string };
   tools?: ManifestTool[];
   skills?: ManifestSkill[];
   connections?: ManifestConnection[];
   channels?: ManifestChannel[];
   schedules?: ManifestSchedule[];
   subagents?: { name?: string }[];
+}
+
+/** Small stable non-crypto hash (FNV-1a) — enough to detect prompt changes. */
+function hashString(s: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0).toString(16);
 }
 
 interface ManifestTool {
@@ -62,7 +74,7 @@ interface ManifestSchedule {
 export type ManifestFacts = Pick<
   AgentModel,
   "capabilities" | "reach" | "autonomy" | "subagents"
-> & { runsOn?: string; description?: string };
+> & { runsOn?: string; description?: string; mind?: SnapshotMind };
 
 function humanize(slug: string): string {
   const s = slug.replace(/[_/-]+/g, " ").trim();
@@ -155,9 +167,14 @@ function mapAutonomy(m: CompiledManifest): Autonomy[] {
 
 /** Map the compiled manifest into the AgentModel's verified trust facts. */
 export function mapManifest(m: CompiledManifest): ManifestFacts {
+  const instructions = m.instructions?.markdown;
   return {
     runsOn: m.config?.model?.id,
     description: m.config?.description,
+    mind: {
+      model: m.config?.model?.id,
+      instructionsHash: instructions ? hashString(instructions) : undefined,
+    },
     capabilities: mapCapabilities(m),
     reach: mapReach(m),
     autonomy: mapAutonomy(m),

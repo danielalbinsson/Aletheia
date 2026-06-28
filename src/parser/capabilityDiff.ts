@@ -10,6 +10,7 @@
 // and compares them. See docs/specs/diff-on-deploy.md.
 
 import type { AgentModel, Autonomy, Reach } from "../model";
+import { classifyReach } from "./consequence";
 
 export interface SnapshotCapability {
   source: string;
@@ -27,11 +28,23 @@ export interface SnapshotAutonomy {
   consent: Autonomy["consent"];
 }
 
+/**
+ * "How it thinks" — the behavior levers. A swapped model or a rewritten
+ * system prompt changes behavior more than any single tool, so they're tracked
+ * and escalated. Instructions are stored as a hash (change detection); the PR
+ * itself shows the prose diff.
+ */
+export interface SnapshotMind {
+  model?: string;
+  instructionsHash?: string;
+}
+
 /** The persisted trust facts at the moment of a deploy. */
 export interface CapabilitySnapshot {
   /** ISO timestamp the snapshot was captured. */
   capturedAt: string;
   name: string;
+  mind?: SnapshotMind;
   capabilities: SnapshotCapability[];
   reach: SnapshotReach[];
   autonomy: SnapshotAutonomy[];
@@ -40,7 +53,7 @@ export interface CapabilitySnapshot {
 
 export type DiffRisk = "elevated" | "routine";
 export type DiffChange = "added" | "removed" | "changed";
-export type DiffKind = "capability" | "reach" | "autonomy" | "subagent";
+export type DiffKind = "capability" | "reach" | "autonomy" | "subagent" | "mind";
 
 export interface DiffEntry {
   kind: DiffKind;
@@ -48,6 +61,10 @@ export interface DiffEntry {
   /** Plain-language one-liner, e.g. "Can now write to Slack (was read-only)". */
   summary: string;
   risk: DiffRisk;
+  /** Blast-radius category for reach changes, e.g. "payments". */
+  category?: string;
+  /** Blast-radius severity, when classified. */
+  severity?: "high" | "medium";
 }
 
 export interface CapabilityDiff {
@@ -66,11 +83,11 @@ export function snapshotFromModel(
   return snapshotFromFacts(model, capturedAt);
 }
 
-/** The trust slice a snapshot needs — what the eve manifest (AgentInfoFacts) provides. */
+/** The trust slice a snapshot needs — what the eve manifest provides. */
 export type SnapshotInput = Pick<
   AgentModel,
   "capabilities" | "reach" | "autonomy" | "subagents"
-> & { name?: string };
+> & { name?: string; mind?: SnapshotMind };
 
 /** Capture a snapshot from manifest facts (or any model-shaped trust slice). */
 export function snapshotFromFacts(
@@ -80,6 +97,7 @@ export function snapshotFromFacts(
   return {
     capturedAt,
     name: facts.name ?? "agent",
+    mind: facts.mind,
     capabilities: facts.capabilities.map((c) => ({
       source: c.source,
       label: c.label,
@@ -129,12 +147,16 @@ function diffReach(prev: SnapshotReach[], next: SnapshotReach[]): DiffEntry[] {
   for (const [key, r] of nextByLabel) {
     const before = prevByLabel.get(key);
     if (!before) {
-      // New reach is elevated when it touches an external system.
+      // New reach is elevated when it touches an external system; its blast
+      // radius (payments, secrets, infra…) drives emphasis and the headline.
+      const c = isExternal(r) ? classifyReach(r.label, r.detail) : null;
       entries.push({
         kind: "reach",
         change: "added",
-        summary: `Can now reach ${r.label}${r.access ? ` (${r.access})` : ""}`,
+        summary: `Can now reach ${r.label}${c ? ` — ${c.category}` : ""}${r.access ? ` (${r.access})` : ""}`,
         risk: isExternal(r) ? "elevated" : "routine",
+        category: c?.category,
+        severity: c?.severity,
       });
     } else if (rank(r.access) > rank(before.access)) {
       entries.push({
@@ -259,6 +281,37 @@ function diffSubagents(prev: string[], next: string[]): DiffEntry[] {
 }
 
 /**
+ * "How it thinks" — model + system prompt. Both are elevated: they change
+ * behavior more than any single tool. Only compared when the baseline recorded
+ * a `mind` (older snapshots predate it), so we never false-flag on first run.
+ */
+function diffMind(prev?: SnapshotMind, next?: SnapshotMind): DiffEntry[] {
+  if (!prev || !next) return [];
+  const entries: DiffEntry[] = [];
+  if (prev.model && next.model && prev.model !== next.model) {
+    entries.push({
+      kind: "mind",
+      change: "changed",
+      summary: `Model changed: ${prev.model} → ${next.model}`,
+      risk: "elevated",
+    });
+  }
+  if (
+    prev.instructionsHash &&
+    next.instructionsHash &&
+    prev.instructionsHash !== next.instructionsHash
+  ) {
+    entries.push({
+      kind: "mind",
+      change: "changed",
+      summary: "Instructions (system prompt) changed — review the file diff",
+      risk: "elevated",
+    });
+  }
+  return entries;
+}
+
+/**
  * Diff the current snapshot against the last deployed one. A null `prev` means
  * this is the first deploy — `isInitial` is set and there are no entries (the
  * UI shows the full current capability set instead).
@@ -271,15 +324,18 @@ export function diffSnapshots(
     return { isInitial: true, entries: [], hasElevated: false, hasChanges: false };
   }
   const entries = [
+    ...diffMind(prev.mind, next.mind),
     ...diffCapabilities(prev.capabilities, next.capabilities),
     ...diffReach(prev.reach, next.reach),
     ...diffAutonomy(prev.autonomy, next.autonomy),
     ...diffSubagents(prev.subagents, next.subagents),
   ];
-  // Elevated first, then by kind, for a scannable list.
-  entries.sort((a, b) =>
-    a.risk === b.risk ? 0 : a.risk === "elevated" ? -1 : 1
-  );
+  // Elevated first, then highest blast radius first, for a scannable list.
+  const sev = (e: DiffEntry) => (e.severity === "high" ? 0 : e.severity === "medium" ? 1 : 2);
+  entries.sort((a, b) => {
+    if (a.risk !== b.risk) return a.risk === "elevated" ? -1 : 1;
+    return sev(a) - sev(b);
+  });
   return {
     isInitial: false,
     entries,
