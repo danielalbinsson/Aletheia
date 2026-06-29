@@ -118,7 +118,7 @@ export function snapshotFromFacts(
       when: a.when,
       consent: a.consent,
     })),
-    subagents: [...facts.subagents],
+    subagents: facts.subagents.map((s) => s.name),
   };
 }
 

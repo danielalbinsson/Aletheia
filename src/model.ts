@@ -40,6 +40,25 @@ export interface Reach {
   detail?: string;
 }
 
+/**
+ * A subagent the orchestrator delegates to. In eve, a subagent is a nested
+ * agent package with its own model, tools, and connections — so it carries its
+ * own capability/reach slice, not just a name. The compiled manifest nests the
+ * full sub-manifest under each subagent, which is what makes this knowable.
+ */
+export interface Subagent {
+  /** Human, plain-language name. e.g. "A11y auditor". */
+  name: string;
+  /** One-line description from the subagent's own defineAgent description. */
+  description?: string;
+  /** The model the subagent runs on, if declared. */
+  runsOn?: string;
+  /** What the subagent itself can do (its own tools/skills). */
+  capabilities: Capability[];
+  /** What the subagent itself can reach (its own connections/channels). */
+  reach: Reach[];
+}
+
 /** A way the agent acts without being prompted (sourced from schedules/). */
 export interface Autonomy {
   /** Plain-language description. e.g. "Every morning at 7am". */
@@ -74,8 +93,8 @@ export interface AgentModel {
   capabilities: Capability[];
   reach: Reach[];
   autonomy: Autonomy[];
-  /** Names of subagents it can delegate to. */
-  subagents: string[];
+  /** Subagents it can delegate to, each with its own capability/reach slice. */
+  subagents: Subagent[];
 }
 
 /** Derived signals the portrait system maps to visual variables. */

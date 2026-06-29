@@ -16,19 +16,32 @@
 //     not render those as fact.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import type { AgentModel, Capability, Reach, Autonomy } from "../model";
+import type { AgentModel, Capability, Reach, Autonomy, Subagent } from "../model";
 import type { SnapshotMind } from "./capabilityDiff";
 
 /** The subset of the compiled manifest this adapter relies on. */
 export interface CompiledManifest {
-  config?: { model?: { id?: string }; description?: string };
+  config?: { name?: string; model?: { id?: string }; description?: string };
   instructions?: { markdown?: string };
   tools?: ManifestTool[];
   skills?: ManifestSkill[];
   connections?: ManifestConnection[];
   channels?: ManifestChannel[];
   schedules?: ManifestSchedule[];
-  subagents?: { name?: string }[];
+  /**
+   * Each subagent entry nests its own full compiled manifest under `agent`
+   * (verified live, eve 0.15.5). `name`/`description` may also appear at the
+   * top level as a slim summary — we prefer the nested manifest when present so
+   * the subagent's own tools/connections/model become legible.
+   */
+  subagents?: ManifestSubagent[];
+}
+
+interface ManifestSubagent {
+  name?: string;
+  description?: string;
+  /** The subagent's own compiled manifest (nested by `eve build`). */
+  agent?: CompiledManifest;
 }
 
 // Narrative (name, essence, motif) is derived from the manifest's own
@@ -206,6 +219,29 @@ function mapAutonomy(m: CompiledManifest): Autonomy[] {
   }));
 }
 
+/**
+ * Subagents are nested agent packages. eve compiles each one's full manifest
+ * under `subagents[].agent`, so we recurse with the same mappers to surface the
+ * subagent's own model, tools, and connections — the work an orchestrator-style
+ * agent actually does lives here, not on the (often tool-less) root.
+ */
+function mapSubagents(m: CompiledManifest): Subagent[] {
+  const out: Subagent[] = [];
+  for (const s of m.subagents ?? []) {
+    const sub = s.agent;
+    const name = sub?.config?.name ?? s.name;
+    if (!name) continue;
+    out.push({
+      name: humanize(name),
+      description: s.description ?? sub?.config?.description,
+      runsOn: sub?.config?.model?.id,
+      capabilities: sub ? mapCapabilities(sub) : [],
+      reach: sub ? mapReach(sub) : [],
+    });
+  }
+  return out;
+}
+
 /** Map the compiled manifest into the AgentModel's verified trust facts. */
 export function mapManifest(m: CompiledManifest): ManifestFacts {
   const instructions = m.instructions?.markdown ?? "";
@@ -223,10 +259,7 @@ export function mapManifest(m: CompiledManifest): ManifestFacts {
     capabilities: mapCapabilities(m),
     reach: mapReach(m),
     autonomy: mapAutonomy(m),
-    subagents: (m.subagents ?? [])
-      .map((s) => s.name)
-      .filter((n): n is string => Boolean(n))
-      .map(humanize),
+    subagents: mapSubagents(m),
   };
 }
 

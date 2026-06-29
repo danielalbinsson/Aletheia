@@ -274,6 +274,51 @@ code { font-family: var(--sans); color: var(--muted); }
 .autonomy-does { color: var(--muted); }
 .autonomy-none { color: var(--muted); font-size: 15px; }
 
+/* Who I delegate to */
+.can-do-none { font-size: 14.5px; color: var(--muted); margin: 0; }
+.subagents { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; }
+.subagent {
+  padding-left: 14px;
+  border-left: 1px solid var(--hair, var(--accent-dim));
+}
+.subagent-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.subagent-name {
+  font-size: 15px;
+  color: var(--ink);
+  letter-spacing: 0.01em;
+}
+.subagent-model {
+  font-family: var(--mono, var(--sans));
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--accent-dim);
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+.subagent-desc {
+  margin: 4px 0 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.subagent-caps {
+  list-style: none;
+  margin: 9px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 5px;
+}
+.subagent-caps li { display: flex; align-items: baseline; gap: 8px; }
+.subagent-caps .cap-label { font-size: 13.5px; }
+.subagent-caps .cap-detail { font-size: 12px; }
+.subagent-reach { list-style: none; margin: 9px 0 0; padding: 0; display: grid; gap: 6px; }
+.subagent-reach .reach-label { font-size: 13.5px; }
+
 /* ── Footer ─────────────────────────────────────────────────────────── */
 .footer {
   margin-top: 80px;

@@ -27,13 +27,20 @@ function hashString(s: string): number {
 }
 
 export function deriveSignals(agent: AgentModel): PortraitSignals {
+  // An orchestrator's surface is its subagents' surface. Count the whole tree
+  // so a tool-less root that delegates to capable subagents doesn't read as an
+  // empty agent. Subagent reach/capabilities fold into the totals.
+  const subReach = agent.subagents.flatMap((s) => s.reach);
+  const subCaps = agent.subagents.flatMap((s) => s.capabilities);
+  const allReach = [...agent.reach, ...subReach];
+
   // reach: number of distinct things it touches, weighted by known write
   // access. Unknown access (manifest reach declares none) is not counted as a
   // write, so we don't overstate.
-  const writes = agent.reach.filter(
+  const writes = allReach.filter(
     (r) => r.access === "write" || r.access === "read-write"
   ).length;
-  const reach = saturate(agent.reach.length + writes, 4);
+  const reach = saturate(allReach.length + writes, 4);
 
   // autonomy: how much it acts on its own vs. asks first.
   const acts = agent.autonomy.filter((a) => a.consent === "acts-on-its-own").length;
@@ -44,8 +51,12 @@ export function deriveSignals(agent: AgentModel): PortraitSignals {
     Math.min(1, ownership * 0.6 + Math.min(acts, 3) / 3 * 0.4)
   );
 
-  // range: breadth of capabilities.
-  const range = saturate(agent.capabilities.length, 5);
+  // range: breadth of capabilities — the agent's own plus everything its
+  // subagents bring, with each subagent itself adding a unit of breadth.
+  const range = saturate(
+    agent.capabilities.length + subCaps.length + agent.subagents.length,
+    5
+  );
 
   // seed: stable hash of the agent's definition.
   const seed = hashString(agent.id + "|" + agent.name + "|" + agent.essence);

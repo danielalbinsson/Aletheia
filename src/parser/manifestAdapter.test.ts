@@ -89,6 +89,42 @@ describe("mapManifest", () => {
     expect(facts.autonomy[0].consent).toBe("acts-on-its-own");
     expect(facts.autonomy[0].when).toContain("*/15");
   });
+
+  it("recurses into nested subagent manifests for model, tools, and reach", () => {
+    const orchestrator: CompiledManifest = {
+      config: { name: "design-qa-agent", model: { id: "openrouter/anthropic/claude-sonnet-4.6" } },
+      tools: [],
+      connections: [
+        { connectionName: "github", description: "PR metadata", protocol: "openapi", url: "https://api.github.com" },
+      ],
+      subagents: [
+        {
+          name: "a11y-auditor",
+          description: "Runs axe-core audits.",
+          agent: {
+            config: { name: "a11y-auditor", description: "Runs axe-core audits.", model: { id: "openrouter/anthropic/claude-3.5-haiku" } },
+            tools: [{ name: "run_axe", description: "Run an accessibility audit.", logicalPath: "tools/run-axe.ts" }],
+            connections: [],
+          },
+        },
+      ],
+    };
+    const f = mapManifest(orchestrator);
+    // Root owns nothing; the subagent carries the real surface.
+    expect(f.capabilities).toHaveLength(0);
+    expect(f.subagents).toHaveLength(1);
+    const sub = f.subagents[0];
+    expect(sub.name).toBe("A11y auditor");
+    expect(sub.runsOn).toBe("openrouter/anthropic/claude-3.5-haiku");
+    expect(sub.capabilities.map((c) => c.label)).toContain("Run axe");
+  });
+
+  it("falls back to the slim top-level subagent name when no nested manifest", () => {
+    const f = mapManifest({ subagents: [{ name: "auditor" }] });
+    expect(f.subagents).toEqual([
+      { name: "Auditor", description: undefined, runsOn: undefined, capabilities: [], reach: [] },
+    ]);
+  });
 });
 
 describe("applyManifest", () => {

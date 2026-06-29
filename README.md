@@ -5,9 +5,9 @@
 Aletheia is a workbench for a single [eve](https://eve.dev) agent that doubles as
 a **legibility layer**. It reads `agent/` and renders a **self-portrait**: a
 generated visual likeness plus a first-person page where the agent presents who
-it is, what it can do, what it can touch, and when it acts on its own — and,
-once built, it shows those facts **as eve itself compiled them**, not as anyone
-annotated them.
+it is, what it can do, what it can touch, when it acts on its own, and who it
+delegates to — and, once built, it shows those facts **as eve itself compiled
+them**, not as anyone annotated them.
 
 Not a dashboard. Not a flowchart. A portrait you can trust.
 
@@ -33,9 +33,11 @@ Aletheia shows trust facts from two sources, and is always honest about which:
 - **Verified** — after `eve build`, the portrait reads eve's own
   `.eve/compile/compiled-agent-manifest.json`. These facts are exactly what the
   runtime resolved: tool names, descriptions, and input schemas; the
-  connections and channels the agent reaches (with protocol and URL); and the
-  schedules by which it acts on its own. Sections are labelled *verified from
-  build*.
+  connections and channels the agent reaches (with protocol and URL); the
+  schedules by which it acts on its own; and, for orchestrator-style agents,
+  each **subagent** it delegates to — recursed from the nested manifests, so the
+  subagent's own model, tools, and reach are shown rather than just a name.
+  Sections are labelled *verified from build*.
 - **From source** — before a build (or without the dev server), it falls back to
   a tolerant source parse of `agent/`, labelled *from source — build to verify*.
 
@@ -238,19 +240,32 @@ deterministic: the same agent always renders the same face.
 
 | Agent property | Visual variable |
 | --- | --- |
-| reach (what it touches) | presence + width of its aura |
+| reach (what it touches, across the whole tree) | presence + width of its aura |
 | autonomy (acts unprompted) | weight + grounded shoulders |
-| range (breadth of capability) | surface complexity |
+| range (breadth of capability, incl. subagents) | surface complexity |
 | domain (personality motif) | accent glyph + texture + highlight color |
 | a hash of its definition | the seed (same agent, same face) |
 
 ## Plugging in a real eve agent
 
-Replace or edit files under `agent/`, then build. The verified facts come from
-eve's compiled manifest via **`src/parser/manifestAdapter.ts`** — that's the
-single point of contact with the eve manifest format. The source-parse fallback
-lives in `src/parser/eveAdapter.ts`. Nothing downstream of the `AgentModel`
-needs to change.
+Two ways to point Aletheia at an agent:
+
+- **Edit in place** — replace or edit files under `agent/`, then build.
+- **View an external workspace** — set `ALETHEIA_WORKSPACE` to the directory of
+  another eve agent (the folder containing its `agent/`, `.eve/`, `.aletheia/`)
+  in `.env.local`. Aletheia reads and builds that workspace instead of the
+  bundled one; unset it to fall back to the placeholder.
+
+  ```bash
+  # .env.local
+  ALETHEIA_WORKSPACE=/path/to/your/eve-agent
+  ```
+
+The verified facts come from eve's compiled manifest via
+**`src/parser/manifestAdapter.ts`** — that's the single point of contact with
+the eve manifest format, and it recurses into nested subagent manifests. The
+source-parse fallback lives in `src/parser/eveAdapter.ts`. Nothing downstream of
+the `AgentModel` needs to change.
 
 ## What's deliberately out
 

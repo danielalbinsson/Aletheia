@@ -13,6 +13,7 @@ import type {
   Capability,
   Reach,
   Autonomy,
+  Subagent,
 } from "../model";
 import type { RawProject } from "./loadProject";
 import { extractOpenRouterModelId } from "../serializer/openRouterAgent";
@@ -192,14 +193,22 @@ function parseAutonomy(raw: RawProject): Autonomy[] {
   );
 }
 
-function parseSubagents(raw: RawProject): string[] {
-  const names: string[] = [];
+// Source fallback: a flat RawProject can't see a nested subagent package's own
+// tools/connections, so we surface name + description only. The verified depth
+// (model, tools, reach per subagent) comes from the compiled manifest.
+function parseSubagents(raw: RawProject): Subagent[] {
+  const subs: Subagent[] = [];
   for (const [path, src] of Object.entries(raw.files)) {
     if (/^subagents\/.+\.ts$/.test(path)) {
-      names.push(titleCase(field(src, "name") ?? path.split("/")[1]));
+      subs.push({
+        name: titleCase(field(src, "name") ?? path.split("/")[1]),
+        description: field(src, "description") || undefined,
+        capabilities: [],
+        reach: [],
+      });
     }
   }
-  return names;
+  return subs;
 }
 
 function humanizeToolName(name: string): string {

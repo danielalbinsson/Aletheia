@@ -1,4 +1,4 @@
-import type { AgentModel, Autonomy, Capability, Reach } from "../model";
+import type { AgentModel, Autonomy, Capability, Reach, Subagent } from "../model";
 import { Portrait } from "./Portrait";
 
 /**
@@ -40,11 +40,21 @@ export function SelfPortrait({
           label="What I can do"
           note={verified ? "verified from build" : "from source — build to verify"}
         >
-          <ul className="can-do">
-            {agent.capabilities.map((c) => (
-              <CapabilityItem key={c.source} cap={c} />
-            ))}
-          </ul>
+          {agent.capabilities.length === 0 ? (
+            <p className="can-do-none">
+              {agent.subagents.length > 0
+                ? "I hold no tools myself — I direct the team below."
+                : verified
+                  ? "I have no tools or skills of my own."
+                  : "Nothing declared yet."}
+            </p>
+          ) : (
+            <ul className="can-do">
+              {agent.capabilities.map((c) => (
+                <CapabilityItem key={c.source} cap={c} />
+              ))}
+            </ul>
+          )}
         </Section>
 
         <Section
@@ -91,6 +101,19 @@ export function SelfPortrait({
             )}
           </div>
         </Section>
+
+        {agent.subagents.length > 0 && (
+          <Section
+            label="Who I delegate to"
+            note={verified ? "verified from build" : "from source — build to verify"}
+          >
+            <ul className="subagents">
+              {agent.subagents.map((s) => (
+                <SubagentItem key={s.name} sub={s} />
+              ))}
+            </ul>
+          </Section>
+        )}
       </div>
     </article>
   );
@@ -144,6 +167,41 @@ function ReachItem({ reach }: { reach: Reach }) {
         <span className={`reach-access access-${reach.access}`}>
           {ACCESS_GLYPH[reach.access]}
         </span>
+      )}
+    </li>
+  );
+}
+
+function SubagentItem({ sub }: { sub: Subagent }) {
+  return (
+    <li className="subagent">
+      <div className="subagent-head">
+        <span className="subagent-name">{sub.name}</span>
+        {sub.runsOn && <span className="subagent-model">{sub.runsOn}</span>}
+      </div>
+      {sub.description && <p className="subagent-desc">{sub.description}</p>}
+      {sub.capabilities.length > 0 && (
+        <ul className="subagent-caps">
+          {sub.capabilities.map((c) => (
+            <li key={c.source}>
+              <span className="cap-label">{c.label}</span>
+              {c.detail && <span className="cap-detail">{c.detail}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+      {sub.reach.length > 0 && (
+        <ul className="subagent-reach">
+          {sub.reach.map((r) => (
+            <li key={r.label} className={`reach-item kind-${r.kind}`}>
+              <span className="reach-dot" aria-hidden />
+              <span className="reach-label">
+                {r.label}
+                {r.detail && <span className="reach-detail">{r.detail}</span>}
+              </span>
+            </li>
+          ))}
+        </ul>
       )}
     </li>
   );
