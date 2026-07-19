@@ -4,6 +4,7 @@ import type { EveDiagnostic } from "./eveBuild";
 import { runEveCommand } from "./eveCli";
 import {
   mapManifest,
+  manifestRestrictionWarning,
   type CompiledManifest,
   type ManifestFacts,
 } from "../parser/manifestAdapter";
@@ -87,6 +88,8 @@ export interface EveManifestResult {
   /** True when a compiled manifest was found and mapped. */
   built: boolean;
   facts?: ManifestFacts;
+  /** Non-fatal integrity warnings from mapping (e.g. missing restriction field). */
+  warnings?: string[];
   error?: string;
 }
 
@@ -104,7 +107,13 @@ export async function runEveManifest(workspaceRoot: string): Promise<EveManifest
   );
   try {
     const raw = JSON.parse(await fs.readFile(manifestPath, "utf8")) as CompiledManifest;
-    return { ok: true, built: true, facts: mapManifest(raw) };
+    const warning = manifestRestrictionWarning(raw);
+    return {
+      ok: true,
+      built: true,
+      facts: mapManifest(raw),
+      ...(warning ? { warnings: [warning] } : {}),
+    };
   } catch {
     return {
       ok: false,

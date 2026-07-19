@@ -63,6 +63,19 @@ describe("renderMarkdown", () => {
     expect(md).toContain("No capability changes");
   });
 
+  it("renders an integrity-warnings block when warnings are passed", () => {
+    const md = renderMarkdown(diffSnapshots(baseSnap, baseSnap), baseSnap, meta, undefined, [
+      "refund declares approval in source but is missing from the sidecar.",
+    ]);
+    expect(md).toContain("⚠ Integrity warnings");
+    expect(md).toContain("missing from the sidecar");
+  });
+
+  it("omits the warnings block when there are none", () => {
+    const md = renderMarkdown(diffSnapshots(baseSnap, baseSnap), baseSnap, meta, undefined, []);
+    expect(md).not.toContain("Integrity warnings");
+  });
+
   it("embeds the portrait in a collapsed details block when provided", () => {
     const md = renderMarkdown(diffSnapshots(baseSnap, baseSnap), baseSnap, meta, {
       name: "Beacon",

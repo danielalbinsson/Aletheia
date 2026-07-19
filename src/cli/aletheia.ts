@@ -18,6 +18,7 @@ import {
   type CapabilitySnapshot,
 } from "../parser/capabilityDiff";
 import { parsePolicy, type Policy } from "../parser/policy";
+import { consentDrift } from "../parser/sourceScan";
 import type { ManifestFacts } from "../parser/manifestAdapter";
 import { deriveSignals } from "../portrait/signals";
 import { renderPortrait } from "../portrait/portrait";
@@ -34,6 +35,45 @@ const execFileAsync = promisify(execFile);
 const SNAPSHOT_REL = "agent/.aletheia/deployed-capabilities.json";
 const MANIFEST_REL = ".eve/compile/compiled-agent-manifest.json";
 const CONSENT_REL = "agent/.aletheia/consent.json";
+const TOOLS_REL = "agent/tools";
+
+/** Read `agent/tools/*.ts` as { toolName: source }, for source-declared signals. */
+async function loadToolSources(root: string): Promise<Record<string, string>> {
+  const dir = path.join(root, TOOLS_REL);
+  const sources: Record<string, string> = {};
+  let names: string[];
+  try {
+    names = await fs.readdir(dir);
+  } catch {
+    return sources;
+  }
+  await Promise.all(
+    names
+      .filter((n) => n.endsWith(".ts"))
+      .map(async (n) => {
+        try {
+          sources[n.slice(0, -".ts".length)] = await fs.readFile(path.join(dir, n), "utf8");
+        } catch {
+          /* skip unreadable file */
+        }
+      })
+  );
+  return sources;
+}
+
+/**
+ * A tool that declares an approval gate in source but isn't in consent.json is
+ * drift: the PR check reads the sidecar only, so the gate would go unrecorded.
+ * Surface it as a warning so the author mirrors it into the sidecar.
+ */
+function driftWarnings(drifted: string[]): string[] {
+  if (drifted.length === 0) return [];
+  return [
+    `${drifted.length} tool(s) declare \`approval:\` in source but are missing from \`${CONSENT_REL}\`: ${drifted
+      .map((t) => `\`${t}\``)
+      .join(", ")}. This PR check reads the sidecar only — add them so the gate is recorded.`,
+  ];
+}
 
 /** Read the consent sidecar's `gated` map (tool name → reason), or {} if absent. */
 async function loadConsent(root: string): Promise<Record<string, string>> {
@@ -216,10 +256,18 @@ async function runDiff(opts: Options): Promise<number> {
   const policy = await loadPolicy(root);
   const failOn = opts.failOnExplicit ? opts.failOn : policy.failOn ?? opts.failOn;
 
-  const facts = applyConsent(manifest.facts, await loadConsent(root));
+  const gated = await loadConsent(root);
+  const facts = applyConsent(manifest.facts, gated);
   const current = snapshotFromFacts(facts);
   const baseline = await resolveBaseline(opts.baseline, root);
   const diff = diffSnapshots(baseline, current, { rules: policy.rules });
+
+  // Integrity warnings: manifest-mapping issues (e.g. missing restriction field)
+  // + consent drift (approval gate in source not mirrored in the sidecar).
+  const warnings = [
+    ...(manifest.warnings ?? []),
+    ...driftWarnings(consentDrift(await loadToolSources(root), gated)),
+  ];
 
   const meta: DiffMeta = {
     headSha: await gitShortSha(root),
@@ -230,8 +278,8 @@ async function runDiff(opts: Options): Promise<number> {
 
   const text =
     opts.format === "json"
-      ? renderJson(diff, current, meta)
-      : renderMarkdown(diff, current, meta, portraitView(facts));
+      ? renderJson(diff, current, meta, warnings)
+      : renderMarkdown(diff, current, meta, portraitView(facts), warnings);
   await emit(text, opts.out);
 
   return verdict(diff, failOn).failing ? 1 : 0;

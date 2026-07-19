@@ -79,15 +79,22 @@ function portraitBlock(p: PortraitView): string[] {
   ];
 }
 
+function warningsBlock(warnings: string[]): string[] {
+  if (warnings.length === 0) return [];
+  return ["#### ⚠ Integrity warnings", "", ...warnings.map((w) => `- ${w}`), ""];
+}
+
 export function renderMarkdown(
   diff: CapabilityDiff,
   current: CapabilitySnapshot,
   meta: DiffMeta,
-  portrait?: PortraitView
+  portrait?: PortraitView,
+  warnings: string[] = []
 ): string {
   const v = verdict(diff, meta.failOn);
   const out: string[] = [STICKY_MARKER, "", "### Aletheia — capability review", ""];
   out.push(`**${v.headline}**`, "");
+  out.push(...warningsBlock(warnings));
   if (portrait) out.push(...portraitBlock(portrait));
 
   if (diff.isInitial) {
@@ -133,11 +140,12 @@ export function renderMarkdown(
 export function renderJson(
   diff: CapabilityDiff,
   current: CapabilitySnapshot,
-  meta: DiffMeta
+  meta: DiffMeta,
+  warnings: string[] = []
 ): string {
   const v = verdict(diff, meta.failOn);
   return JSON.stringify(
-    { failing: v.failing, headline: v.headline, meta, diff, current },
+    { failing: v.failing, headline: v.headline, meta, warnings, diff, current },
     null,
     2
   );

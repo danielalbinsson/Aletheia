@@ -3,6 +3,7 @@ import {
   mapManifest,
   applyManifest,
   summarizeInputs,
+  manifestRestrictionWarning,
   type CompiledManifest,
 } from "./manifestAdapter";
 import type { AgentModel } from "../model";
@@ -214,5 +215,24 @@ describe("summarizeInputs", () => {
   it("returns undefined for empty/absent schema", () => {
     expect(summarizeInputs(undefined)).toBeUndefined();
     expect(summarizeInputs({ type: "object", properties: {} })).toBeUndefined();
+  });
+});
+
+describe("manifestRestrictionWarning (silent-absence guard)", () => {
+  it("warns when a manifest has tools but no disabledFrameworkTools field", () => {
+    const m: CompiledManifest = { tools: [{ name: "bash", description: "" }] };
+    expect(manifestRestrictionWarning(m)).toMatch(/restriction data may be missing/i);
+  });
+
+  it("no warning for an explicit empty list (a real 'nothing disabled' fact)", () => {
+    const m: CompiledManifest = {
+      tools: [{ name: "bash", description: "" }],
+      disabledFrameworkTools: [],
+    };
+    expect(manifestRestrictionWarning(m)).toBeNull();
+  });
+
+  it("no warning when there are no tools at all", () => {
+    expect(manifestRestrictionWarning({})).toBeNull();
   });
 });

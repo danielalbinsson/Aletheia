@@ -80,6 +80,23 @@ function mapRestrictions(m: CompiledManifest): Restriction[] {
   return (m.disabledFrameworkTools ?? []).map(frameworkRestriction);
 }
 
+/**
+ * Guard against a silent false-negative. Restrictions are a trust-*positive*
+ * fact: their absence reads to a viewer as "the agent CAN do this". So a
+ * manifest that carries tools but omits `disabledFrameworkTools` entirely — the
+ * shape we'd get if a future eve renamed or dropped the field — must not be
+ * quietly rendered as "no restrictions". Returns a warning to surface as
+ * "unknown", or null when the field is present (including an explicit `[]`).
+ * `[]` is a real fact (nothing disabled); `undefined` is missing knowledge.
+ */
+export function manifestRestrictionWarning(m: CompiledManifest): string | null {
+  const hasTools = (m.tools?.length ?? 0) > 0;
+  if (hasTools && m.disabledFrameworkTools === undefined) {
+    return "Manifest has tools but no `disabledFrameworkTools` field — restriction data may be missing (eve version drift?). Treating restrictions as unknown, not none.";
+  }
+  return null;
+}
+
 interface ManifestSubagent {
   name?: string;
   description?: string;

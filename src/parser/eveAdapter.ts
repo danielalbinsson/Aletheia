@@ -19,6 +19,7 @@ import type {
 import type { RawProject } from "./loadProject";
 import { extractOpenRouterModelId } from "../serializer/openRouterAgent";
 import { frameworkRestriction } from "./manifestAdapter";
+import { consentDrift, hasDisableTool } from "./sourceScan";
 import { themeForMotif } from "../theme/personalityTheme";
 
 /** Pull a quoted string value for `key:` from a blob (single or double quotes). */
@@ -95,15 +96,18 @@ function parseCapabilities(raw: RawProject): Capability[] {
     if (/^tools\/.+\.ts$/.test(path)) {
       const name = field(src, "name") ?? toolLabelFromPath(path);
       const detail = field(src, "description") ?? "";
+      // The consent sidecar is the single source of consent truth (the CLI/PR
+      // check reads it too). An `approval:` gate in tool source that is *not*
+      // mirrored here is not rendered as fact — it's reported as drift by
+      // `detectConsentDrift` so the author mirrors it into the sidecar.
       const toolName = path.slice("tools/".length, -".ts".length);
       const reason = consentBySidecar[toolName];
-      const gated = reason !== undefined || /\bapproval\s*:/.test(src);
       caps.push({
         label: humanizeToolName(name),
         detail,
         origin: "tool",
         source: path,
-        ...(gated ? { consent: "asks-first" as const } : {}),
+        ...(reason !== undefined ? { consent: "asks-first" as const } : {}),
         ...(reason ? { consentReason: reason } : {}),
       });
     } else if (/^skills\/.+\/SKILL\.md$/.test(path)) {
@@ -247,11 +251,26 @@ function parseRestrictions(raw: RawProject): Restriction[] {
   const restrictions: Restriction[] = [];
   for (const [path, src] of Object.entries(raw.files)) {
     const m = /^tools\/([^/]+)\.ts$/.exec(path);
-    if (m && /\bdisableTool\s*\(/.test(src)) {
+    if (m && hasDisableTool(src)) {
       restrictions.push(frameworkRestriction(m[1]));
     }
   }
   return restrictions;
+}
+
+/**
+ * Tools that declare an approval gate in source but are missing from the consent
+ * sidecar. Because the sidecar is the single source of consent truth, these
+ * gates are otherwise invisible — surface them so the author mirrors each one
+ * into `agent/.aletheia/consent.json`. Pure signal for the app and the CLI.
+ */
+export function detectConsentDrift(raw: RawProject): string[] {
+  const toolSources: Record<string, string> = {};
+  for (const [path, src] of Object.entries(raw.files)) {
+    const m = /^tools\/([^/]+)\.ts$/.exec(path);
+    if (m) toolSources[m[1]] = src;
+  }
+  return consentDrift(toolSources, parseConsentSidecar(raw));
 }
 
 export function parseAgent(raw: RawProject): AgentModel {
