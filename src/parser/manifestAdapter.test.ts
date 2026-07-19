@@ -32,6 +32,7 @@ const manifest: CompiledManifest = {
   channels: [],
   schedules: [{ name: "sla-watch", cron: "*/15 * * * *", markdown: "Warn about SLA breaches.", hasRun: false }],
   subagents: [],
+  disabledFrameworkTools: ["bash", "write_file"],
 };
 
 describe("mapManifest", () => {
@@ -119,6 +120,24 @@ describe("mapManifest", () => {
     expect(sub.capabilities.map((c) => c.label)).toContain("Run axe");
   });
 
+  it("maps disabledFrameworkTools to plain-language restrictions", () => {
+    expect(facts.restrictions).toEqual([
+      { tool: "bash", label: "run shell commands" },
+      { tool: "write_file", label: "write files" },
+    ]);
+  });
+
+  it("humanizes an unknown disabled tool rather than dropping it", () => {
+    const f = mapManifest({ disabledFrameworkTools: ["some_custom_tool"] });
+    expect(f.restrictions).toEqual([
+      { tool: "some_custom_tool", label: "some custom tool" },
+    ]);
+  });
+
+  it("reports no restrictions when none are disabled", () => {
+    expect(mapManifest({ tools: [] }).restrictions).toEqual([]);
+  });
+
   it("falls back to the slim top-level subagent name when no nested manifest", () => {
     const f = mapManifest({ subagents: [{ name: "auditor" }] });
     expect(f.subagents).toEqual([
@@ -140,6 +159,7 @@ describe("applyManifest", () => {
     capabilities: [{ label: "Old", detail: "", origin: "tool", source: "tools/old.ts" }],
     reach: [{ label: "Guess", kind: "data", access: "read" }],
     autonomy: [],
+    restrictions: [],
     subagents: [],
   };
 
@@ -156,6 +176,11 @@ describe("applyManifest", () => {
     const merged = applyManifest(base, mapManifest({ tools: [], connections: [] }));
     expect(merged.reach).toEqual([]);
     expect(merged.capabilities).toEqual([]);
+  });
+
+  it("overlays verified restrictions onto the model", () => {
+    const merged = applyManifest(base, mapManifest(manifest));
+    expect(merged.restrictions.map((r) => r.tool)).toEqual(["bash", "write_file"]);
   });
 });
 

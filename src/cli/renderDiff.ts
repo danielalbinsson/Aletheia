@@ -99,6 +99,10 @@ export function renderMarkdown(
     } else {
       out.push("", "It reaches nothing outside itself.");
     }
+    if (current.restrictions?.length) {
+      out.push("", "And it cannot:", "");
+      for (const r of current.restrictions) out.push(`- ${r.label} (${r.tool} disabled)`);
+    }
     out.push("", footer(meta));
     return out.join("\n");
   }

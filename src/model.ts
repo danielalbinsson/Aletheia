@@ -59,6 +59,19 @@ export interface Subagent {
   reach: Reach[];
 }
 
+/**
+ * A framework capability the agent has explicitly given up — a verifiable
+ * "cannot". Sourced from the manifest's `disabledFrameworkTools` (a tool the
+ * agent disabled with `disableTool()`). Unlike everything else in the model,
+ * this is a trust-*positive* fact: the absence of power, stated plainly.
+ */
+export interface Restriction {
+  /** The disabled framework tool slug, e.g. "bash". */
+  tool: string;
+  /** Plain-language phrase of what it can no longer do, e.g. "run shell commands". */
+  label: string;
+}
+
 /** A way the agent acts without being prompted (sourced from schedules/). */
 export interface Autonomy {
   /** Plain-language description. e.g. "Every morning at 7am". */
@@ -93,6 +106,11 @@ export interface AgentModel {
   capabilities: Capability[];
   reach: Reach[];
   autonomy: Autonomy[];
+  /**
+   * Framework tools the agent has explicitly disabled — verifiable "cannots".
+   * Empty means none were disabled (or, from source, none detected).
+   */
+  restrictions: Restriction[];
   /** Subagents it can delegate to, each with its own capability/reach slice. */
   subagents: Subagent[];
 }

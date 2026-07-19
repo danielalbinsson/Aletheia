@@ -9,7 +9,7 @@
 // Pure module: no fs, no eve. The server persists snapshots; this just maps
 // and compares them. See docs/specs/diff-on-deploy.md.
 
-import type { AgentModel, Autonomy, Reach } from "../model";
+import type { AgentModel, Autonomy, Reach, Restriction } from "../model";
 import { classifyReach, type ConsequenceRule } from "./consequence";
 
 /** Options for diffSnapshots — e.g. team-defined consequence rules from policy. */
@@ -31,6 +31,10 @@ export interface SnapshotAutonomy {
   does: string;
   when: string;
   consent: Autonomy["consent"];
+}
+export interface SnapshotRestriction {
+  tool: string;
+  label: string;
 }
 
 /**
@@ -54,11 +58,23 @@ export interface CapabilitySnapshot {
   reach: SnapshotReach[];
   autonomy: SnapshotAutonomy[];
   subagents: string[];
+  /**
+   * Framework tools the agent disabled. Optional: baselines captured before
+   * restrictions were tracked omit it, and we skip the diff rather than
+   * false-flag a "restriction lifted" on every old snapshot.
+   */
+  restrictions?: SnapshotRestriction[];
 }
 
 export type DiffRisk = "elevated" | "routine";
 export type DiffChange = "added" | "removed" | "changed";
-export type DiffKind = "capability" | "reach" | "autonomy" | "subagent" | "mind";
+export type DiffKind =
+  | "capability"
+  | "reach"
+  | "autonomy"
+  | "subagent"
+  | "restriction"
+  | "mind";
 
 export interface DiffEntry {
   kind: DiffKind;
@@ -92,7 +108,7 @@ export function snapshotFromModel(
 export type SnapshotInput = Pick<
   AgentModel,
   "capabilities" | "reach" | "autonomy" | "subagents"
-> & { name?: string; mind?: SnapshotMind };
+> & { name?: string; mind?: SnapshotMind; restrictions?: Restriction[] };
 
 /** Capture a snapshot from manifest facts (or any model-shaped trust slice). */
 export function snapshotFromFacts(
@@ -119,6 +135,10 @@ export function snapshotFromFacts(
       consent: a.consent,
     })),
     subagents: facts.subagents.map((s) => s.name),
+    restrictions: (facts.restrictions ?? []).map((r) => ({
+      tool: r.tool,
+      label: r.label,
+    })),
   };
 }
 
@@ -290,6 +310,44 @@ function diffSubagents(prev: string[], next: string[]): DiffEntry[] {
 }
 
 /**
+ * Restrictions are inverted authority: lifting one (a tool that was disabled is
+ * enabled again) *expands* what the agent can do, so it's elevated — the same
+ * gate logic as new reach. Adding one narrows authority and is routine.
+ * Skipped entirely when the baseline predates restriction tracking (undefined),
+ * to avoid false "restriction lifted" on every legacy snapshot.
+ */
+function diffRestrictions(
+  prev: SnapshotRestriction[] | undefined,
+  next: SnapshotRestriction[] | undefined
+): DiffEntry[] {
+  if (!prev) return [];
+  const prevSet = indexBy(prev, (r) => r.tool);
+  const nextSet = indexBy(next ?? [], (r) => r.tool);
+  const entries: DiffEntry[] = [];
+  for (const [tool, r] of prevSet) {
+    if (!nextSet.has(tool)) {
+      entries.push({
+        kind: "restriction",
+        change: "removed",
+        summary: `Restriction lifted: can now ${r.label} (${tool} re-enabled)`,
+        risk: "elevated",
+      });
+    }
+  }
+  for (const [tool, r] of nextSet) {
+    if (!prevSet.has(tool)) {
+      entries.push({
+        kind: "restriction",
+        change: "added",
+        summary: `Now restricted: cannot ${r.label} (${tool} disabled)`,
+        risk: "routine",
+      });
+    }
+  }
+  return entries;
+}
+
+/**
  * "How it thinks" — model + system prompt. Both are elevated: they change
  * behavior more than any single tool. Only compared when the baseline recorded
  * a `mind` (older snapshots predate it), so we never false-flag on first run.
@@ -339,6 +397,7 @@ export function diffSnapshots(
     ...diffReach(prev.reach, next.reach, opts.rules ?? []),
     ...diffAutonomy(prev.autonomy, next.autonomy),
     ...diffSubagents(prev.subagents, next.subagents),
+    ...diffRestrictions(prev.restrictions, next.restrictions),
   ];
   // Elevated first, then highest blast radius first, for a scannable list.
   const sev = (e: DiffEntry) => (e.severity === "high" ? 0 : e.severity === "medium" ? 1 : 2);

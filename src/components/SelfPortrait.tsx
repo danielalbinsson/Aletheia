@@ -1,4 +1,11 @@
-import type { AgentModel, Autonomy, Capability, Reach, Subagent } from "../model";
+import type {
+  AgentModel,
+  Autonomy,
+  Capability,
+  Reach,
+  Restriction,
+  Subagent,
+} from "../model";
 import { Portrait } from "./Portrait";
 
 /**
@@ -75,6 +82,19 @@ export function SelfPortrait({
             </ul>
           )}
         </Section>
+
+        {agent.restrictions.length > 0 && (
+          <Section
+            label="What I cannot do"
+            note={verified ? "verified from build" : "from source — build to verify"}
+          >
+            <ul className="cannot-do">
+              {agent.restrictions.map((r) => (
+                <RestrictionItem key={r.tool} restriction={r} />
+              ))}
+            </ul>
+          </Section>
+        )}
 
         <Section label="When I act on my own">
           <div className="autonomy">
@@ -203,6 +223,20 @@ function SubagentItem({ sub }: { sub: Subagent }) {
           ))}
         </ul>
       )}
+    </li>
+  );
+}
+
+function RestrictionItem({ restriction }: { restriction: Restriction }) {
+  return (
+    <li className="cannot-item">
+      <span className="cannot-glyph" aria-hidden>
+        ✕
+      </span>
+      <span className="cannot-label">
+        I cannot {restriction.label}
+        <span className="cannot-tool">{restriction.tool} disabled</span>
+      </span>
     </li>
   );
 }

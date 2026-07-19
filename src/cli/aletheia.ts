@@ -147,6 +147,7 @@ function portraitView(facts: ManifestFacts): PortraitView {
     capabilities: facts.capabilities,
     reach: facts.reach,
     autonomy: facts.autonomy,
+    restrictions: facts.restrictions,
     subagents: facts.subagents,
   };
   return { name, rows: renderPortrait(deriveSignals(model)) };

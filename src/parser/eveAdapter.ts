@@ -13,10 +13,12 @@ import type {
   Capability,
   Reach,
   Autonomy,
+  Restriction,
   Subagent,
 } from "../model";
 import type { RawProject } from "./loadProject";
 import { extractOpenRouterModelId } from "../serializer/openRouterAgent";
+import { frameworkRestriction } from "./manifestAdapter";
 import { themeForMotif } from "../theme/personalityTheme";
 
 /** Pull a quoted string value for `key:` from a blob (single or double quotes). */
@@ -216,6 +218,21 @@ function humanizeToolName(name: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+// Source fallback for restrictions: a tool file that only re-exports
+// `disableTool()` turns off the framework tool of the same name. The verified
+// list comes from the manifest's `disabledFrameworkTools`; this is the
+// pre-build guess, labelled "from source" downstream.
+function parseRestrictions(raw: RawProject): Restriction[] {
+  const restrictions: Restriction[] = [];
+  for (const [path, src] of Object.entries(raw.files)) {
+    const m = /^tools\/([^/]+)\.ts$/.exec(path);
+    if (m && /\bdisableTool\s*\(/.test(src)) {
+      restrictions.push(frameworkRestriction(m[1]));
+    }
+  }
+  return restrictions;
+}
+
 export function parseAgent(raw: RawProject): AgentModel {
   const agentTs = raw.files["agent.ts"] ?? "";
   const instructions = raw.files["instructions.md"] ?? "";
@@ -244,6 +261,7 @@ export function parseAgent(raw: RawProject): AgentModel {
     capabilities: parseCapabilities(raw),
     reach: parseReach(raw),
     autonomy: parseAutonomy(raw),
+    restrictions: parseRestrictions(raw),
     subagents: parseSubagents(raw),
   };
 }

@@ -216,6 +216,31 @@ code { font-family: var(--sans); color: var(--muted); }
 }
 .access-write, .access-read-write { color: color-mix(in srgb, var(--accent) 75%, var(--ink-soft)); }
 
+/* Restrictions — verifiable "cannots". A trust-positive absence of power. */
+.cannot-do { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.cannot-item {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  font-size: 15px;
+}
+.cannot-glyph {
+  width: 7px;
+  flex: none;
+  color: var(--faint);
+  font-size: 11px;
+  line-height: 1;
+  text-align: center;
+}
+.cannot-label { color: var(--ink-soft); }
+.cannot-tool {
+  margin-left: 8px;
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--faint);
+}
+
 /* Verified-from-build provenance + decision-grade signals */
 .section-note {
   margin-left: 12px;

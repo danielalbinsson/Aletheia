@@ -19,6 +19,7 @@ function model(over: Partial<AgentModel> = {}): AgentModel {
     capabilities: [],
     reach: [],
     autonomy: [],
+    restrictions: [],
     subagents: [],
     ...over,
   };
@@ -167,6 +168,38 @@ describe("diffSnapshots", () => {
     const d = diffSnapshots(base, next);
     expect(d.entries.every((e) => e.risk === "routine")).toBe(true);
     expect(d.entries.some((e) => e.change === "removed")).toBe(true);
+  });
+
+  it("escalates a lifted restriction (a disabled tool re-enabled)", () => {
+    const prev = snapshotFromModel(
+      model({ restrictions: [{ tool: "bash", label: "run shell commands" }] })
+    );
+    const next = snapshotFromModel(model({ restrictions: [] }));
+    const d = diffSnapshots(prev, next);
+    const lift = d.entries.find((e) => e.kind === "restriction");
+    expect(lift?.change).toBe("removed");
+    expect(lift?.risk).toBe("elevated");
+    expect(lift?.summary).toContain("bash re-enabled");
+  });
+
+  it("treats a newly added restriction as routine", () => {
+    const prev = snapshotFromModel(model({ restrictions: [] }));
+    const next = snapshotFromModel(
+      model({ restrictions: [{ tool: "write_file", label: "write files" }] })
+    );
+    const d = diffSnapshots(prev, next);
+    const add = d.entries.find((e) => e.kind === "restriction");
+    expect(add?.change).toBe("added");
+    expect(add?.risk).toBe("routine");
+  });
+
+  it("does not flag restrictions when the baseline predates tracking", () => {
+    const prev: CapabilitySnapshot = { ...base, restrictions: undefined };
+    const next = snapshotFromModel(
+      model({ restrictions: [{ tool: "bash", label: "run shell commands" }] })
+    );
+    const d = diffSnapshots(prev, next);
+    expect(d.entries.some((e) => e.kind === "restriction")).toBe(false);
   });
 });
 

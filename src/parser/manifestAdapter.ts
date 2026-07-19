@@ -16,7 +16,14 @@
 //     not render those as fact.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import type { AgentModel, Capability, Reach, Autonomy, Subagent } from "../model";
+import type {
+  AgentModel,
+  Capability,
+  Reach,
+  Autonomy,
+  Restriction,
+  Subagent,
+} from "../model";
 import type { SnapshotMind } from "./capabilityDiff";
 
 /** The subset of the compiled manifest this adapter relies on. */
@@ -35,6 +42,42 @@ export interface CompiledManifest {
    * the subagent's own tools/connections/model become legible.
    */
   subagents?: ManifestSubagent[];
+  /**
+   * Framework tools the agent turned off with `disableTool()`. eve records
+   * these by slug in the compiled manifest — a decision-grade "cannot" that
+   * needs no running server. Verified against eve 0.15.5 and 0.25.2 (identical
+   * shape).
+   */
+  disabledFrameworkTools?: string[];
+}
+
+/**
+ * Plain-language phrasing for the built-in eve harness tools, so a disabled
+ * tool reads as a human "cannot" rather than a slug. Unknown slugs fall back to
+ * a humanized form.
+ */
+const FRAMEWORK_TOOL_PHRASE: Record<string, string> = {
+  bash: "run shell commands",
+  write_file: "write files",
+  read_file: "read files",
+  edit_file: "edit files",
+  glob: "search for files by name",
+  grep: "search inside files",
+  web_fetch: "fetch web pages",
+  web_search: "search the web",
+  todo: "keep its own task list",
+  ask_question: "ask you clarifying questions",
+  agent: "spawn subagents",
+};
+
+/** Map a disabled framework-tool slug to a verifiable "cannot" fact. */
+export function frameworkRestriction(slug: string): Restriction {
+  const phrase = FRAMEWORK_TOOL_PHRASE[slug] ?? slug.replace(/[_-]+/g, " ").trim();
+  return { tool: slug, label: phrase };
+}
+
+function mapRestrictions(m: CompiledManifest): Restriction[] {
+  return (m.disabledFrameworkTools ?? []).map(frameworkRestriction);
 }
 
 interface ManifestSubagent {
@@ -119,7 +162,7 @@ interface ManifestSchedule {
 /** The slice of AgentModel this adapter is authoritative for. */
 export type ManifestFacts = Pick<
   AgentModel,
-  "capabilities" | "reach" | "autonomy" | "subagents"
+  "capabilities" | "reach" | "autonomy" | "restrictions" | "subagents"
 > & {
   runsOn?: string;
   description?: string;
@@ -259,6 +302,7 @@ export function mapManifest(m: CompiledManifest): ManifestFacts {
     capabilities: mapCapabilities(m),
     reach: mapReach(m),
     autonomy: mapAutonomy(m),
+    restrictions: mapRestrictions(m),
     subagents: mapSubagents(m),
   };
 }
@@ -276,6 +320,7 @@ export function applyManifest<T extends AgentModel>(base: T, facts: ManifestFact
     capabilities: facts.capabilities,
     reach: facts.reach,
     autonomy: facts.autonomy,
+    restrictions: facts.restrictions,
     subagents: facts.subagents,
   };
 }
