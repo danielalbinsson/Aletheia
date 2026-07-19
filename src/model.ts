@@ -19,6 +19,15 @@ export interface Capability {
   source: string;
   /** Plain-language summary of inputs, derived from the tool's input schema. */
   takes?: string;
+  /**
+   * "asks-first" when the tool is approval-gated (`approval: always()` in eve).
+   * eve does not serialize approval into the compiled manifest, so this is
+   * never manifest-verified — it comes from the tool source or from the
+   * `agent/.aletheia/consent.json` sidecar, and is rendered with that caveat.
+   */
+  consent?: "asks-first";
+  /** Why it asks first, from the consent sidecar. e.g. "charges a payment method". */
+  consentReason?: string;
 }
 
 /** Something the agent can reach — data, an API, or a channel. */

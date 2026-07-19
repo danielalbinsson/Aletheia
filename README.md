@@ -41,13 +41,21 @@ Aletheia shows trust facts from two sources, and is always honest about which:
 - **From source** — before a build (or without the dev server), it falls back to
   a tolerant source parse of `agent/`, labelled *from source — build to verify*.
 
-What Aletheia **does not** claim: eve 0.15.5 does not expose per-tool **approval**
-or a connection's **read/write** in any build artifact, so Aletheia does not
-render them. Showing a consent badge we can't actually verify would manufacture
-exactly the false confidence this project exists to prevent. Reach is shown as
-the real systems and protocols; autonomy is shown from real schedules. (If a
-future eve version serializes approval, the model and portrait have a clear seam
-to reintroduce it — see `docs/specs/capability-manifest.md`.)
+What Aletheia **does not** claim as verified: eve does not expose per-tool
+**approval** or a connection's **read/write** in any build artifact (still true
+as of 0.25.2), so Aletheia never renders those as *verified from build*. Showing
+a consent badge we can't verify would manufacture exactly the false confidence
+this project exists to prevent. Reach is shown as the real systems and protocols;
+autonomy is shown from real schedules.
+
+**Consent, from source.** Because approval is decision-grade but unverifiable,
+Aletheia reads it from a build-stable sidecar, `agent/.aletheia/consent.json`
+(and, in the app, from an `approval:` field in tool source). A gated tool renders
+as **asks first** with its reason, always labelled as source-declared — not
+build-verified. This fills the seam `docs/specs/capability-manifest.md` describes
+without faking verification, and the capability diff treats **removing** a gate as
+an expansion of authority. If a future eve version serializes approval, the same
+field flips to verified with no downstream change.
 
 ## Workspace layout
 
@@ -269,8 +277,10 @@ the `AgentModel` needs to change.
 
 ## What's deliberately out
 
-- **Approval / consent rendering** — eve doesn't expose it in any build artifact,
-  so Aletheia doesn't fake it.
+- **Approval / consent as *verified* fact** — eve doesn't expose it in any build
+  artifact, so Aletheia never renders it as build-verified. It *is* now surfaced
+  as a source-declared fact from `agent/.aletheia/consent.json` (see "Consent,
+  from source" above), clearly labelled as such.
 - **Embedded Vercel Agent Runs UI** — use the Vercel dashboard.
 - **`eve link` from the UI** — interactive only; use the terminal.
 - Production `pnpm build` bundles `agent/` at compile time — no filesystem writes

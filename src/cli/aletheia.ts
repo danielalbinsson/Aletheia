@@ -33,6 +33,37 @@ import type { AgentModel } from "../model";
 const execFileAsync = promisify(execFile);
 const SNAPSHOT_REL = "agent/.aletheia/deployed-capabilities.json";
 const MANIFEST_REL = ".eve/compile/compiled-agent-manifest.json";
+const CONSENT_REL = "agent/.aletheia/consent.json";
+
+/** Read the consent sidecar's `gated` map (tool name → reason), or {} if absent. */
+async function loadConsent(root: string): Promise<Record<string, string>> {
+  try {
+    const raw = await fs.readFile(path.join(root, CONSENT_REL), "utf8");
+    const parsed = JSON.parse(raw) as { gated?: Record<string, string> };
+    return parsed.gated && typeof parsed.gated === "object" ? parsed.gated : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Overlay source-declared consent onto manifest facts. eve doesn't serialize
+ * approval, so the sidecar is the only build-stable record of which tools ask
+ * first — this is what makes the gate legible in the PR check.
+ */
+function applyConsent(facts: ManifestFacts, gated: Record<string, string>): ManifestFacts {
+  if (Object.keys(gated).length === 0) return facts;
+  return {
+    ...facts,
+    capabilities: facts.capabilities.map((c) => {
+      const m = /^tools\/(.+)\.ts$/.exec(c.source);
+      const reason = m ? gated[m[1]] : undefined;
+      return reason !== undefined
+        ? { ...c, consent: "asks-first" as const, consentReason: reason }
+        : c;
+    }),
+  };
+}
 
 interface Options {
   baseline: string;
@@ -185,7 +216,8 @@ async function runDiff(opts: Options): Promise<number> {
   const policy = await loadPolicy(root);
   const failOn = opts.failOnExplicit ? opts.failOn : policy.failOn ?? opts.failOn;
 
-  const current = snapshotFromFacts(manifest.facts);
+  const facts = applyConsent(manifest.facts, await loadConsent(root));
+  const current = snapshotFromFacts(facts);
   const baseline = await resolveBaseline(opts.baseline, root);
   const diff = diffSnapshots(baseline, current, { rules: policy.rules });
 
@@ -199,7 +231,7 @@ async function runDiff(opts: Options): Promise<number> {
   const text =
     opts.format === "json"
       ? renderJson(diff, current, meta)
-      : renderMarkdown(diff, current, meta, portraitView(manifest.facts));
+      : renderMarkdown(diff, current, meta, portraitView(facts));
   await emit(text, opts.out);
 
   return verdict(diff, failOn).failing ? 1 : 0;

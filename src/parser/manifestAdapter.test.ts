@@ -182,6 +182,32 @@ describe("applyManifest", () => {
     const merged = applyManifest(base, mapManifest(manifest));
     expect(merged.restrictions.map((r) => r.tool)).toEqual(["bash", "write_file"]);
   });
+
+  it("carries source-declared consent onto the matching verified capability", () => {
+    const gatedBase: AgentModel = {
+      ...base,
+      capabilities: [
+        {
+          label: "Draft reply",
+          detail: "",
+          origin: "tool",
+          source: "tools/draft-reply.ts",
+          consent: "asks-first",
+          consentReason: "sends a message to the customer",
+        },
+      ],
+    };
+    const merged = applyManifest(gatedBase, mapManifest(manifest));
+    const draft = merged.capabilities.find((c) => c.source === "tools/draft-reply.ts");
+    // Existence/label/schema stay manifest-verified; consent comes from source.
+    expect(draft?.takes).toContain("conversationid");
+    expect(draft?.consent).toBe("asks-first");
+    expect(draft?.consentReason).toBe("sends a message to the customer");
+    // Ungated verified tools are untouched.
+    expect(
+      merged.capabilities.find((c) => c.source === "tools/search-docs.ts")?.consent,
+    ).toBeUndefined();
+  });
 });
 
 describe("summarizeInputs", () => {

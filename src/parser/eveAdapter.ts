@@ -72,18 +72,39 @@ function parseIntro(md: string): { intro: string; essence: string } {
   return { intro, essence: firstSentence };
 }
 
+// The consent sidecar (agent/.aletheia/consent.json) maps a gated tool name to
+// the human reason it asks first. Presence of a tool here (or an `approval:`
+// field in its source) means "asks-first". eve never puts this in the build
+// manifest, so it is always a source/declared fact, never manifest-verified.
+function parseConsentSidecar(raw: RawProject): Record<string, string> {
+  const src = raw.files[".aletheia/consent.json"];
+  if (!src) return {};
+  try {
+    const parsed = JSON.parse(src) as { gated?: Record<string, string> };
+    return parsed.gated && typeof parsed.gated === "object" ? parsed.gated : {};
+  } catch {
+    return {};
+  }
+}
+
 function parseCapabilities(raw: RawProject): Capability[] {
   const caps: Capability[] = [];
+  const consentBySidecar = parseConsentSidecar(raw);
 
   for (const [path, src] of Object.entries(raw.files)) {
     if (/^tools\/.+\.ts$/.test(path)) {
       const name = field(src, "name") ?? toolLabelFromPath(path);
       const detail = field(src, "description") ?? "";
+      const toolName = path.slice("tools/".length, -".ts".length);
+      const reason = consentBySidecar[toolName];
+      const gated = reason !== undefined || /\bapproval\s*:/.test(src);
       caps.push({
         label: humanizeToolName(name),
         detail,
         origin: "tool",
         source: path,
+        ...(gated ? { consent: "asks-first" as const } : {}),
+        ...(reason ? { consentReason: reason } : {}),
       });
     } else if (/^skills\/.+\/SKILL\.md$/.test(path)) {
       const name = field(src, "name") ?? path.split("/")[1];

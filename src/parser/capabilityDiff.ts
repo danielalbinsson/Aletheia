@@ -20,6 +20,8 @@ export interface DiffOptions {
 export interface SnapshotCapability {
   source: string;
   label: string;
+  /** "asks-first" when approval-gated. Dropping it later is authority expansion. */
+  consent?: "asks-first";
 }
 export interface SnapshotReach {
   label: string;
@@ -122,6 +124,7 @@ export function snapshotFromFacts(
     capabilities: facts.capabilities.map((c) => ({
       source: c.source,
       label: c.label,
+      ...(c.consent ? { consent: c.consent } : {}),
     })),
     reach: facts.reach.map((r) => ({
       label: r.label,
@@ -225,11 +228,29 @@ function diffCapabilities(
   const entries: DiffEntry[] = [];
 
   for (const [key, c] of nextBy) {
-    if (!prevBy.has(key)) {
+    const before = prevBy.get(key);
+    if (!before) {
       entries.push({
         kind: "capability",
         change: "added",
-        summary: `New capability: ${c.label}`,
+        // A new tool that arrives gated is reassuring; ungated is the baseline.
+        summary: `New capability: ${c.label}${c.consent ? " (asks first)" : ""}`,
+        risk: "routine",
+      });
+    } else if (before.consent === "asks-first" && c.consent !== "asks-first") {
+      // The gate was removed from a tool that still exists — it now runs without
+      // asking. That is an expansion of authority, so it's elevated.
+      entries.push({
+        kind: "capability",
+        change: "changed",
+        summary: `${c.label}: no longer asks first — approval gate removed`,
+        risk: "elevated",
+      });
+    } else if (before.consent !== "asks-first" && c.consent === "asks-first") {
+      entries.push({
+        kind: "capability",
+        change: "changed",
+        summary: `${c.label}: now asks first before running`,
         risk: "routine",
       });
     }

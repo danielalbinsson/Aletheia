@@ -193,6 +193,30 @@ describe("diffSnapshots", () => {
     expect(add?.risk).toBe("routine");
   });
 
+  it("escalates removing an approval gate from a tool that still exists", () => {
+    const cap = (consent?: "asks-first") => [
+      { label: "Refund", detail: "", origin: "tool" as const, source: "tools/refund.ts", ...(consent ? { consent } : {}) },
+    ];
+    const prev = snapshotFromModel(model({ capabilities: cap("asks-first") }));
+    const next = snapshotFromModel(model({ capabilities: cap() }));
+    const d = diffSnapshots(prev, next);
+    const e = d.entries.find((x) => x.kind === "capability" && x.change === "changed");
+    expect(e?.risk).toBe("elevated");
+    expect(e?.summary).toContain("no longer asks first");
+  });
+
+  it("treats newly gating an existing tool as routine", () => {
+    const cap = (consent?: "asks-first") => [
+      { label: "Refund", detail: "", origin: "tool" as const, source: "tools/refund.ts", ...(consent ? { consent } : {}) },
+    ];
+    const prev = snapshotFromModel(model({ capabilities: cap() }));
+    const next = snapshotFromModel(model({ capabilities: cap("asks-first") }));
+    const d = diffSnapshots(prev, next);
+    const e = d.entries.find((x) => x.kind === "capability" && x.change === "changed");
+    expect(e?.risk).toBe("routine");
+    expect(e?.summary).toContain("now asks first");
+  });
+
   it("does not flag restrictions when the baseline predates tracking", () => {
     const prev: CapabilitySnapshot = { ...base, restrictions: undefined };
     const next = snapshotFromModel(

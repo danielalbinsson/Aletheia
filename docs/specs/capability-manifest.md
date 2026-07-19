@@ -198,3 +198,31 @@ verified-from-build. Nothing is inferred silently; if a value is unknown, say
 
 Dependency: blocks/feeds `diff-on-deploy.md` — both diff and gate should run on
 this manifest, so land P0 here first.
+
+## Addendum — Consent from the sidecar (2026-07)
+
+Goal 2 asks the portrait to show, per capability, *whether it needs approval to
+run*. eve still does not serialize `approval` into the compiled manifest (checked
+against 0.15.5 and 0.25.2), so it cannot be sourced the way tools/reach/schedules
+are. Rather than drop the goal or fake verification, consent is read from a
+build-stable sidecar:
+
+```
+agent/.aletheia/consent.json
+{ "gated": { "request_refund": "charges the customer's payment method" } }
+```
+
+Rules:
+
+- **Not verified.** Consent is always rendered as *source-declared*, never
+  *verified from build*. The honesty contract is intact: the manifest remains the
+  only source of verified facts.
+- **Two readers, one fact.** The app reads the sidecar (and, as a convenience,
+  parses an `approval:` field from tool source); the CLI/PR-check reads the
+  sidecar only, because it is the portable, build-stable record.
+- **The seam.** `applyManifest` overlays sidecar consent onto the manifest-verified
+  capability, matched by logical path — verified existence + declared consent.
+- **Gating the gate.** `capabilityDiff` treats *removing* a gate from an existing
+  tool as elevated (authority expanded); adding one is routine.
+- **Forward path.** If a future eve serializes approval, `manifestAdapter` sets
+  `consent` directly and the label flips to verified with no other change.

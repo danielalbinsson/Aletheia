@@ -38,11 +38,19 @@ const modules = import.meta.glob("/agent/**/*.{ts,md}", {
   eager: true,
 }) as Record<string, string>;
 
+// The consent sidecar lives under a dot-directory, which the main glob skips.
+// Read it explicitly so approval facts are legible in the app too.
+const sidecars = import.meta.glob("/agent/**/.aletheia/*.json", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+}) as Record<string, string>;
+
 /** Build-time project from import.meta.glob (static bundle). */
 export function loadRawProject(): RawProject | null {
   const files: Record<string, string> = {};
 
-  for (const [absPath, contents] of Object.entries(modules)) {
+  for (const [absPath, contents] of Object.entries({ ...modules, ...sidecars })) {
     const m = absPath.match(/^\/agent\/(.+)$/);
     if (!m) continue;
     files[m[1]] = contents;

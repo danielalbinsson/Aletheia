@@ -314,10 +314,26 @@ export function mapManifest(m: CompiledManifest): ManifestFacts {
  * still overwrite — "verifiably zero connections" is a real fact.
  */
 export function applyManifest<T extends AgentModel>(base: T, facts: ManifestFacts): T {
+  // The seam: capability existence, labels, and schemas are manifest-verified,
+  // but eve doesn't serialize approval — so consent (asks-first + why) is carried
+  // over from the source-parsed base, matched by the tool's logical path. The
+  // portrait shows verified capabilities with a source-declared consent badge.
+  const consentBySource = new Map(
+    base.capabilities
+      .filter((c) => c.consent)
+      .map((c) => [c.source, c] as const),
+  );
+  const capabilities = facts.capabilities.map((c) => {
+    const declared = consentBySource.get(c.source);
+    return declared
+      ? { ...c, consent: declared.consent, consentReason: declared.consentReason }
+      : c;
+  });
+
   return {
     ...base,
     runsOn: facts.runsOn ?? base.runsOn,
-    capabilities: facts.capabilities,
+    capabilities,
     reach: facts.reach,
     autonomy: facts.autonomy,
     restrictions: facts.restrictions,

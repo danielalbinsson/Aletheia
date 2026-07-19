@@ -62,6 +62,13 @@ export function SelfPortrait({
               ))}
             </ul>
           )}
+          {agent.capabilities.some((c) => c.consent === "asks-first") && (
+            <p className="consent-note">
+              “asks first” is declared in source (agent/.aletheia/consent.json), not
+              the build manifest — eve doesn’t serialize approval, so this one fact
+              can’t be build-verified.
+            </p>
+          )}
         </Section>
 
         <Section
@@ -162,8 +169,19 @@ function Section({
 function CapabilityItem({ cap }: { cap: Capability }) {
   return (
     <li>
-      <span className="cap-label">{cap.label}</span>
+      <span className="cap-label">
+        {cap.label}
+        {cap.consent === "asks-first" && (
+          <span
+            className="cap-consent"
+            title={cap.consentReason ?? "Requires your approval before running."}
+          >
+            asks first
+          </span>
+        )}
+      </span>
       <span className="cap-detail">{cap.detail}</span>
+      {cap.consentReason && <span className="cap-consent-why">{cap.consentReason}</span>}
       {cap.takes && <span className="cap-takes">takes: {cap.takes}</span>}
     </li>
   );
