@@ -16,6 +16,11 @@ import {
   buildProject as apiBuildProject,
   isProjectApiAvailable,
   saveProject as apiSaveProject,
+  fetchWorkspaces,
+  scanWorkspaces as apiScanWorkspaces,
+  pickWorkspaceFolder as apiPickWorkspaceFolder,
+  setActiveWorkspace as apiSetActiveWorkspace,
+  type WorkspacesResponse,
 } from "../api/projectClient";
 import type { EveBuildResult } from "../server/eveBuild";
 import { parseAgent } from "../parser/eveAdapter";
@@ -49,6 +54,14 @@ interface ProjectStoreValue {
   buildProject: () => Promise<EveBuildResult>;
   clearStatus: () => void;
   refreshProject: () => Promise<void>;
+  /** Discovered agents + which is being inspected (null until loaded). */
+  workspaces: WorkspacesResponse | null;
+  /** True when inspecting an agent other than the working/boot project. */
+  inspectingOther: boolean;
+  scanWorkspaceRoot: (root: string) => Promise<void>;
+  /** Open the native OS folder picker and scan the chosen folder. */
+  pickWorkspaceFolder: () => Promise<void>;
+  selectWorkspace: (path: string) => Promise<void>;
 }
 
 const ProjectStoreContext = createContext<ProjectStoreValue | null>(null);
@@ -63,6 +76,7 @@ export function ProjectStoreProvider({ children }: { children: ReactNode }) {
   const [draftModel, setDraftModel] = useState<AgentModel | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [workspaces, setWorkspaces] = useState<WorkspacesResponse | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // The source-parsed model is the narrative base (intro, motif, theme). When a
@@ -114,9 +128,54 @@ export function ProjectStoreProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const loadWorkspaces = useCallback(async () => {
+    try {
+      setWorkspaces(await fetchWorkspaces());
+    } catch {
+      setWorkspaces(null);
+    }
+  }, []);
+
+  const scanWorkspaceRoot = useCallback(async (root: string) => {
+    setError(null);
+    try {
+      setWorkspaces(await apiScanWorkspaces(root));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Scan failed");
+    }
+  }, []);
+
+  const pickWorkspaceFolder = useCallback(async () => {
+    setError(null);
+    try {
+      const result = await apiPickWorkspaceFolder();
+      if ("canceled" in result) return;
+      setWorkspaces(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Folder picker failed");
+    }
+  }, []);
+
+  const selectWorkspace = useCallback(
+    async (targetPath: string) => {
+      setError(null);
+      try {
+        await apiSetActiveWorkspace(targetPath);
+        await refreshProject();
+        await loadWorkspaces();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Could not switch workspace");
+      }
+    },
+    [refreshProject, loadWorkspaces]
+  );
+
   useEffect(() => {
-    void refreshProject();
-  }, [refreshProject]);
+    void (async () => {
+      await refreshProject();
+      if (await isProjectApiAvailable()) await loadWorkspaces();
+    })();
+  }, [refreshProject, loadWorkspaces]);
 
   useEffect(() => {
     if (!draft) {
@@ -238,6 +297,9 @@ export function ProjectStoreProvider({ children }: { children: ReactNode }) {
 
   const clearStatus = useCallback(() => setStatusMessage(null), []);
 
+  const inspectingOther =
+    workspaces !== null && workspaces.activePath !== workspaces.defaultPath;
+
   const value: ProjectStoreValue = {
     project,
     model,
@@ -259,6 +321,11 @@ export function ProjectStoreProvider({ children }: { children: ReactNode }) {
     buildProject,
     clearStatus,
     refreshProject,
+    workspaces,
+    inspectingOther,
+    scanWorkspaceRoot,
+    pickWorkspaceFolder,
+    selectWorkspace,
   };
 
   return (

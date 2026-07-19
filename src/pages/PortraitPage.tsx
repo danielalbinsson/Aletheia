@@ -1,11 +1,13 @@
 import { Link } from "react-router-dom";
 import { SelfPortrait } from "../components/SelfPortrait";
+import { WorkspaceSwitcher } from "../components/WorkspaceSwitcher";
 import { themeForMotif } from "../theme/personalityTheme";
 import { usePersonalityTheme } from "../theme/usePersonalityTheme";
 import { useProjectStore } from "../store/ProjectStore";
 
 export function PortraitPage() {
-  const { model, verified, loading, apiAvailable } = useProjectStore();
+  const { model, verified, loading, apiAvailable, inspectingOther, workspaces } =
+    useProjectStore();
 
   usePersonalityTheme(model?.theme ?? themeForMotif("form"));
 
@@ -41,20 +43,36 @@ export function PortraitPage() {
           </Link>
           <span className="wordmark-sub">see your agent</span>
         </div>
+        {apiAvailable && <WorkspaceSwitcher />}
         {apiAvailable && (
           <div className="topbar-actions">
-            <Link to="/run" className="btn-ghost">
-              Run
-            </Link>
-            <Link to="/observe" className="btn-ghost">
-              Observe
-            </Link>
-            <Link to="/edit" className="btn-ghost">
-              Edit
-            </Link>
+            {inspectingOther ? (
+              <span className="topbar-note" title="Edit, Run and Observe act on the working project. Switch back to it to use them.">
+                Read-only inspection
+              </span>
+            ) : (
+              <>
+                <Link to="/run" className="btn-ghost">
+                  Run
+                </Link>
+                <Link to="/observe" className="btn-ghost">
+                  Observe
+                </Link>
+                <Link to="/edit" className="btn-ghost">
+                  Edit
+                </Link>
+              </>
+            )}
           </div>
         )}
       </nav>
+
+      {inspectingOther && workspaces && (
+        <p className="inspect-banner">
+          Inspecting <strong>{model.name}</strong> — read-only. Edit, Run and Observe act on
+          your working project.
+        </p>
+      )}
 
       <SelfPortrait agent={model} verified={verified} key={model.id} />
 

@@ -174,6 +174,59 @@ export async function fetchObservabilitySnapshot(): Promise<ObservabilitySnapsho
   return parseResponse<ObservabilitySnapshot>(res);
 }
 
+export interface DiscoveredAgent {
+  path: string;
+  name: string;
+  isDefault?: boolean;
+}
+
+export interface WorkspacesResponse {
+  scanRoot?: string;
+  /** Absolute path of the workspace currently being inspected. */
+  activePath: string;
+  /** The boot/working workspace path (Edit/Run/Observe always act here). */
+  defaultPath: string;
+  agents: DiscoveredAgent[];
+}
+
+/** List the working agent + any agents discovered under the scan folder. */
+export async function fetchWorkspaces(): Promise<WorkspacesResponse> {
+  const res = await fetch("/api/workspaces");
+  return parseResponse<WorkspacesResponse>(res);
+}
+
+/** Set the folder to scan for eve agents; returns the refreshed agent list. */
+export async function scanWorkspaces(root: string): Promise<WorkspacesResponse> {
+  const res = await fetch("/api/workspaces/scan", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ root }),
+  });
+  return parseResponse<WorkspacesResponse>(res);
+}
+
+/**
+ * Open the OS's native folder picker (via the dev server) and scan the chosen
+ * folder. Returns the refreshed agent list, or `{ canceled: true }` if the user
+ * dismissed the dialog.
+ */
+export async function pickWorkspaceFolder(): Promise<
+  WorkspacesResponse | { canceled: true }
+> {
+  const res = await fetch("/api/workspaces/pick", { method: "POST" });
+  return parseResponse<WorkspacesResponse | { canceled: true }>(res);
+}
+
+/** Switch which agent the portrait + capability review inspect. */
+export async function setActiveWorkspace(path: string): Promise<{ activePath: string }> {
+  const res = await fetch("/api/workspaces/active", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ path }),
+  });
+  return parseResponse<{ activePath: string }>(res);
+}
+
 export async function isProjectApiAvailable(): Promise<boolean> {
   try {
     const res = await fetch("/api/project");

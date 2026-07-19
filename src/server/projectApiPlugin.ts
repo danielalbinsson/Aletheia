@@ -28,6 +28,16 @@ import {
   runEveInfo,
   runEveManifest,
 } from "./eveObservability";
+import {
+  discoverAgents,
+  expandHome,
+  isEveWorkspace,
+  loadState,
+  readAgentName,
+  saveState,
+  type DiscoveredAgent,
+} from "./workspaceRegistry";
+import { pickFolder } from "./nativeFolderPicker";
 
 const FILE_RE = /^[\w./-]+\.(ts|md)$/;
 
@@ -130,22 +140,133 @@ async function readJsonBody(req: IncomingMessage): Promise<unknown> {
 }
 
 export function projectApiPlugin(agentRoot: string, workspaceRoot: string): Plugin {
+  // The workspace Aletheia is *inspecting* (portrait + capability review). It
+  // defaults to the boot workspace but can be pointed at any discovered agent.
+  // Mutating and dev/observe endpoints always act on the boot workspace — the
+  // "working project" — so inspection is read-only and can't touch other agents.
+  let hydrated = false;
+  let scanRoot: string | undefined;
+  let activePath: string | undefined; // undefined = the default/boot workspace
+
+  async function hydrate(): Promise<void> {
+    if (hydrated) return;
+    const s = await loadState();
+    scanRoot = s.scanRoot;
+    activePath = s.activePath;
+    hydrated = true;
+  }
+
+  const currentActive = (): string => activePath ?? workspaceRoot;
+
+  /** Roots for the inspected workspace (falls back to boot if active is gone). */
+  async function inspectRoots(): Promise<{ workspaceRoot: string; agentRoot: string }> {
+    await hydrate();
+    const target = activePath;
+    if (target && target !== workspaceRoot && (await isEveWorkspace(target))) {
+      return { workspaceRoot: target, agentRoot: path.join(target, "agent") };
+    }
+    return { workspaceRoot, agentRoot };
+  }
+
+  /** The boot/default agent plus any agents discovered under the scan root. */
+  async function listAgents(): Promise<DiscoveredAgent[]> {
+    await hydrate();
+    const list: DiscoveredAgent[] = [
+      { path: workspaceRoot, name: await readAgentName(workspaceRoot), isDefault: true },
+    ];
+    if (scanRoot) {
+      for (const a of await discoverAgents(scanRoot)) {
+        if (a.path !== workspaceRoot) list.push(a);
+      }
+    }
+    return list;
+  }
+
   return {
     name: "aletheia-project-api",
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
-        if (!req.url?.startsWith("/api/project")) return next();
+        if (!req.url?.startsWith("/api/")) return next();
 
         const url = new URL(req.url, "http://localhost");
         const parts = url.pathname.split("/").filter(Boolean);
-        if (parts[0] !== "api" || parts[1] !== "project") return next();
+        if (parts[0] !== "api") return next();
 
         const method = req.method ?? "GET";
-        const sub = parts[2];
 
         try {
+          // ── Workspace registry: list / scan / switch the inspected agent ──
+          if (parts[1] === "workspaces") {
+            if (!parts[2] && method === "GET") {
+              return sendJson(res, 200, {
+                scanRoot,
+                activePath: currentActive(),
+                defaultPath: workspaceRoot,
+                agents: await listAgents(),
+              });
+            }
+            if (parts[2] === "pick" && method === "POST") {
+              // Open the OS folder dialog, then scan the chosen folder so the
+              // agent list is ready in one step.
+              const picked = await pickFolder();
+              if (picked.error) return sendJson(res, 400, { error: picked.error });
+              if (picked.canceled || !picked.path) {
+                return sendJson(res, 200, { canceled: true });
+              }
+              scanRoot = path.resolve(expandHome(picked.path));
+              await saveState({ scanRoot, activePath });
+              return sendJson(res, 200, {
+                scanRoot,
+                activePath: currentActive(),
+                defaultPath: workspaceRoot,
+                agents: await listAgents(),
+              });
+            }
+            if (parts[2] === "scan" && method === "POST") {
+              const body = (await readJsonBody(req)) as { root?: string };
+              if (!body.root) return sendJson(res, 400, { error: "root is required" });
+              const root = path.resolve(expandHome(body.root));
+              try {
+                if (!(await fs.stat(root)).isDirectory()) throw new Error("not a dir");
+              } catch {
+                return sendJson(res, 400, { error: `Not a directory: ${root}` });
+              }
+              scanRoot = root;
+              await saveState({ scanRoot, activePath });
+              return sendJson(res, 200, {
+                scanRoot,
+                activePath: currentActive(),
+                defaultPath: workspaceRoot,
+                agents: await listAgents(),
+              });
+            }
+            if (parts[2] === "active" && method === "POST") {
+              const body = (await readJsonBody(req)) as { path?: string };
+              const target = body.path ? path.resolve(expandHome(body.path)) : workspaceRoot;
+              // Only the default or a discovered agent may be activated — this
+              // keeps the browser from pointing the file reader at any path.
+              const agents = await listAgents();
+              const known = agents.some((a) => a.path === target);
+              if (!known || !(await isEveWorkspace(target))) {
+                return sendJson(res, 400, {
+                  error: `Not a known eve agent workspace: ${target}`,
+                });
+              }
+              activePath = target === workspaceRoot ? undefined : target;
+              await saveState({ scanRoot, activePath });
+              return sendJson(res, 200, { activePath: currentActive() });
+            }
+            return sendJson(res, 405, { error: "Method not allowed" });
+          }
+
+          if (parts[1] !== "project") return next();
+
+          const sub = parts[2];
           if (!sub && method === "GET") {
-            const project = await readProjectDir(agentRoot);
+            // Read follows the inspected workspace so the portrait can show any
+            // discovered agent.
+            const { agentRoot: inspectAgentRoot } = await inspectRoots();
+            const project = await readProjectDir(inspectAgentRoot);
             if (Object.keys(project.files).length === 0) {
               return sendJson(res, 404, { error: "Project not initialized" });
             }
@@ -183,7 +304,8 @@ export function projectApiPlugin(agentRoot: string, workspaceRoot: string): Plug
           }
 
           if (sub === "manifest" && method === "GET") {
-            const result = await runEveManifest(workspaceRoot);
+            const { workspaceRoot: inspectRoot } = await inspectRoots();
+            const result = await runEveManifest(inspectRoot);
             return sendJson(res, 200, result);
           }
 
@@ -194,8 +316,10 @@ export function projectApiPlugin(agentRoot: string, workspaceRoot: string): Plug
 
           if (sub === "deploy" && parts[3] === "diff" && method === "GET") {
             // Capability review: diff the current built manifest against the
-            // last deployed snapshot. Drives the pre-deploy review gate.
-            const manifest = await runEveManifest(workspaceRoot);
+            // last deployed snapshot. Follows the inspected workspace.
+            const { workspaceRoot: inspectRoot, agentRoot: inspectAgentRoot } =
+              await inspectRoots();
+            const manifest = await runEveManifest(inspectRoot);
             if (!manifest.built || !manifest.facts) {
               return sendJson(res, 200, {
                 ok: false,
@@ -203,9 +327,9 @@ export function projectApiPlugin(agentRoot: string, workspaceRoot: string): Plug
                 error: manifest.error ?? "Build the agent to review capability changes.",
               });
             }
-            const prev = await readDeployedSnapshot(agentRoot);
+            const prev = await readDeployedSnapshot(inspectAgentRoot);
             const current = snapshotFromFacts(manifest.facts);
-            const policy = await readPolicy(workspaceRoot);
+            const policy = await readPolicy(inspectRoot);
             return sendJson(res, 200, {
               ok: true,
               built: true,
