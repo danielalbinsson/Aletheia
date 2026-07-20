@@ -200,6 +200,51 @@ code { font-family: var(--sans); color: var(--muted); }
   font-size: 12px;
 }
 
+/* ── Manifesto ──────────────────────────────────────────────────────── */
+.manifesto {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 24px 0 96px;
+  font-family: var(--sans);
+  color: var(--ink-soft);
+}
+.manifesto h1 {
+  font-size: 40px;
+  line-height: 1.1;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  margin: 8px 0 4px;
+}
+.manifesto h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 44px 0 12px;
+}
+.manifesto h3 { font-size: 16px; font-weight: 600; color: var(--ink); margin: 28px 0 8px; }
+.manifesto p {
+  font-size: 17px;
+  line-height: 1.65;
+  margin: 0 0 18px;
+}
+.manifesto em { font-style: italic; }
+.manifesto > p:first-of-type em,
+.manifesto p em:only-child { color: var(--muted); }
+.manifesto strong { color: var(--ink); font-weight: 600; }
+.manifesto a { color: var(--accent); text-underline-offset: 3px; }
+.manifesto ul { margin: 0 0 18px; padding-left: 20px; }
+.manifesto li { font-size: 17px; line-height: 1.6; margin: 0 0 6px; }
+.manifesto hr { border: none; border-top: 1px solid var(--hair); margin: 40px 0; }
+.manifesto code {
+  font-family: var(--mono);
+  font-size: 0.88em;
+  color: var(--ink-soft);
+  background: var(--bg-deep);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
 /* ── Capability review ──────────────────────────────────────────────── */
 .review-body { max-width: 720px; margin: 0 auto; padding: 8px 0 64px; }
 .review-title {
