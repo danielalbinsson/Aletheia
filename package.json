@@ -25,7 +25,7 @@
     "@openrouter/ai-sdk-provider": "^2.10.0",
     "@uiw/react-codemirror": "^4.25.10",
     "ai": "^7.0.2",
-    "eve": "^0.15.5",
+    "eve": "^0.18.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.18.0",

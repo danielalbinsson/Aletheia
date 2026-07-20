@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "launch-readiness-review": {
+      "source": "sylphxai/skills",
+      "sourceType": "github",
+      "skillPath": "skills/launch-readiness-review/SKILL.md",
+      "computedHash": "e3a87469f98b4ba60b74283d48dc90576d7ed086a888564f140d26148b59b7e3"
+    }
+  }
+}

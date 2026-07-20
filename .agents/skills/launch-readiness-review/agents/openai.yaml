@@ -1,0 +1,4 @@
+interface:
+  display_name: "Launch Readiness Review"
+  short_description: "Review product launch readiness"
+  default_prompt: "Use $launch-readiness-review to handle a realistic product task in this domain."
