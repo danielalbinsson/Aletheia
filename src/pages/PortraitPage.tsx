@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import { AppFooter } from "../components/AppFooter";
+import { AppNav } from "../components/AppNav";
 import { SelfPortrait } from "../components/SelfPortrait";
 import { WorkspaceSwitcher } from "../components/WorkspaceSwitcher";
 import { themeForMotif } from "../theme/personalityTheme";
@@ -13,6 +15,7 @@ export function PortraitPage() {
   if (loading) {
     return (
       <main className="app empty">
+        <AppNav subtitle="portrait" />
         <p>Loading agent…</p>
       </main>
     );
@@ -21,9 +24,15 @@ export function PortraitPage() {
   if (!model) {
     return (
       <main className="app empty">
+        <AppNav subtitle="portrait" />
         <p>
-          No agent found. Point Aletheia at a folder containing an eve agent
-          (<code>agent/agent.ts</code>).
+          No agent found. Point Aletheia at a folder containing an eve agent (
+          <code>agent/agent.ts</code>).
+        </p>
+        <p className="empty-cta">
+          <Link to="/" className="btn-ghost">
+            ← About
+          </Link>
         </p>
       </main>
     );
@@ -31,28 +40,10 @@ export function PortraitPage() {
 
   return (
     <main className="app">
-      <nav className="topbar">
-        <div className="wordmark">
-          <Link to="/" className="wordmark-link">
-            Aletheia
-          </Link>
-          <span className="wordmark-sub">see what an agent can do</span>
-        </div>
-        {apiAvailable && <WorkspaceSwitcher />}
-        {apiAvailable && (
-          <div className="topbar-actions">
-            <Link to="/gallery" className="btn-ghost">
-              Gallery
-            </Link>
-            <Link to="/manifesto" className="btn-ghost">
-              Manifesto
-            </Link>
-            <Link to="/review" className="btn-primary">
-              Capability review
-            </Link>
-          </div>
-        )}
-      </nav>
+      <AppNav
+        subtitle="portrait"
+        center={apiAvailable ? <WorkspaceSwitcher /> : undefined}
+      />
 
       <SelfPortrait agent={model} verified={verified} key={model.id} />
 
@@ -61,6 +52,7 @@ export function PortraitPage() {
           Read from <code>agent/</code> — the files are the truth.
         </span>
       </footer>
+      <AppFooter />
     </main>
   );
 }

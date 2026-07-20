@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { AppFooter } from "../components/AppFooter";
+import { AppNav } from "../components/AppNav";
 import manifestoMd from "../../MANIFESTO.md?raw";
 
 /** Inline markdown: **bold**, *em*, `code`, [text](url). Controlled content. */
@@ -60,21 +61,9 @@ function renderMarkdown(md: string): ReactNode[] {
 export function ManifestoPage() {
   return (
     <main className="app manifesto-app">
-      <nav className="topbar">
-        <div className="wordmark">
-          <Link to="/" className="wordmark-link">
-            Aletheia
-          </Link>
-          <span className="wordmark-sub">manifesto</span>
-        </div>
-        <div className="topbar-actions">
-          <Link to="/" className="btn-ghost">
-            ← Portrait
-          </Link>
-        </div>
-      </nav>
-
+      <AppNav subtitle="manifesto" />
       <article className="manifesto">{renderMarkdown(manifestoMd)}</article>
+      <AppFooter />
     </main>
   );
 }

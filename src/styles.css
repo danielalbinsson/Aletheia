@@ -70,9 +70,48 @@ code { font-family: var(--sans); color: var(--muted); }
   display: flex;
   align-items: baseline;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px 24px;
   padding: 34px 0 26px;
   margin-bottom: 28px;
   border-bottom: 1px solid var(--hair);
+}
+
+.topbar-center {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.topbar-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  align-items: baseline;
+}
+
+.topbar-nav-link {
+  appearance: none;
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+.topbar-nav-link:hover {
+  color: var(--ink-soft);
+  border-color: var(--hair);
+}
+
+.topbar-nav-link.active {
+  color: var(--accent);
+  border-color: var(--accent-dim);
+  background: var(--accent-dim);
 }
 
 .wordmark {
@@ -301,6 +340,144 @@ code { font-family: var(--sans); color: var(--muted); }
   background: var(--bg-deep);
   padding: 1px 5px;
   border-radius: 4px;
+}
+
+/* ── Home & shared prose ────────────────────────────────────────────── */
+.prose {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 8px 0 48px;
+  font-family: var(--sans);
+  color: var(--ink-soft);
+}
+
+.prose h1 {
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 1.12;
+  color: var(--ink);
+  margin: 0 0 20px;
+  letter-spacing: -0.02em;
+}
+
+.prose h2 {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 40px 0 12px;
+}
+
+.prose p {
+  font-size: 17px;
+  line-height: 1.65;
+  margin: 0 0 16px;
+}
+
+.prose ul {
+  margin: 0 0 18px;
+  padding-left: 20px;
+}
+
+.prose li {
+  font-size: 17px;
+  line-height: 1.6;
+  margin: 0 0 8px;
+}
+
+.prose em { font-style: italic; }
+.prose strong { color: var(--ink); font-weight: 600; }
+.prose a { color: var(--accent); text-underline-offset: 3px; }
+.prose code {
+  font-family: var(--mono);
+  font-size: 0.9em;
+  color: var(--muted);
+}
+
+.home-hero { margin-bottom: 8px; }
+
+.home-epigraph {
+  font-size: 15px !important;
+  color: var(--muted) !important;
+  margin-bottom: 28px !important;
+}
+
+.home-lede { font-size: 18px !important; }
+
+.home-tagline {
+  font-size: 16px !important;
+  color: var(--muted) !important;
+  font-style: italic;
+}
+
+.home-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 28px 0 8px;
+}
+
+.home-note {
+  padding: 14px 16px;
+  border-left: 3px solid var(--hair-strong);
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 15px !important;
+  color: var(--muted) !important;
+}
+
+.home-note-ok {
+  border-left-color: var(--accent);
+  color: var(--ink-soft) !important;
+}
+
+.home-code {
+  margin: 0 0 18px;
+  padding: 16px 18px;
+  border-radius: 10px;
+  border: 1px solid var(--hair);
+  background: var(--bg-deep);
+  overflow-x: auto;
+}
+
+.home-code code {
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  white-space: pre;
+}
+
+.home-routes {
+  list-style: none;
+  padding: 0;
+}
+
+.home-routes li {
+  margin: 0 0 10px;
+}
+
+.privacy-updated {
+  font-size: 14px !important;
+  color: var(--muted) !important;
+  margin-top: -8px !important;
+}
+
+.site-footer {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 24px 0 64px;
+  border-top: 1px solid var(--hair);
+  font-size: 13px;
+  color: var(--faint);
+  letter-spacing: 0.04em;
+}
+
+.site-footer a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.site-footer a:hover {
+  color: var(--accent);
 }
 
 /* ── Capability review ──────────────────────────────────────────────── */
@@ -650,6 +827,7 @@ code { font-family: var(--sans); color: var(--muted); }
   .portrait-col { position: static; }
   .agent-name { font-size: 42px; }
   .topbar { flex-direction: column; gap: 18px; align-items: flex-start; }
+  .topbar-nav { width: 100%; }
   .autonomy-line { grid-template-columns: 1fr; gap: 2px; }
   .editor-layout { grid-template-columns: 1fr; }
   .editor-preview-inner .self-portrait { grid-template-columns: 1fr; }

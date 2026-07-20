@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom";
+import { AppFooter } from "../components/AppFooter";
+import { AppNav } from "../components/AppNav";
 import heroDiff from "../../examples/gallery/capability-review-authority-expanded.jpg";
 import portraitDesignQa from "../../examples/gallery/portrait-design-qa-agent.jpg";
 import portraitSupportBot from "../../examples/gallery/portrait-support-bot.jpg";
@@ -41,19 +42,7 @@ const ENTRIES: Entry[] = [
 export function GalleryPage() {
   return (
     <main className="app gallery-app">
-      <nav className="topbar">
-        <div className="wordmark">
-          <Link to="/" className="wordmark-link">
-            Aletheia
-          </Link>
-          <span className="wordmark-sub">gallery</span>
-        </div>
-        <div className="topbar-actions">
-          <Link to="/" className="btn-ghost">
-            ← Portrait
-          </Link>
-        </div>
-      </nav>
+      <AppNav subtitle="gallery" />
 
       <header className="gallery-intro">
         <h1>Four agents, read by Aletheia</h1>
@@ -89,6 +78,7 @@ export function GalleryPage() {
           </figure>
         ))}
       </div>
+      <AppFooter />
     </main>
   );
 }

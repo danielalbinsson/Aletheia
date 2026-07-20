@@ -2,6 +2,7 @@
   "name": "aletheia",
   "private": true,
   "version": "0.2.0",
+  "license": "MIT",
   "type": "module",
   "description": "Aletheia — see your agent. Renders an eve agent as a first-person self-portrait.",
   "engines": {

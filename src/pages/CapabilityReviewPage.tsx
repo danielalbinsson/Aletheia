@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { AppFooter } from "../components/AppFooter";
+import { AppNav } from "../components/AppNav";
+import { WorkspaceSwitcher } from "../components/WorkspaceSwitcher";
 import { fetchReview, type CapabilityReviewResponse } from "../api/projectClient";
 import { useProjectStore } from "../store/ProjectStore";
 import type { DiffEntry } from "../parser/capabilityDiff";
@@ -51,19 +53,10 @@ export function CapabilityReviewPage() {
 
   return (
     <main className="app review-app">
-      <nav className="topbar">
-        <div className="wordmark">
-          <Link to="/" className="wordmark-link">
-            Aletheia
-          </Link>
-          <span className="wordmark-sub">capability review</span>
-        </div>
-        <div className="topbar-actions">
-          <Link to="/" className="btn-ghost">
-            ← Portrait
-          </Link>
-        </div>
-      </nav>
+      <AppNav
+        subtitle="review"
+        center={apiAvailable ? <WorkspaceSwitcher /> : undefined}
+      />
 
       <section className="review-body">
         <h1 className="review-title">
@@ -168,6 +161,7 @@ export function CapabilityReviewPage() {
           </>
         )}
       </section>
+      <AppFooter />
     </main>
   );
 }

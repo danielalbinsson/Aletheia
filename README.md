@@ -47,10 +47,12 @@ edits your agent — inspection is read-only.
 
 | Route | What it shows |
 | ----- | ------------- |
-| `/` | The agent's self-portrait |
+| `/` | About — what Aletheia is and how to use it |
+| `/portrait` | The agent's self-portrait |
 | `/review` | Capability review — how its authority changed |
 | `/gallery` | Example agents read by Aletheia |
 | `/manifesto` | The POV behind the project |
+| `/privacy` | Privacy note |
 
 ## The honesty contract — the core idea
 
@@ -177,8 +179,8 @@ be hosted:
 pnpm build          # → dist/
 ```
 
-A `vercel.json` is included (SPA rewrites so `/manifesto`, `/gallery`, `/review`
-resolve on refresh); deploy with the Vercel CLI or by connecting the repo. The
+A `vercel.json` is included (SPA rewrites so `/portrait`, `/manifesto`, `/gallery`,
+`/review`, and `/privacy` resolve on refresh); deploy with the Vercel CLI or by connecting the repo. The
 hosted portrait shows the bundled demo agent *from source* — verified facts and
 the live "point at any agent" inspection only run locally (next).
 
