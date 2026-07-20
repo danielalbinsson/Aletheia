@@ -41,7 +41,7 @@ export function PortraitPage() {
         {apiAvailable && <WorkspaceSwitcher />}
         {apiAvailable && (
           <div className="topbar-actions">
-            <Link to="/review" className="btn-ghost">
+            <Link to="/review" className="btn-primary">
               Capability review
             </Link>
           </div>

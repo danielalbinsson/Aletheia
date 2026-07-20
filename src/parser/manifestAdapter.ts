@@ -309,7 +309,9 @@ export function mapManifest(m: CompiledManifest): ManifestFacts {
   return {
     runsOn: m.config?.model?.id,
     description: m.config?.description,
-    name: instructions ? parseName(instructions) : undefined,
+    // Prefer eve's verified agent name; fall back to the instructions H1. Avoids
+    // a generic H1 ("# Agent") masking the real name from the compiled manifest.
+    name: m.config?.name?.trim() || (instructions ? parseName(instructions) : undefined),
     essence: instructions ? parseEssence(instructions) : undefined,
     motif: deriveMotif(`${instructions}\n${description}`),
     mind: {
@@ -349,6 +351,7 @@ export function applyManifest<T extends AgentModel>(base: T, facts: ManifestFact
 
   return {
     ...base,
+    name: facts.name ?? base.name,
     runsOn: facts.runsOn ?? base.runsOn,
     capabilities,
     reach: facts.reach,

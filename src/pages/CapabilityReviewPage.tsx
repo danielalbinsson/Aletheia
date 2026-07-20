@@ -79,10 +79,35 @@ export function CapabilityReviewPage() {
         {error && <p className="review-note review-error">{error}</p>}
 
         {review && !loading && !review.built && (
-          <p className="review-note">
-            {review.error ??
-              "This agent has no compiled manifest. Build it in its own project to review verified capability changes."}
-          </p>
+          <div className="review-group">
+            <p className="review-verdict tone-routine">
+              No compiled manifest yet — showing capabilities <strong>from source</strong>.
+              Build the agent (in its own project) to verify these and diff authority changes.
+            </p>
+            {model && model.capabilities.length > 0 && (
+              <>
+                <h2>It can — from source</h2>
+                <ul className="review-list">
+                  {model.capabilities.map((c, i) => (
+                    <li key={i}>{c.label}</li>
+                  ))}
+                </ul>
+              </>
+            )}
+            {model && model.reach.length > 0 && (
+              <>
+                <h2>And reach — from source</h2>
+                <ul className="review-list">
+                  {model.reach.map((r, i) => (
+                    <li key={i}>
+                      {r.label}
+                      {r.detail ? ` (${r.detail})` : ""}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
         )}
 
         {review?.ok && review.diff && (
