@@ -144,7 +144,7 @@ verified-from-build. Nothing is inferred silently; if a value is unknown, say
 - **`eveAdapter.ts` stays the swap point** but its job changes from "regex
   source" to "map eve's manifest." The `AgentModel` gains `approval` on
   `Capability` and keeps `Reach`/`Autonomy` but sourced differently.
-- **Examples rewritten to real eve shape.** The beacon/ledger/margaux examples
+- **Examples rewritten to real eve shape.** The beacon/ledger/design-qa-agent examples
   currently use invented fields; they must be rebuilt as valid eve agents (real
   `defineTool`/`defineSchedule`, real `connect(...)` connections) so the manifest
   has truthful input. Ties into the open "replace placeholder agent" thread.

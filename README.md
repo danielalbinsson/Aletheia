@@ -181,7 +181,7 @@ pnpm build          # → dist/
 
 A `vercel.json` is included (SPA rewrites so `/portrait`, `/manifesto`, `/gallery`,
 `/review`, and `/privacy` resolve on refresh); deploy with the Vercel CLI or by connecting the repo. The
-hosted portrait shows the bundled demo agent *from source* — verified facts and
+hosted portrait shows the bundled [design-qa-agent](https://github.com/danielalbinsson/design-qa-agent) *from source* — verified facts and
 the live "point at any agent" inspection only run locally (next).
 
 ## Why it runs locally
