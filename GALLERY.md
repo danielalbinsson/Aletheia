@@ -5,6 +5,14 @@ is generated from the agent's own compiled manifest, every fact labelled
 *verified from build*. Point Aletheia at a folder of agents and this is what you
 see.
 
+## The moment that matters: authority expanded
+
+Agents change. The review flags it when a new version gives the agent **more
+power** — new external reach, a new delegation, a lifted restriction, a removed
+approval gate — and asks a human to look. Routine changes pass quietly.
+
+![Capability review — authority expanded](examples/gallery/capability-review-authority-expanded.jpg)
+
 ## design-qa-agent
 
 An **orchestrator**: it holds no tools of its own — it directs three specialist

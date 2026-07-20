@@ -217,6 +217,12 @@ code { font-family: var(--sans); color: var(--muted); }
   margin: 0;
 }
 .gallery-intro em { font-style: italic; color: var(--muted); }
+.gallery-hero {
+  max-width: 840px;
+  margin: 0 auto 44px;
+}
+.gallery-hero .gallery-cap { text-align: center; max-width: 620px; margin: 14px auto 0; }
+.gallery-hero .gallery-name { text-align: center; }
 .gallery-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

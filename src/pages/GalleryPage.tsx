@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import heroDiff from "../../examples/gallery/capability-review-authority-expanded.jpg";
 import portraitDesignQa from "../../examples/gallery/portrait-design-qa-agent.jpg";
 import portraitSupportBot from "../../examples/gallery/portrait-support-bot.jpg";
 import portraitCodeReviewer from "../../examples/gallery/portrait-code-reviewer.jpg";
@@ -62,6 +63,20 @@ export function GalleryPage() {
           folder of agents and this is what you see.
         </p>
       </header>
+
+      <figure className="gallery-hero">
+        <img
+          className="gallery-shot"
+          src={heroDiff}
+          alt="Aletheia capability review flagging that an agent's authority expanded"
+        />
+        <figcaption className="gallery-cap">
+          <span className="gallery-name">the moment that matters</span>
+          Agents change. When a new version gains external reach, a delegation, or drops an
+          approval gate, the review says so — <em>authority expanded, review required</em> —
+          and asks a human to look. Routine changes pass quietly.
+        </figcaption>
+      </figure>
 
       <div className="gallery-grid">
         {ENTRIES.map((e) => (
