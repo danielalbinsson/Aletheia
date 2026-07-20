@@ -6,15 +6,14 @@ import { usePersonalityTheme } from "../theme/usePersonalityTheme";
 import { useProjectStore } from "../store/ProjectStore";
 
 export function PortraitPage() {
-  const { model, verified, loading, apiAvailable, inspectingOther, workspaces } =
-    useProjectStore();
+  const { model, verified, loading, apiAvailable } = useProjectStore();
 
   usePersonalityTheme(model?.theme ?? themeForMotif("form"));
 
   if (loading) {
     return (
       <main className="app empty">
-        <p>Loading project…</p>
+        <p>Loading agent…</p>
       </main>
     );
   }
@@ -23,13 +22,9 @@ export function PortraitPage() {
     return (
       <main className="app empty">
         <p>
-          No agent project found. Initialize <code>agent/</code> to get started.
+          No agent found. Point Aletheia at a folder containing an eve agent
+          (<code>agent/agent.ts</code>).
         </p>
-        {apiAvailable && (
-          <Link to="/init" className="btn-primary empty-cta">
-            Initialize agent project
-          </Link>
-        )}
       </main>
     );
   }
@@ -41,38 +36,17 @@ export function PortraitPage() {
           <Link to="/" className="wordmark-link">
             Aletheia
           </Link>
-          <span className="wordmark-sub">see your agent</span>
+          <span className="wordmark-sub">see what an agent can do</span>
         </div>
         {apiAvailable && <WorkspaceSwitcher />}
         {apiAvailable && (
           <div className="topbar-actions">
-            {inspectingOther ? (
-              <span className="topbar-note" title="Edit, Run and Observe act on the working project. Switch back to it to use them.">
-                Read-only inspection
-              </span>
-            ) : (
-              <>
-                <Link to="/run" className="btn-ghost">
-                  Run
-                </Link>
-                <Link to="/observe" className="btn-ghost">
-                  Observe
-                </Link>
-                <Link to="/edit" className="btn-ghost">
-                  Edit
-                </Link>
-              </>
-            )}
+            <Link to="/review" className="btn-ghost">
+              Capability review
+            </Link>
           </div>
         )}
       </nav>
-
-      {inspectingOther && workspaces && (
-        <p className="inspect-banner">
-          Inspecting <strong>{model.name}</strong> — read-only. Edit, Run and Observe act on
-          your working project.
-        </p>
-      )}
 
       <SelfPortrait agent={model} verified={verified} key={model.id} />
 
