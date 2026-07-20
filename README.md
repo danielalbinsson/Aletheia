@@ -209,6 +209,6 @@ expose it), and anything Aletheia would have to guess at.
 
 ---
 
-Built by [Daniel Albinsson](mailto:daniel.albinsson@forefront.se) as a study in
+Built by [Daniel Albinsson](mailto:daniel.albinsson@pm.me) as a study in
 **agent legibility** — designing how humans understand and trust the agents they
 delegate to.

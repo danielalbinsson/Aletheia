@@ -61,7 +61,7 @@ export function PrivacyPage() {
           <h2>Contact</h2>
           <p>
             Questions:{" "}
-            <a href="mailto:daniel.albinsson@forefront.se">daniel.albinsson@forefront.se</a>
+            <a href="mailto:daniel.albinsson@pm.me">daniel.albinsson@pm.me</a>
           </p>
         </section>
       </article>
