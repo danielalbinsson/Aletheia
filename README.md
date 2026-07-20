@@ -16,6 +16,42 @@ deploys it. It only makes it legible.
 
 Not a dashboard. Not a flowchart. A portrait you can trust.
 
+## Quickstart — for eve builders
+
+Aletheia runs on your machine and reads your agents off disk (a browser alone
+can't — see [Why it runs locally](#why-it-runs-locally)). Clone, install, run:
+
+```bash
+git clone https://github.com/<you>/aletheia.git
+cd aletheia
+pnpm install
+pnpm dev            # → http://localhost:5173
+```
+
+Then in the app, click **Browse folder…** and pick a directory (e.g.
+`~/Documents`, or wherever your eve projects live). Aletheia scans it for eve
+agents — any folder containing `agent/agent.ts` — and lists them in the **Agent**
+dropdown. Pick one; its portrait and capability review render for that agent.
+That's the whole loop.
+
+Prefer a fixed target? Set `ALETHEIA_WORKSPACE` in `.env.local`:
+
+```bash
+ALETHEIA_WORKSPACE=/path/to/your/eve-agent
+```
+
+**Requirements:** Node 24+ and pnpm. Node 24 is eve's minimum — it's only needed
+to *build* an agent (`eve build`) so its facts read *verified from build*; until
+then Aletheia shows the honest *from source* view. It never builds, runs, or
+edits your agent — inspection is read-only.
+
+| Route | What it shows |
+| ----- | ------------- |
+| `/` | The agent's self-portrait |
+| `/review` | Capability review — how its authority changed |
+| `/gallery` | Example agents read by Aletheia |
+| `/manifesto` | The POV behind the project |
+
 ## The honesty contract — the core idea
 
 A trust tool that lies is worse than none. So Aletheia is built around one rule:
@@ -70,35 +106,6 @@ docs/calendar rank *medium* — so the review says "now reaches payments," not
   ]
 }
 ```
-
-## Use it
-
-```bash
-pnpm install
-pnpm dev        # http://localhost:5173
-pnpm test       # parser, diff, discovery, and honesty-contract unit tests
-pnpm build      # static portrait bundle in dist/
-```
-
-In the app, click **Browse folder…** and point Aletheia at a directory (e.g.
-`~/Documents`). It scans for eve agents — any folder with `agent/agent.ts` — and
-lets you switch between them from the **Agent** dropdown. Pick one and its
-portrait and capability review render for that agent.
-
-You can also pin a default workspace with `ALETHEIA_WORKSPACE` in `.env.local`:
-
-```bash
-ALETHEIA_WORKSPACE=/path/to/some/eve-agent
-```
-
-Verified facts require a compiled manifest, so an agent shows the *from source*
-view until it's been built (`eve build`, which needs **Node 24+**) in its own
-project. Aletheia never builds it for you — inspection stays read-only.
-
-| Route | What it shows |
-| ----- | ------------- |
-| `/` | The agent's self-portrait |
-| `/review` | Capability review — how its authority changed |
 
 ## Capability review in CI (`aletheia diff`)
 
@@ -160,6 +167,31 @@ always renders the same face.
 | range (breadth of capability, incl. subagents) | surface complexity |
 | domain (personality motif) | accent glyph + texture + highlight color |
 | a hash of its definition | the seed (same agent, same face) |
+
+## Deploy the showcase
+
+The manifesto, gallery, and a demo portrait are fully static, so the showcase can
+be hosted:
+
+```bash
+pnpm build          # → dist/
+```
+
+A `vercel.json` is included (SPA rewrites so `/manifesto`, `/gallery`, `/review`
+resolve on refresh); deploy with the Vercel CLI or by connecting the repo. The
+hosted portrait shows the bundled demo agent *from source* — verified facts and
+the live "point at any agent" inspection only run locally (next).
+
+## Why it runs locally
+
+The interactive inspector isn't hosted, by design. Running `pnpm dev` starts a
+small Node server on your machine that does the filesystem work — reading
+`agent/`, the compiled manifest, and opening the folder picker — and the page is
+its UI. A deployed website is only the browser half, and browsers deliberately
+sandbox away raw filesystem access (any site could otherwise read your disk). So
+"point Aletheia at a local folder" needs a program running on your machine —
+which is exactly what the local dev server is. The hosted site is the showcase;
+the tool runs where your agents live.
 
 ## What's deliberately out
 

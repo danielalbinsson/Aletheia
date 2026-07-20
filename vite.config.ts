@@ -18,6 +18,8 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react(), projectApiPlugin(agentRoot, workspaceRoot)],
-    base: "./",
+    // Root-absolute base so client-routed deep links (/manifesto, /gallery,
+    // /review) resolve their assets correctly on a static host.
+    base: "/",
   };
 });

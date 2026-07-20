@@ -90,9 +90,14 @@ export async function setActiveWorkspace(path: string): Promise<{ activePath: st
 }
 
 export async function isProjectApiAvailable(): Promise<boolean> {
+  // Only true when the dev-server API answers. On a static host the SPA rewrite
+  // serves index.html for /api/project (HTTP 200 HTML), so we also require a
+  // JSON content-type — otherwise the app would think the API exists and try to
+  // parse HTML as project data.
   try {
     const res = await fetch("/api/project");
-    return res.ok || res.status === 404;
+    const isJson = (res.headers.get("content-type") ?? "").includes("application/json");
+    return isJson && (res.ok || res.status === 404);
   } catch {
     return false;
   }
