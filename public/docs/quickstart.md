@@ -25,8 +25,8 @@ ALETHEIA_WORKSPACE=/path/to/your/eve-agent
 ## Headless capability review (CI)
 
 ```bash
-pnpm build:cli
-aletheia diff --baseline git:main
+npx @aletheia/cli diff --baseline git:main
+# from this repo: pnpm build:cli && node bin/aletheia.mjs diff --baseline git:main
 # exit 0 = ok, 1 = authority expanded, 2 = error
 ```
 

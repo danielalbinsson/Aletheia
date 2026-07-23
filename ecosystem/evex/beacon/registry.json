@@ -1,0 +1,147 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "items": [
+    {
+      "name": "beacon",
+      "type": "registry:item",
+      "title": "Beacon",
+      "description": "Customer-support eve agent with docs search, approved replies, SLA watch, and Zendesk/Intercom/Slack reach. Inspect with Aletheia before you run it.",
+      "categories": [
+        "support"
+      ],
+      "dependencies": [
+        "eve@^0.24.6",
+        "zod@^4.4.3"
+      ],
+      "files": [
+        {
+          "path": ".env.example",
+          "type": "registry:file",
+          "target": "~/.env.example"
+        },
+        {
+          "path": "README.md",
+          "type": "registry:file",
+          "target": "~/agent/README.md"
+        },
+        {
+          "path": "agent/agent.ts",
+          "type": "registry:file",
+          "target": "~/agent/agent.ts"
+        },
+        {
+          "path": "agent/connections/intercom.ts",
+          "type": "registry:file",
+          "target": "~/agent/connections/intercom.ts"
+        },
+        {
+          "path": "agent/connections/slack.ts",
+          "type": "registry:file",
+          "target": "~/agent/connections/slack.ts"
+        },
+        {
+          "path": "agent/connections/zendesk.ts",
+          "type": "registry:file",
+          "target": "~/agent/connections/zendesk.ts"
+        },
+        {
+          "path": "agent/instructions.md",
+          "type": "registry:file",
+          "target": "~/agent/instructions.md"
+        },
+        {
+          "path": "agent/schedules/sla_watch.ts",
+          "type": "registry:file",
+          "target": "~/agent/schedules/sla_watch.ts"
+        },
+        {
+          "path": "agent/skills/tone/SKILL.md",
+          "type": "registry:file",
+          "target": "~/agent/skills/tone/SKILL.md"
+        },
+        {
+          "path": "agent/tools/draft_reply.ts",
+          "type": "registry:file",
+          "target": "~/agent/tools/draft_reply.ts"
+        },
+        {
+          "path": "agent/tools/route_ticket.ts",
+          "type": "registry:file",
+          "target": "~/agent/tools/route_ticket.ts"
+        },
+        {
+          "path": "agent/tools/search_docs.ts",
+          "type": "registry:file",
+          "target": "~/agent/tools/search_docs.ts"
+        },
+        {
+          "path": "evals/evals.config.ts",
+          "type": "registry:file",
+          "target": "~/evals/evals.config.ts"
+        },
+        {
+          "path": "evals/search-before-reply.eval.ts",
+          "type": "registry:file",
+          "target": "~/evals/search-before-reply.eval.ts"
+        },
+        {
+          "path": "examples/sample-input.md",
+          "type": "registry:file",
+          "target": "~/examples/sample-input.md"
+        }
+      ],
+      "meta": {
+        "slug": "beacon",
+        "category": "support",
+        "createdAt": "2026-07-23T00:00:00.000Z",
+        "updatedAt": "2026-07-23T00:00:00.000Z",
+        "docs": {
+          "overview": [
+            "Beacon is a customer-support eve agent blueprint from the Aletheia project. It searches docs, drafts replies behind an approval gate, routes hard tickets to humans, and watches SLA clocks.",
+            "Use Aletheia (https://github.com/danielalbinsson/Aletheia) to render a verified self-portrait and capability review before you run or deploy the agent."
+          ],
+          "howItWorks": [
+            "Inbound support work arrives through your channel of choice; the agent searches docs with search_docs.",
+            "When confident, it calls draft_reply, which parks for human approval (always()).",
+            "Hard or sensitive questions go through route_ticket; sla_watch runs on a schedule to raise breaches early."
+          ],
+          "useCases": [
+            {
+              "title": "First-line support draft",
+              "body": "Install into an eve app and wire Intercom/Zendesk/Slack credentials when you leave stub land."
+            },
+            {
+              "title": "Trust review training",
+              "body": "Point Aletheia at the agent to teach teammates what reach and approval look like on a real support agent."
+            }
+          ],
+          "requirements": [
+            {
+              "name": "AI_GATEWAY_API_KEY",
+              "body": "Or Vercel OIDC \u2014 model credential for the gateway id in agent/agent.ts."
+            },
+            {
+              "name": "SLACK_BOT_TOKEN",
+              "body": "Optional until you enable the Slack MCP connection."
+            },
+            {
+              "name": "INTERCOM_API_KEY",
+              "body": "Optional until you enable the Intercom OpenAPI connection."
+            }
+          ],
+          "faqs": [
+            {
+              "question": "Are the tools production-ready?",
+              "answer": "Bodies are stubs that return mock success. Replace execute implementations with your APIs; keep approval on draft_reply."
+            },
+            {
+              "question": "How do I inspect capabilities?",
+              "answer": "Use Aletheia locally or npx @aletheia/cli diff after eve build."
+            }
+          ]
+        }
+      },
+      "author": "danielalbinsson"
+    }
+  ]
+}

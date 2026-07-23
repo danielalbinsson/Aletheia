@@ -1,0 +1,182 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "items": [
+    {
+      "name": "ledger",
+      "type": "registry:item",
+      "title": "Ledger",
+      "description": "Finance eve agent that reconciles transactions, flags anomalies, closes the month, and delegates to an auditor subagent. Inspect with Aletheia before you run it.",
+      "categories": [
+        "productivity"
+      ],
+      "dependencies": [
+        "eve@^0.24.6",
+        "zod@^4.4.3"
+      ],
+      "files": [
+        {
+          "path": ".env.example",
+          "type": "registry:file",
+          "target": "~/.env.example"
+        },
+        {
+          "path": "README.md",
+          "type": "registry:file",
+          "target": "~/agent/README.md"
+        },
+        {
+          "path": "agent/agent.ts",
+          "type": "registry:file",
+          "target": "~/agent/agent.ts"
+        },
+        {
+          "path": "agent/connections/bank.ts",
+          "type": "registry:file",
+          "target": "~/agent/connections/bank.ts"
+        },
+        {
+          "path": "agent/connections/quickbooks.ts",
+          "type": "registry:file",
+          "target": "~/agent/connections/quickbooks.ts"
+        },
+        {
+          "path": "agent/connections/slack.ts",
+          "type": "registry:file",
+          "target": "~/agent/connections/slack.ts"
+        },
+        {
+          "path": "agent/instructions.md",
+          "type": "registry:file",
+          "target": "~/agent/instructions.md"
+        },
+        {
+          "path": "agent/schedules/month_close.ts",
+          "type": "registry:file",
+          "target": "~/agent/schedules/month_close.ts"
+        },
+        {
+          "path": "agent/schedules/nightly_reconcile.ts",
+          "type": "registry:file",
+          "target": "~/agent/schedules/nightly_reconcile.ts"
+        },
+        {
+          "path": "agent/skills/anomaly-rules/SKILL.md",
+          "type": "registry:file",
+          "target": "~/agent/skills/anomaly-rules/SKILL.md"
+        },
+        {
+          "path": "agent/skills/month-close/SKILL.md",
+          "type": "registry:file",
+          "target": "~/agent/skills/month-close/SKILL.md"
+        },
+        {
+          "path": "agent/subagents/auditor/agent.ts",
+          "type": "registry:file",
+          "target": "~/agent/subagents/auditor/agent.ts"
+        },
+        {
+          "path": "agent/subagents/auditor/instructions.md",
+          "type": "registry:file",
+          "target": "~/agent/subagents/auditor/instructions.md"
+        },
+        {
+          "path": "agent/subagents/auditor/tools/review_entries.ts",
+          "type": "registry:file",
+          "target": "~/agent/subagents/auditor/tools/review_entries.ts"
+        },
+        {
+          "path": "agent/tools/categorize.ts",
+          "type": "registry:file",
+          "target": "~/agent/tools/categorize.ts"
+        },
+        {
+          "path": "agent/tools/fetch_transactions.ts",
+          "type": "registry:file",
+          "target": "~/agent/tools/fetch_transactions.ts"
+        },
+        {
+          "path": "agent/tools/flag_anomaly.ts",
+          "type": "registry:file",
+          "target": "~/agent/tools/flag_anomaly.ts"
+        },
+        {
+          "path": "agent/tools/post_entry.ts",
+          "type": "registry:file",
+          "target": "~/agent/tools/post_entry.ts"
+        },
+        {
+          "path": "agent/tools/reconcile.ts",
+          "type": "registry:file",
+          "target": "~/agent/tools/reconcile.ts"
+        },
+        {
+          "path": "evals/evals.config.ts",
+          "type": "registry:file",
+          "target": "~/evals/evals.config.ts"
+        },
+        {
+          "path": "evals/fetch-and-reconcile.eval.ts",
+          "type": "registry:file",
+          "target": "~/evals/fetch-and-reconcile.eval.ts"
+        },
+        {
+          "path": "examples/sample-input.md",
+          "type": "registry:file",
+          "target": "~/examples/sample-input.md"
+        }
+      ],
+      "meta": {
+        "slug": "ledger",
+        "category": "productivity",
+        "createdAt": "2026-07-23T00:00:00.000Z",
+        "updatedAt": "2026-07-23T00:00:00.000Z",
+        "docs": {
+          "overview": [
+            "Ledger is a finance reconciliation eve agent blueprint from Aletheia. It fetches transactions, categorizes, reconciles, posts entries, flags anomalies, and runs month-close with an auditor subagent.",
+            "Because it reaches bank and QuickBooks-shaped APIs, inspect it with Aletheia before enabling real credentials."
+          ],
+          "howItWorks": [
+            "Nightly schedule prompts reconciliation; tools fetch and categorize transactions.",
+            "Anomalies stop the happy path via flag_anomaly; posting is explicit.",
+            "Auditor subagent reviews entries before month close."
+          ],
+          "useCases": [
+            {
+              "title": "Bookkeeping assistant scaffold",
+              "body": "Replace stub OpenAPI hosts with your bank and ledger providers."
+            },
+            {
+              "title": "Authority-diff demo",
+              "body": "Use aletheia diff in CI when you add new financial reach."
+            }
+          ],
+          "requirements": [
+            {
+              "name": "AI_GATEWAY_API_KEY",
+              "body": "Or Vercel OIDC for the gateway model in agent.ts."
+            },
+            {
+              "name": "BANK_API_KEY",
+              "body": "Token for the bank OpenAPI connection."
+            },
+            {
+              "name": "QUICKBOOKS_TOKEN",
+              "body": "Token for the QuickBooks OpenAPI connection."
+            },
+            {
+              "name": "SLACK_BOT_TOKEN",
+              "body": "Optional Slack MCP connection."
+            }
+          ],
+          "faqs": [
+            {
+              "question": "Is this ready for real money movement?",
+              "answer": "No. Stubs and example OpenAPI hosts only. Treat as a blueprint and gate authority changes with Aletheia."
+            }
+          ]
+        }
+      },
+      "author": "danielalbinsson"
+    }
+  ]
+}

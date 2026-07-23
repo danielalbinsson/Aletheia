@@ -1,18 +1,28 @@
 # Aletheia CLI reference
 
-## Build the binary
+## Install (published)
 
-From the Aletheia repo:
+```bash
+pnpm add -D @aletheia/cli
+# or
+npx @aletheia/cli diff --baseline git:main
+```
+
+The binary name is `aletheia` either way.
+
+## Build from this repo
 
 ```bash
 pnpm build:cli
 # → bin/aletheia.mjs
+pnpm build:cli:npm   # → packages/aletheia-cli/bin/aletheia.mjs
 ```
 
 ## Diff against a baseline
 
 ```bash
-node bin/aletheia.mjs diff --baseline git:main
+aletheia diff --baseline git:main
+# or: node bin/aletheia.mjs diff --baseline git:main
 ```
 
 Typical baselines:

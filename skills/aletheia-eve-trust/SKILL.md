@@ -43,6 +43,10 @@ Optional: `ALETHEIA_WORKSPACE=/path/to/eve-agent` in `.env.local`.
 ## Headless gate
 
 ```bash
+# Published CLI (preferred for consumers)
+npx @aletheia/cli diff --baseline git:main
+
+# Or from this repo
 pnpm build:cli
 node bin/aletheia.mjs diff --baseline git:main
 ```

@@ -131,6 +131,7 @@ diff and the agent's portrait.
 ```bash
 pnpm build:cli                       # bundle bin/aletheia.mjs
 aletheia diff --baseline git:main    # exit 0 = ok, 1 = authority expanded, 2 = error
+# consumers (after publish): npx @aletheia/cli diff --baseline git:main
 ```
 
 The shipped GitHub Action (`.github/workflows/capability-review.yml`) fails a

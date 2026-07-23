@@ -1,0 +1,27 @@
+{
+  "name": "beacon",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Customer-support eve agent blueprint — inspect with Aletheia before you run it.",
+  "license": "MIT",
+  "scripts": {
+    "dev": "eve dev",
+    "build": "eve build",
+    "start": "eve start",
+    "eval": "eve eval",
+    "info": "eve info",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "eve": "^0.24.6",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "24.x",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": "24.x"
+  }
+}

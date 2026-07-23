@@ -27,6 +27,16 @@ This file is the agent-facing index. Prefer the Markdown links below over HTML S
 - Install: `npx skills add danielalbinsson/Aletheia --skill aletheia-eve-trust`
 - Skill source: [skills/aletheia-eve-trust/SKILL.md](https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/skills/aletheia-eve-trust/SKILL.md)
 
+## CLI (capability gate)
+
+- npm: `npx @aletheia/cli diff --baseline git:main` (package `@aletheia/cli`, bin `aletheia`)
+- Source: [packages/aletheia-cli](https://github.com/danielalbinsson/Aletheia/tree/main/packages/aletheia-cli)
+
+## Ecosystem blueprints (registry kits)
+
+- Eve Directory / Evex submission kits: [ecosystem/](https://github.com/danielalbinsson/Aletheia/tree/main/ecosystem)
+- Beacon (support), Ledger (finance) — inspect with Aletheia before enabling credentials
+
 ## Source & product
 
 - Repository: https://github.com/danielalbinsson/Aletheia

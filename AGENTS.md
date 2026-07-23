@@ -56,8 +56,8 @@ Routes: `/` about, `/portrait`, `/review`, `/gallery`, `/manifesto`, `/privacy`.
 ### Headless diff (CI)
 
 ```bash
-pnpm build:cli
-node bin/aletheia.mjs diff --baseline git:main
+npx @aletheia/cli diff --baseline git:main
+# from this repo: pnpm build:cli && node bin/aletheia.mjs diff --baseline git:main
 # exit 0 = ok, 1 = authority expanded, 2 = error
 ```
 
@@ -68,6 +68,7 @@ Acknowledge intentional expansion with GitHub label `capability-change-ack` (see
 - `agent/` — bundled design-qa orchestrator
 - `examples/beacon/` — support-style eve agent
 - `examples/ledger/` — finance-style eve agent with auditor subagent
+- `ecosystem/` — Eve Directory / Evex submission kits (registry-shaped copies)
 
 ## Honesty rules (do not violate)
 

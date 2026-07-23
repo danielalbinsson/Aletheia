@@ -1,0 +1,54 @@
+{
+  "name": "@aletheia/cli",
+  "version": "0.2.0",
+  "description": "Headless capability review for Vercel eve agents — aletheia diff gates authority expansion in PRs.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "aletheia": "bin/aletheia.mjs"
+  },
+  "files": [
+    "bin",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "esbuild ../../src/cli/aletheia.ts --bundle --platform=node --format=esm --target=node24 --outfile=bin/aletheia.mjs && node -e \"require('fs').chmodSync('bin/aletheia.mjs', 0o755)\"",
+    "prepack": "pnpm build",
+    "prepublishOnly": "pnpm build"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danielalbinsson/Aletheia.git",
+    "directory": "packages/aletheia-cli"
+  },
+  "homepage": "https://github.com/danielalbinsson/Aletheia#readme",
+  "bugs": {
+    "url": "https://github.com/danielalbinsson/Aletheia/issues"
+  },
+  "keywords": [
+    "eve",
+    "vercel-eve",
+    "aletheia",
+    "capability-review",
+    "agent-legibility",
+    "cli"
+  ],
+  "peerDependencies": {
+    "eve": ">=0.18.0"
+  },
+  "peerDependenciesMeta": {
+    "eve": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

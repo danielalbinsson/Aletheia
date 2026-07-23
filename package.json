@@ -35,6 +35,8 @@
     "build": "tsc -b && vite build",
     "build:agent": "eve build",
     "build:cli": "esbuild src/cli/aletheia.ts --bundle --platform=node --format=esm --target=node24 --packages=external --outfile=bin/aletheia.mjs",
+    "build:cli:npm": "pnpm --dir packages/aletheia-cli build",
+    "pack:cli": "pnpm --dir packages/aletheia-cli pack",
     "preview": "vite preview",
     "test": "vitest run"
   },

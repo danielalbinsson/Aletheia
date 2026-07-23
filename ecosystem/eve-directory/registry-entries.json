@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "note": "Merge these objects into catalog/registry.json → agents[] when opening the Eve Directory PR. Do not commit this file into eve-directory as-is.",
+  "agents": [
+    {
+      "name": "Beacon",
+      "slug": "beacon",
+      "path": "agents/beacon",
+      "summary": "Customer-support eve agent with docs search, approved replies, SLA watch, and Zendesk/Intercom/Slack reach — inspect with Aletheia before you run it.",
+      "version": "1.0.0",
+      "license": "MIT",
+      "category": { "name": "Support", "slug": "support" },
+      "integrations": ["slack", "zendesk", "intercom"]
+    },
+    {
+      "name": "Ledger",
+      "slug": "ledger",
+      "path": "agents/ledger",
+      "summary": "Finance eve agent that reconciles transactions nightly, flags anomalies, closes the month, and delegates to an auditor — inspect with Aletheia before you run it.",
+      "version": "1.0.0",
+      "license": "MIT",
+      "category": { "name": "Finance", "slug": "finance" },
+      "integrations": ["slack", "quickbooks"]
+    }
+  ]
+}
