@@ -2,6 +2,10 @@
 
 *Aletheia (ἀλήθεια): truth as unconcealment — bringing what is hidden into the open.*
 
+[![Agent skill](https://img.shields.io/badge/skill-aletheia--eve--trust-111)](./skills/aletheia-eve-trust/SKILL.md)
+[![llms.txt](https://img.shields.io/badge/llms.txt-ready-111)](./public/llms.txt)
+[![AGENTS.md](https://img.shields.io/badge/AGENTS.md-ready-111)](./AGENTS.md)
+
 You cloned an eve agent you didn't write. Before you run it, you'd like to know:
 what can it touch? What does it do on its own? What does it ask permission for?
 What is it *forbidden* from doing? Today the only way to answer that is to read
@@ -16,14 +20,21 @@ deploys it. It only makes it legible.
 
 Not a dashboard. Not a flowchart. A portrait you can trust.
 
+**For AI agents:** start at [`public/llms.txt`](./public/llms.txt) or
+[`AGENTS.md`](./AGENTS.md). Install the skill:
+
+```bash
+npx skills add danielalbinsson/Aletheia --skill aletheia-eve-trust
+```
+
 ## Quickstart — for eve builders
 
 Aletheia runs on your machine and reads your agents off disk (a browser alone
 can't — see [Why it runs locally](#why-it-runs-locally)). Clone, install, run:
 
 ```bash
-git clone https://github.com/<you>/aletheia.git
-cd aletheia
+git clone https://github.com/danielalbinsson/Aletheia.git
+cd Aletheia
 pnpm install
 pnpm dev            # → http://localhost:5173
 ```
@@ -176,13 +187,26 @@ The manifesto, gallery, and a demo portrait are fully static, so the showcase ca
 be hosted:
 
 ```bash
-pnpm build          # → dist/
+pnpm build          # → dist/ (includes public/ agent-readability files)
 ```
 
 A `vercel.json` is included (SPA rewrites so `/portrait`, `/manifesto`, `/gallery`,
-`/review`, and `/privacy` resolve on refresh); deploy with the Vercel CLI or by connecting the repo. The
-hosted portrait shows the bundled [design-qa-agent](https://github.com/danielalbinsson/design-qa-agent) *from source* — verified facts and
-the live "point at any agent" inspection only run locally (next).
+`/review`, and `/privacy` resolve on refresh, while `/llms.txt`, `/AGENTS.md`,
+`/sitemap.md`, and `/docs/*.md` stay as plain text). Deploy with the Vercel CLI or
+by connecting the repo. The hosted portrait shows the bundled
+[design-qa-agent](https://github.com/danielalbinsson/design-qa-agent) *from source*
+— verified facts and the live "point at any agent" inspection only run locally
+(next).
+
+After deploy, verify agent surfaces:
+
+```bash
+curl -I https://YOUR_DOMAIN/llms.txt
+curl -I https://YOUR_DOMAIN/AGENTS.md
+```
+
+**GitHub topics to set** (helps registry and agent search): `eve`, `vercel-eve`,
+`ai-agent`, `agent-skills`, `agent-legibility`, `capability-review`, `aletheia`.
 
 ## Why it runs locally
 

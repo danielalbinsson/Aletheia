@@ -3,6 +3,25 @@
   "buildCommand": "pnpm build",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    {
+      "source": "/((?!api/|llms\\.txt|llms-full\\.txt|robots\\.txt|sitemap\\.xml|sitemap\\.md|AGENTS\\.md|agents\\.md|manifesto\\.md|gallery\\.md|privacy\\.md|docs/).*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(llms\\.txt|llms-full\\.txt|robots\\.txt|sitemap\\.md|AGENTS\\.md|agents\\.md|manifesto\\.md|gallery\\.md|privacy\\.md|docs/(.*)\\.md)",
+      "headers": [
+        { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, max-age=300" }
+      ]
+    },
+    {
+      "source": "/sitemap.xml",
+      "headers": [
+        { "key": "Content-Type", "value": "application/xml; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, max-age=300" }
+      ]
+    }
   ]
 }

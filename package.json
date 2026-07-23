@@ -4,7 +4,26 @@
   "version": "0.2.0",
   "license": "MIT",
   "type": "module",
-  "description": "Aletheia — see your agent. Renders an eve agent as a first-person self-portrait.",
+  "description": "Local-first trust tool for Vercel eve agents — verified self-portrait and capability review (agent legibility).",
+  "keywords": [
+    "eve",
+    "vercel-eve",
+    "aletheia",
+    "agent-legibility",
+    "capability-review",
+    "agent-skills",
+    "ai-agent",
+    "agent-trust",
+    "self-portrait"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danielalbinsson/Aletheia.git"
+  },
+  "homepage": "https://github.com/danielalbinsson/Aletheia#readme",
+  "bugs": {
+    "url": "https://github.com/danielalbinsson/Aletheia/issues"
+  },
   "engines": {
     "node": "24.x"
   },

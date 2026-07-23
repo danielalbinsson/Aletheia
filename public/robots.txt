@@ -1,0 +1,47 @@
+# Aletheia — allow AI and search crawlers; discovery files must stay reachable.
+User-agent: *
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+# Explicitly allow agent-readability surfaces
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /AGENTS.md
+Allow: /agents.md
+Allow: /sitemap.md
+Allow: /sitemap.xml
+Allow: /docs/
+Allow: /manifesto.md
+Allow: /gallery.md
+Allow: /privacy.md
+
+Sitemap: https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/public/sitemap.xml
