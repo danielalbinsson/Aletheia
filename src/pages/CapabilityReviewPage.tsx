@@ -27,22 +27,32 @@ function verdictLine(r: CapabilityReviewResponse): { headline: string; tone: str
 }
 
 export function CapabilityReviewPage() {
-  const { model, apiAvailable } = useProjectStore();
+  const { model, apiAvailable, loading: storeLoading } = useProjectStore();
   const [review, setReview] = useState<CapabilityReviewResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
+    // Wait until ProjectStore has probed the inspection API. On the static
+    // showcase there is no /api — fetching would get HTML and blow up as JSON.
+    if (storeLoading) return;
+
     setLoading(true);
     setError(null);
     try {
+      if (!apiAvailable) {
+        // Hosted demo: show the bundled agent from source, same as an unbuilt
+        // local agent. Full authority diffs need `pnpm dev`.
+        setReview({ ok: false, built: false });
+        return;
+      }
       setReview(await fetchReview());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not load capability review");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [apiAvailable, storeLoading]);
 
   useEffect(() => {
     void load();
@@ -63,9 +73,10 @@ export function CapabilityReviewPage() {
           {model ? model.name : "Agent"} — how its authority changed
         </h1>
 
-        {!apiAvailable && (
+        {!apiAvailable && !storeLoading && (
           <p className="review-note">
-            The capability review needs the dev server (run <code>pnpm dev</code>).
+            Authority diffs need the local inspector (run <code>pnpm dev</code>).
+            Showing this agent&apos;s capabilities from source.
           </p>
         )}
         {loading && <p className="review-note">Loading review…</p>}
@@ -73,10 +84,12 @@ export function CapabilityReviewPage() {
 
         {review && !loading && !review.built && (
           <div className="review-group">
-            <p className="review-verdict tone-routine">
-              No compiled manifest yet — showing capabilities <strong>from source</strong>.
-              Build the agent (in its own project) to verify these and diff authority changes.
-            </p>
+            {apiAvailable && (
+              <p className="review-verdict tone-routine">
+                No compiled manifest yet — showing capabilities <strong>from source</strong>.
+                Build the agent (in its own project) to verify these and diff authority changes.
+              </p>
+            )}
             {model && model.capabilities.length > 0 && (
               <>
                 <h2>It can — from source</h2>

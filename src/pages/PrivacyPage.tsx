@@ -22,7 +22,7 @@ export function PrivacyPage() {
         <section>
           <h2>Third-party fonts</h2>
           <p>
-            Pages load the Karla typeface from{" "}
+            Pages load the Archivo typeface from{" "}
             <a href="https://fonts.google.com" target="_blank" rel="noreferrer">
               Google Fonts
             </a>

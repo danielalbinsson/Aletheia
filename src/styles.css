@@ -1,7 +1,8 @@
 :root {
-  /* Warm near-black, light surfacing from the dark. */
-  --bg: #18181a;
-  --bg-deep: #141416;
+  /* Near-black surfaces — hierarchy from depth, not tint. */
+  --bg: #101010;
+  --bg-deep: #0a0a0a;
+  --bg-elevated: #141414;
   --ink: #ece6dc;        /* warm off-white — headings */
   --ink-soft: #cbc4b8;   /* body */
   --muted: #8f877c;      /* labels, secondary */
@@ -11,8 +12,10 @@
   --accent: #d9a368;     /* warm amber, used sparingly */
   --accent-dim: rgba(217, 163, 104, 0.16);
   --accent-glow: rgba(217, 163, 104, 0.05);
-  --sans: "Karla", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --sans: "Archivo", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  --weight-headline: 100;
+  --weight-body: 400;
 }
 
 * { box-sizing: border-box; }
@@ -45,8 +48,19 @@ html, body {
   background: var(--bg);
   color: var(--ink-soft);
   font-family: var(--sans);
+  font-weight: var(--weight-body);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3,
+.agent-name,
+.create-title,
+.review-title,
+.runtime-heading,
+.gallery-intro h1 {
+  font-family: var(--sans);
+  font-weight: var(--weight-headline);
 }
 
 body {
@@ -244,7 +258,7 @@ code { font-family: var(--sans); color: var(--muted); }
 .gallery-intro h1 {
   font-family: var(--sans);
   font-size: 30px;
-  font-weight: 600;
+  font-weight: var(--weight-headline);
   color: var(--ink);
   margin: 0 0 12px;
 }
@@ -308,18 +322,18 @@ code { font-family: var(--sans); color: var(--muted); }
 .manifesto h1 {
   font-size: 40px;
   line-height: 1.1;
-  font-weight: 600;
+  font-weight: var(--weight-headline);
   color: var(--ink);
   letter-spacing: -0.01em;
   margin: 8px 0 4px;
 }
 .manifesto h2 {
   font-size: 20px;
-  font-weight: 600;
+  font-weight: var(--weight-headline);
   color: var(--ink);
   margin: 44px 0 12px;
 }
-.manifesto h3 { font-size: 16px; font-weight: 600; color: var(--ink); margin: 28px 0 8px; }
+.manifesto h3 { font-size: 16px; font-weight: var(--weight-headline); color: var(--ink); margin: 28px 0 8px; }
 .manifesto p {
   font-size: 17px;
   line-height: 1.65;
@@ -353,7 +367,7 @@ code { font-family: var(--sans); color: var(--muted); }
 
 .prose h1 {
   font-size: 40px;
-  font-weight: 600;
+  font-weight: var(--weight-headline);
   line-height: 1.12;
   color: var(--ink);
   margin: 0 0 20px;
@@ -362,7 +376,7 @@ code { font-family: var(--sans); color: var(--muted); }
 
 .prose h2 {
   font-size: 22px;
-  font-weight: 600;
+  font-weight: var(--weight-headline);
   color: var(--ink);
   margin: 40px 0 12px;
 }
@@ -485,7 +499,7 @@ code { font-family: var(--sans); color: var(--muted); }
 .review-title {
   font-family: var(--sans);
   font-size: 22px;
-  font-weight: 500;
+  font-weight: var(--weight-headline);
   color: var(--ink);
   margin: 0 0 20px;
 }
@@ -574,7 +588,7 @@ code { font-family: var(--sans); color: var(--muted); }
 .agent-name {
   font-size: 56px;
   line-height: 1;
-  font-weight: 600;
+  font-weight: var(--weight-headline);
   letter-spacing: -0.02em;
   color: var(--ink);
   margin: 0 0 14px;
@@ -1106,7 +1120,7 @@ code { font-family: var(--sans); color: var(--muted); }
   font-size: 36px;
   color: var(--ink);
   margin: 0 0 8px;
-  font-weight: 600;
+  font-weight: var(--weight-headline);
 }
 .create-lead {
   color: var(--muted);
@@ -1173,7 +1187,7 @@ code { font-family: var(--sans); color: var(--muted); }
 
 .runtime-heading {
   font-size: 18px;
-  font-weight: 500;
+  font-weight: var(--weight-headline);
   margin: 0 0 8px;
 }
 

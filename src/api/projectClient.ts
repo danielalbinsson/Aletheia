@@ -11,6 +11,14 @@ export interface ProjectErrorResponse {
 }
 
 async function parseResponse<T>(res: Response): Promise<T> {
+  const contentType = res.headers.get("content-type") ?? "";
+  if (!contentType.includes("application/json")) {
+    throw new Error(
+      res.status === 404
+        ? "Inspection API not available (run pnpm dev)."
+        : `Expected JSON from inspection API (got ${contentType || "unknown"}, HTTP ${res.status}).`
+    );
+  }
   const body = (await res.json()) as T & ProjectErrorResponse;
   if (!res.ok) {
     throw new Error(body.error ?? `Request failed (${res.status})`);

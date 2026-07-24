@@ -8,7 +8,7 @@ The hosted Aletheia showcase does **not** use analytics, advertising trackers, a
 
 ## Third-party fonts
 
-Pages may load the Karla typeface from Google Fonts. When your browser requests those files, Google may receive your IP address and basic request metadata under Google's own privacy policy.
+Pages may load the Archivo typeface from Google Fonts. When your browser requests those files, Google may receive your IP address and basic request metadata under Google's own privacy policy.
 
 ## Local tool (`pnpm dev`)
 
