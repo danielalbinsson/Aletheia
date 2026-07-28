@@ -1,0 +1,15 @@
+{
+  "failOn": "elevated",
+  "rules": [
+    {
+      "category": "source control",
+      "severity": "high",
+      "pattern": "github|gitlab|bitbucket"
+    },
+    {
+      "category": "delegation",
+      "severity": "medium",
+      "pattern": "subagent|orchestrat"
+    }
+  ]
+}

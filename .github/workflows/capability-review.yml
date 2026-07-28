@@ -1,14 +1,24 @@
 name: Capability review
 
-# Posts a plain-language capability diff on every PR that touches the agent, and
-# blocks merge when the agent's authority expands (new external reach, a new
-# acts-on-its-own schedule, a new delegation) unless the change is acknowledged
-# with the "capability-change-ack" label.
+# Posts a plain-language capability diff on PRs that touch stamped agents, and
+# blocks merge when authority expands unless acknowledged with the
+# "capability-change-ack" label.
+#
+# Matrix covers the bundled design-qa agent (repo root) and the Beacon
+# blueprint (examples/beacon). Nested workflows under examples/ are templates
+# for standalone agent repos — GitHub only runs this root workflow here.
 
 on:
   pull_request:
     paths:
       - "agent/**"
+      - ".aletheia/**"
+      - "examples/beacon/agent/**"
+      - "examples/beacon/.aletheia/**"
+      - "src/cli/**"
+      - "src/parser/**"
+      - "packages/aletheia-cli/**"
+      - ".github/workflows/capability-review.yml"
 
 permissions:
   contents: read
@@ -18,39 +28,71 @@ permissions:
 jobs:
   capability-diff:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: design-qa
+            agent_dir: .
+            comment_marker: "<!-- aletheia-capability-diff:design-qa -->"
+          - name: beacon
+            agent_dir: examples/beacon
+            comment_marker: "<!-- aletheia-capability-diff:beacon -->"
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # need the base ref to diff against
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+          cache: pnpm
 
-      - name: Install
-        run: npm ci
+      - name: Install (repo)
+        run: pnpm install --frozen-lockfile
+
+      - name: Install (Beacon workspace)
+        if: matrix.name == 'beacon'
+        working-directory: examples/beacon
+        run: pnpm install --frozen-lockfile
 
       - name: Build the diff CLI
-        run: npm run build:cli
+        run: pnpm build:cli
 
+      # No continue-on-error here. capability-diff.sh exits 0 for both "no
+      # change" and "authority expanded" so the Gate step can decide, and
+      # propagates >= 2 so a tooling failure fails the job instead of being
+      # reported as "no change". Covered by src/cli/capabilityGate.test.ts.
       - name: Capability diff
         id: diff
-        continue-on-error: true # always post the comment, decide pass/fail after
+        working-directory: ${{ matrix.agent_dir }}
+        env:
+          # defineAgent reads this at build time; CI only needs a non-empty value
+          OPENROUTER_API_KEY: ci-placeholder-not-a-real-key
         run: |
-          node bin/aletheia.mjs diff \
+          bash "${{ github.workspace }}/scripts/ci/capability-diff.sh" \
+            node "${{ github.workspace }}/bin/aletheia.mjs" diff \
             --baseline "git:origin/${{ github.base_ref }}" \
             --format markdown \
             --fail-on elevated \
-            --out "$RUNNER_TEMP/diff.md"
-          echo "exit=$?" >> "$GITHUB_OUTPUT"
+            --out "$RUNNER_TEMP/diff-${{ matrix.name }}.md" \
+            --agent-dir "${{ github.workspace }}/${{ matrix.agent_dir }}"
 
       - name: Post sticky comment
         uses: actions/github-script@v7
+        env:
+          DIFF_FILE: ${{ runner.temp }}/diff-${{ matrix.name }}.md
+          MARKER: ${{ matrix.comment_marker }}
         with:
           script: |
             const fs = require('fs');
-            const body = fs.readFileSync(process.env.RUNNER_TEMP + '/diff.md', 'utf8');
-            const marker = '<!-- aletheia-capability-diff -->';
+            const marker = process.env.MARKER;
+            let body = fs.readFileSync(process.env.DIFF_FILE, 'utf8');
+            body = body.replace('<!-- aletheia-capability-diff -->', marker);
             const { owner, repo } = context.repo;
             const issue_number = context.issue.number;
             const { data: comments } = await github.rest.issues.listComments({ owner, repo, issue_number });
@@ -61,13 +103,11 @@ jobs:
               await github.rest.issues.createComment({ owner, repo, issue_number, body });
             }
 
+      # Fails closed: an empty or unparseable DIFF_EXIT blocks the merge.
       - name: Gate
+        if: always() && steps.diff.conclusion != 'skipped'
         env:
           DIFF_EXIT: ${{ steps.diff.outputs.exit }}
           ACK: ${{ contains(github.event.pull_request.labels.*.name, 'capability-change-ack') }}
-        run: |
-          if [ "$DIFF_EXIT" = "1" ] && [ "$ACK" != "true" ]; then
-            echo "::error::Agent authority expanded. Review the capability diff, then add the 'capability-change-ack' label to acknowledge and merge."
-            exit 1
-          fi
-          echo "Capability review passed (exit=$DIFF_EXIT, acknowledged=$ACK)."
+          NAME: ${{ matrix.name }}
+        run: bash "${{ github.workspace }}/scripts/ci/capability-gate.sh"

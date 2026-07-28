@@ -18,6 +18,9 @@ and the powers it has given up — plus a **capability review** that shows how t
 authority has changed over time. It never runs the agent, never edits it, never
 deploys it. It only makes it legible.
 
+Product shell + Kit Certified gallery: **[agentic-kit.dev](https://agentic-kit.dev)**
+(golden path, CI docs, paid Capability Review).
+
 Not a dashboard. Not a flowchart. A portrait you can trust.
 
 **For AI agents:** start at [`public/llms.txt`](./public/llms.txt) or
@@ -129,9 +132,13 @@ against a committed baseline, and posts a single sticky comment carrying the
 diff and the agent's portrait.
 
 ```bash
-pnpm build:cli                       # bundle bin/aletheia.mjs
-aletheia diff --baseline git:main    # exit 0 = ok, 1 = authority expanded, 2 = error
-# consumers (after publish): npx @aletheia/cli diff --baseline git:main
+# published package
+npx @danielalbinsson/aletheia-cli diff --baseline git:main
+# exit 0 = ok, 1 = authority expanded, 2 = error
+
+# from this repo (dev)
+pnpm build:cli
+./bin/aletheia.mjs diff --baseline git:main
 ```
 
 The shipped GitHub Action (`.github/workflows/capability-review.yml`) fails a
@@ -234,6 +241,8 @@ expose it), and anything Aletheia would have to guess at.
 
 ---
 
-Built by [Daniel Albinsson](mailto:daniel.albinsson@pm.me) as a study in
-**agent legibility** — designing how humans understand and trust the agents they
-delegate to.
+Built by [Daniel Albinsson](https://danielalbinsson.com) — author of the
+[Agentic UX](https://agentic-ux.com) framework and [Agentic Kit](https://agentic-kit.dev)
+(Eve agent trust: inspect, gate, stamp). [Hire / consult](https://agentic-ux.com/hire) ·
+[Capability Review](https://agentic-kit.dev/review) ·
+[daniel.Albinsson@pm.me](mailto:daniel.Albinsson@pm.me)

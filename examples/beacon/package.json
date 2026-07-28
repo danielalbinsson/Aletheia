@@ -1,0 +1,29 @@
+{
+  "name": "beacon",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Beacon — Kit Certified support-style eve blueprint (Aletheia examples)",
+  "imports": {
+    "#*": "./agent/*"
+  },
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "dev": "eve dev",
+    "build": "eve build",
+    "start": "eve start",
+    "info": "eve info"
+  },
+  "dependencies": {
+    "@openrouter/ai-sdk-provider": "^2.10.0",
+    "ai": "^7.0.2",
+    "eve": "^0.18.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.0.1",
+    "typescript": "^5.6.3"
+  }
+}

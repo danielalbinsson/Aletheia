@@ -10,7 +10,7 @@ templates, plus the publishable CLI and community post draft.
 | `eve-directory/agents/{beacon,ledger}/` | Curated Eve Directory catalog apps |
 | `eve-directory/registry-entries.json` | Fragments to merge into `catalog/registry.json` |
 | `evex/{beacon,ledger}/` | Evex registry packages (`registry.json` + agent) |
-| `../packages/aletheia-cli/` | npm package `@aletheia/cli` (`aletheia` bin) |
+| `../packages/aletheia-cli/` | npm package `@danielalbinsson/aletheia-cli` (`aletheia` bin) |
 | `eve-discussions-post.md` | Paste into vercel/eve Discussions |
 
 Canonical sources for agent *behavior* remain `examples/beacon` and
@@ -43,7 +43,7 @@ cp -R /path/to/Aletheia/ecosystem/evex/ledger registry/ledger
 # author must be your GitHub username (danielalbinsson)
 ```
 
-## Publish `@aletheia/cli`
+## Publish `@danielalbinsson/aletheia-cli`
 
 ```bash
 npm login
@@ -55,11 +55,13 @@ npm publish --access public
 Consumers:
 
 ```bash
-npx @aletheia/cli diff --baseline git:main
-# or: pnpm add -D @aletheia/cli
+npx @danielalbinsson/aletheia-cli diff --baseline git:main
+# or: pnpm add -D @danielalbinsson/aletheia-cli
 ```
 
-Note: the unscoped name `aletheia` is already taken on npm (unrelated 0.0.4).
+Note: the unscoped name `aletheia` is already taken on npm (unrelated language).
+We publish as `@danielalbinsson/aletheia-cli` (bins: `aletheia` and `aletheia-cli`).
+The `@aletheia` npm org/scope is also unavailable.
 
 ## Seed skills.sh
 

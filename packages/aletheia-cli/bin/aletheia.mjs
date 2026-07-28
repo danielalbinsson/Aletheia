@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
 // ../../src/cli/aletheia.ts
-import { execFile } from "node:child_process";
+import { execFile as execFile2 } from "node:child_process";
 import { createHash } from "node:crypto";
-import fs3 from "node:fs/promises";
-import path4 from "node:path";
-import { promisify } from "node:util";
+import fs4 from "node:fs/promises";
+import path5 from "node:path";
+import { promisify as promisify2 } from "node:util";
 
 // ../../src/server/eveBuild.ts
 import fs from "node:fs/promises";
@@ -824,45 +824,44 @@ function renderJson(diff, current, meta, warnings = []) {
   );
 }
 
-// ../../src/cli/aletheia.ts
+// ../../src/cli/cliCore.ts
+import { execFile } from "node:child_process";
+import fs3 from "node:fs/promises";
+import path4 from "node:path";
+import { promisify } from "node:util";
 var execFileAsync = promisify(execFile);
 var SNAPSHOT_REL = "agent/.aletheia/deployed-capabilities.json";
 var MANIFEST_REL = ".eve/compile/compiled-agent-manifest.json";
 var CONSENT_REL = "agent/.aletheia/consent.json";
 var TOOLS_REL = "agent/tools";
-async function loadToolSources(root) {
-  const dir = path4.join(root, TOOLS_REL);
-  const sources = {};
-  let names;
-  try {
-    names = await fs3.readdir(dir);
-  } catch {
-    return sources;
+function parseArgs(argv, cwd = process.cwd()) {
+  const o = {
+    baseline: `file:${SNAPSHOT_REL}`,
+    format: "markdown",
+    failOn: "elevated",
+    failOnExplicit: false,
+    build: true,
+    agentDir: cwd
+  };
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    const next = () => argv[++i];
+    if (a === "--baseline") o.baseline = next();
+    else if (a === "--format") o.format = next();
+    else if (a === "--fail-on") {
+      o.failOn = next();
+      o.failOnExplicit = true;
+    } else if (a === "--out") o.out = next();
+    else if (a === "--no-build") o.build = false;
+    else if (a === "--agent-dir") o.agentDir = path4.resolve(cwd, next());
   }
-  await Promise.all(
-    names.filter((n) => n.endsWith(".ts")).map(async (n) => {
-      try {
-        sources[n.slice(0, -".ts".length)] = await fs3.readFile(path4.join(dir, n), "utf8");
-      } catch {
-      }
-    })
-  );
-  return sources;
+  return o;
 }
 function driftWarnings(drifted) {
   if (drifted.length === 0) return [];
   return [
     `${drifted.length} tool(s) declare \`approval:\` in source but are missing from \`${CONSENT_REL}\`: ${drifted.map((t) => `\`${t}\``).join(", ")}. This PR check reads the sidecar only \u2014 add them so the gate is recorded.`
   ];
-}
-async function loadConsent(root) {
-  try {
-    const raw = await fs3.readFile(path4.join(root, CONSENT_REL), "utf8");
-    const parsed = JSON.parse(raw);
-    return parsed.gated && typeof parsed.gated === "object" ? parsed.gated : {};
-  } catch {
-    return {};
-  }
 }
 function applyConsent(facts, gated) {
   if (Object.keys(gated).length === 0) return facts;
@@ -875,35 +874,39 @@ function applyConsent(facts, gated) {
     })
   };
 }
-function parseArgs(argv) {
-  const o = {
-    baseline: `file:${SNAPSHOT_REL}`,
-    format: "markdown",
-    failOn: "elevated",
-    failOnExplicit: false,
-    build: true,
-    agentDir: process.cwd()
-  };
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i];
-    const next = () => argv[++i];
-    if (a === "--baseline") o.baseline = next();
-    else if (a === "--format") o.format = next();
-    else if (a === "--fail-on") {
-      o.failOn = next();
-      o.failOnExplicit = true;
-    } else if (a === "--out") o.out = next();
-    else if (a === "--no-build") o.build = false;
-    else if (a === "--agent-dir") o.agentDir = path4.resolve(next());
-  }
-  return o;
+async function gitSnapshotRelPath(agentRoot) {
+  const abs = path4.join(agentRoot, SNAPSHOT_REL);
+  const toplevel = await findGitToplevel(agentRoot) ?? await gitRevParseToplevel(agentRoot);
+  if (!toplevel) return SNAPSHOT_REL;
+  return path4.relative(toplevel, abs).split(path4.sep).join("/");
 }
-async function loadPolicy(root) {
+async function findGitToplevel(start) {
+  let dir = path4.resolve(start);
+  for (; ; ) {
+    try {
+      const st = await fs3.stat(path4.join(dir, ".git"));
+      if (st.isDirectory() || st.isFile()) return dir;
+    } catch {
+    }
+    const parent = path4.dirname(dir);
+    if (parent === dir) return null;
+    dir = parent;
+  }
+}
+async function gitRevParseToplevel(cwd) {
   try {
-    const raw = JSON.parse(await fs3.readFile(path4.join(root, ".aletheia/policy.json"), "utf8"));
-    return parsePolicy(raw);
+    const env = { ...process.env };
+    delete env.GIT_DIR;
+    delete env.GIT_WORK_TREE;
+    delete env.GIT_COMMON_DIR;
+    const { stdout } = await execFileAsync("git", ["rev-parse", "--show-toplevel"], {
+      cwd,
+      encoding: "utf8",
+      env
+    });
+    return stdout.trim() || null;
   } catch {
-    return { rules: [] };
+    return null;
   }
 }
 async function readJsonSnapshot(file) {
@@ -920,11 +923,16 @@ async function resolveBaseline(spec, root) {
   }
   if (spec.startsWith("git:")) {
     const ref = spec.slice("git:".length);
+    const snapPath = await gitSnapshotRelPath(root);
     try {
+      const env = { ...process.env };
+      delete env.GIT_DIR;
+      delete env.GIT_WORK_TREE;
+      delete env.GIT_COMMON_DIR;
       const { stdout } = await execFileAsync(
         "git",
-        ["show", `${ref}:${SNAPSHOT_REL}`],
-        { cwd: root, encoding: "utf8", maxBuffer: 10 * 1024 * 1024 }
+        ["show", `${ref}:${snapPath}`],
+        { cwd: root, encoding: "utf8", maxBuffer: 10 * 1024 * 1024, env }
       );
       const parsed = JSON.parse(stdout);
       return Array.isArray(parsed.capabilities) ? parsed : null;
@@ -936,9 +944,48 @@ async function resolveBaseline(spec, root) {
     `Unsupported --baseline "${spec}". Use file:<path> or git:<ref> (url:/build: are planned).`
   );
 }
+
+// ../../src/cli/aletheia.ts
+var execFileAsync2 = promisify2(execFile2);
+async function loadToolSources(root) {
+  const dir = path5.join(root, TOOLS_REL);
+  const sources = {};
+  let names;
+  try {
+    names = await fs4.readdir(dir);
+  } catch {
+    return sources;
+  }
+  await Promise.all(
+    names.filter((n) => n.endsWith(".ts")).map(async (n) => {
+      try {
+        sources[n.slice(0, -".ts".length)] = await fs4.readFile(path5.join(dir, n), "utf8");
+      } catch {
+      }
+    })
+  );
+  return sources;
+}
+async function loadConsent(root) {
+  try {
+    const raw = await fs4.readFile(path5.join(root, CONSENT_REL), "utf8");
+    const parsed = JSON.parse(raw);
+    return parsed.gated && typeof parsed.gated === "object" ? parsed.gated : {};
+  } catch {
+    return {};
+  }
+}
+async function loadPolicy(root) {
+  try {
+    const raw = JSON.parse(await fs4.readFile(path5.join(root, ".aletheia/policy.json"), "utf8"));
+    return parsePolicy(raw);
+  } catch {
+    return { rules: [] };
+  }
+}
 async function gitShortSha(root) {
   try {
-    const { stdout } = await execFileAsync("git", ["rev-parse", "--short", "HEAD"], {
+    const { stdout } = await execFileAsync2("git", ["rev-parse", "--short", "HEAD"], {
       cwd: root,
       encoding: "utf8"
     });
@@ -949,7 +996,7 @@ async function gitShortSha(root) {
 }
 async function manifestSha(root) {
   try {
-    const buf = await fs3.readFile(path4.join(root, MANIFEST_REL));
+    const buf = await fs4.readFile(path5.join(root, MANIFEST_REL));
     return createHash("sha256").update(buf).digest("hex");
   } catch {
     return void 0;
@@ -975,7 +1022,7 @@ function portraitView(facts) {
   return { name, rows: renderPortrait(deriveSignals(model)) };
 }
 async function emit(text, out) {
-  if (out) await fs3.writeFile(out, text.endsWith("\n") ? text : `${text}
+  if (out) await fs4.writeFile(out, text.endsWith("\n") ? text : `${text}
 `, "utf8");
   else process.stdout.write(`${text}
 `);
@@ -1023,7 +1070,9 @@ async function runDiff(opts) {
 async function main() {
   const [command, ...rest] = process.argv.slice(2);
   if (command !== "diff") {
-    process.stderr.write("usage: aletheia diff [--baseline file:<p>|git:<ref>] [--format markdown|json] [--fail-on elevated|any|never] [--out <file>] [--no-build] [--agent-dir <path>]\n");
+    process.stderr.write(
+      "usage: aletheia diff [--baseline file:<p>|git:<ref>] [--format markdown|json] [--fail-on elevated|any|never] [--out <file>] [--no-build] [--agent-dir <path>]\n"
+    );
     process.exit(command ? 2 : 0);
   }
   process.exit(await runDiff(parseArgs(rest)));

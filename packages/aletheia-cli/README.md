@@ -1,4 +1,4 @@
-# @aletheia/cli
+# @danielalbinsson/aletheia-cli
 
 Headless **capability review** for [Vercel eve](https://eve.dev) agents. Diffs
 what an agent can do / reach / do unprompted against a baseline and fails CI when
@@ -11,12 +11,12 @@ trust tool for eve agent legibility.
 
 ```bash
 # in an eve agent project (eve available on PATH / as a dependency)
-pnpm add -D @aletheia/cli
+pnpm add -D @danielalbinsson/aletheia-cli
 # or one-shot:
-npx @aletheia/cli diff --baseline git:main
+npx @danielalbinsson/aletheia-cli diff --baseline git:main
 ```
 
-The `aletheia` binary name is unchanged:
+Bins: `aletheia` and `aletheia-cli` (same entrypoint):
 
 ```bash
 aletheia diff --baseline git:main
@@ -38,3 +38,15 @@ aletheia diff --baseline git:main
 ## License
 
 MIT
+
+## Tests
+
+From the Aletheia repo root:
+
+```bash
+pnpm exec vitest run src/cli
+# or
+pnpm --dir packages/aletheia-cli test
+```
+
+Covers flag parsing, nested `git:` baselines, consent overlay, and a smoke run of the bundled bin against a fixture agent (`--no-build`).

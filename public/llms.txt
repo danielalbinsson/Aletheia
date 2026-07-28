@@ -17,6 +17,7 @@ This file is the agent-facing index. Prefer the Markdown links below over HTML S
 - [Honesty contract](https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/public/docs/honesty-contract.md): verified-from-build vs from-source; what Aletheia refuses to invent
 - [Capability review & CLI](https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/public/docs/capability-review.md): authority diff, blast radius, `aletheia diff`, CI gate
 - [Example eve agents](https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/public/docs/example-agents.md): Beacon, Ledger, and gallery blueprints
+- [Passport](https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/public/docs/passport.md): stakeholder one-pager (hand-authored today; CLI export Phase 2)
 - [Glossary](https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/public/docs/glossary.md): eve / Aletheia terminology
 - [Manifesto](https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/MANIFESTO.md): why agent legibility matters
 - [AGENTS.md](https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/AGENTS.md): install, config, and usage for coding agents
@@ -29,7 +30,7 @@ This file is the agent-facing index. Prefer the Markdown links below over HTML S
 
 ## CLI (capability gate)
 
-- npm: `npx @aletheia/cli diff --baseline git:main` (package `@aletheia/cli`, bin `aletheia`)
+- npm: `npx @danielalbinsson/aletheia-cli diff --baseline git:main` (package `@danielalbinsson/aletheia-cli`, bin `aletheia`)
 - Source: [packages/aletheia-cli](https://github.com/danielalbinsson/Aletheia/tree/main/packages/aletheia-cli)
 
 ## Ecosystem blueprints (registry kits)

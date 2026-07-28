@@ -1,11 +1,12 @@
 {
-  "name": "@aletheia/cli",
-  "version": "0.2.0",
+  "name": "@danielalbinsson/aletheia-cli",
+  "version": "0.2.1",
   "description": "Headless capability review for Vercel eve agents — aletheia diff gates authority expansion in PRs.",
   "license": "MIT",
   "type": "module",
   "bin": {
-    "aletheia": "bin/aletheia.mjs"
+    "aletheia": "bin/aletheia.mjs",
+    "aletheia-cli": "bin/aletheia.mjs"
   },
   "files": [
     "bin",
@@ -15,7 +16,8 @@
   "scripts": {
     "build": "esbuild ../../src/cli/aletheia.ts --bundle --platform=node --format=esm --target=node24 --outfile=bin/aletheia.mjs && node -e \"require('fs').chmodSync('bin/aletheia.mjs', 0o755)\"",
     "prepack": "pnpm build",
-    "prepublishOnly": "pnpm build"
+    "prepublishOnly": "pnpm build",
+    "test": "pnpm --dir ../.. exec vitest run src/cli"
   },
   "engines": {
     "node": ">=24"

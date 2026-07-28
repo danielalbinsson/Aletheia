@@ -1,0 +1,32 @@
+{
+  "capturedAt": "2026-07-26T10:31:51.068Z",
+  "name": "aletheia",
+  "mind": {
+    "model": "openrouter/anthropic/claude-sonnet-4.6",
+    "instructionsHash": "908ab82f"
+  },
+  "capabilities": [],
+  "reach": [
+    {
+      "label": "github",
+      "kind": "api",
+      "detail": "MCP · https://api.githubcopilot.com/mcp/"
+    }
+  ],
+  "autonomy": [],
+  "subagents": [
+    "A11y auditor",
+    "Design system checker",
+    "Heuristic critic"
+  ],
+  "restrictions": [
+    {
+      "tool": "bash",
+      "label": "run shell commands"
+    },
+    {
+      "tool": "write_file",
+      "label": "write files"
+    }
+  ]
+}

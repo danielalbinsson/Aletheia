@@ -1,0 +1,6 @@
+{
+  "gated": {
+    "draft-reply": "Sends a customer-facing reply — irreversible once delivered.",
+    "route-ticket": "Hands a ticket to a human with context — confirm before escalating."
+  }
+}

@@ -35,7 +35,7 @@ Example policy:
 ## CLI
 
 ```bash
-npx @aletheia/cli diff --baseline git:main
+npx @danielalbinsson/aletheia-cli diff --baseline git:main
 # from this repo: pnpm build:cli && node bin/aletheia.mjs diff --baseline git:main
 ```
 

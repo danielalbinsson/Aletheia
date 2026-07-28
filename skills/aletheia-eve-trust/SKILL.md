@@ -44,7 +44,7 @@ Optional: `ALETHEIA_WORKSPACE=/path/to/eve-agent` in `.env.local`.
 
 ```bash
 # Published CLI (preferred for consumers)
-npx @aletheia/cli diff --baseline git:main
+npx @danielalbinsson/aletheia-cli diff --baseline git:main
 
 # Or from this repo
 pnpm build:cli

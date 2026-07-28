@@ -3,9 +3,9 @@
 ## Install (published)
 
 ```bash
-pnpm add -D @aletheia/cli
+pnpm add -D @danielalbinsson/aletheia-cli
 # or
-npx @aletheia/cli diff --baseline git:main
+npx @danielalbinsson/aletheia-cli diff --baseline git:main
 ```
 
 The binary name is `aletheia` either way.

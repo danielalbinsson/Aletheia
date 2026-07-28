@@ -1,0 +1,103 @@
+name: Capability review
+
+# Template for a *standalone* Beacon (or any stamped) agent repo.
+# Inside the Aletheia monorepo this file is not executed — the root workflow
+# `.github/workflows/capability-review.yml` runs the Beacon matrix job instead.
+# Copy this file when extracting Beacon into its own repository.
+
+on:
+  pull_request:
+    paths:
+      - "agent/**"
+      - ".aletheia/**"
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  capability-diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # aletheia diff exit contract: 0 = no change, 1 = authority expanded,
+      # 2 = error. `set +e` is required: GitHub runs run-blocks under `bash -e`,
+      # so without it a non-zero exit aborts the step before the exit code is
+      # recorded, and the Gate below reads an empty value and passes everything.
+      - name: Capability diff
+        id: diff
+        run: |
+          set +e
+          npx --yes @danielalbinsson/aletheia-cli@0.2.1 diff \
+            --baseline "git:origin/${{ github.base_ref }}" \
+            --format markdown \
+            --fail-on elevated \
+            --out "$RUNNER_TEMP/diff.md" \
+            --agent-dir "$GITHUB_WORKSPACE"
+          DIFF_EXIT=$?
+          set -e
+          echo "exit=$DIFF_EXIT" >> "$GITHUB_OUTPUT"
+          echo "aletheia diff exited $DIFF_EXIT"
+          if [ "$DIFF_EXIT" -gt 1 ]; then
+            echo "::error::aletheia diff failed to run (exit $DIFF_EXIT). Tooling failure, not a capability change."
+            exit "$DIFF_EXIT"
+          fi
+
+      - name: Post sticky comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync(process.env.RUNNER_TEMP + '/diff.md', 'utf8');
+            const marker = '<!-- aletheia-capability-diff -->';
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const { data: comments } = await github.rest.issues.listComments({ owner, repo, issue_number });
+            const existing = comments.find(c => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
+      # Fails closed: an empty or unparseable result blocks the merge rather
+      # than reading silence as "no capability change".
+      - name: Gate
+        if: always() && steps.diff.conclusion != 'skipped'
+        env:
+          DIFF_EXIT: ${{ steps.diff.outputs.exit }}
+          ACK: ${{ contains(github.event.pull_request.labels.*.name, 'capability-change-ack') }}
+        run: |
+          if [ -z "$DIFF_EXIT" ]; then
+            echo "::error::No capability-diff result was reported. Failing closed."
+            exit 1
+          fi
+          case "$DIFF_EXIT" in *[!0-9]*)
+            echo "::error::Unexpected capability-diff result '$DIFF_EXIT'. Failing closed."
+            exit 1 ;;
+          esac
+          if [ "$DIFF_EXIT" -gt 1 ]; then
+            echo "::error::aletheia diff failed to run (exit $DIFF_EXIT). Fix the tooling failure before merging."
+            exit 1
+          fi
+          if [ "$DIFF_EXIT" -eq 1 ] && [ "$ACK" != "true" ]; then
+            echo "::error::Agent authority expanded. Review the capability diff, then add the 'capability-change-ack' label to acknowledge and merge."
+            exit 1
+          fi
+          echo "Capability review passed (exit=$DIFF_EXIT, acknowledged=$ACK)."

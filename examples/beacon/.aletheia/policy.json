@@ -1,0 +1,15 @@
+{
+  "failOn": "elevated",
+  "rules": [
+    {
+      "category": "customer communications",
+      "severity": "medium",
+      "pattern": "slack|intercom|zendesk"
+    },
+    {
+      "category": "payments",
+      "severity": "high",
+      "pattern": "stripe|payment|refund"
+    }
+  ]
+}

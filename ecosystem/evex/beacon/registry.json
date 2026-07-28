@@ -136,7 +136,7 @@
             },
             {
               "question": "How do I inspect capabilities?",
-              "answer": "Use Aletheia locally or npx @aletheia/cli diff after eve build."
+              "answer": "Use Aletheia locally or npx @danielalbinsson/aletheia-cli diff after eve build."
             }
           ]
         }

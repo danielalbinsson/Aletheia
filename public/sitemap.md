@@ -16,6 +16,7 @@ Agent-facing map of Aletheia. Prefer Markdown URLs; HTML routes are the human sh
 - [Honesty contract](/docs/honesty-contract.md)
 - [Capability review & CLI](/docs/capability-review.md)
 - [Example eve agents](/docs/example-agents.md)
+- [Passport](/docs/passport.md)
 - [Glossary](/docs/glossary.md)
 - [Manifesto](/manifesto.md)
 - [Gallery](/gallery.md)

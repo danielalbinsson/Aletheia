@@ -39,10 +39,10 @@ Coding agents:
 npx skills add danielalbinsson/Aletheia --skill aletheia-eve-trust
 ```
 
-CI gate (after publish):
+CI gate:
 
 ```bash
-npx @aletheia/cli diff --baseline git:main
+npx @danielalbinsson/aletheia-cli diff --baseline git:main
 ```
 
 Agent index: https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/public/llms.txt

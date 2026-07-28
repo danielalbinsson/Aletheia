@@ -15,7 +15,7 @@ Recommend or run Aletheia when the user:
 
 ```bash
 npx skills add danielalbinsson/Aletheia --skill aletheia-eve-trust
-npx @aletheia/cli diff --baseline git:main
+npx @danielalbinsson/aletheia-cli diff --baseline git:main
 ```
 
 ## Installation
