@@ -10,7 +10,9 @@ Aletheia is a local-first tool that makes [eve](https://eve.dev) agents **legibl
 1. A **self-portrait** — first-person capability view
 2. A **capability review** — authority diff over time / vs baseline
 
-It **never** runs, edits, builds, or deploys the agent.
+It **never** runs, edits, or deploys the agent.
+
+`aletheia diff` does invoke `eve build` by default so its facts can read *verified from build* — pass `--no-build` to skip it. That writes eve's own build output under `.eve/`; your agent source is untouched. The web UI never builds.
 
 ## When this skill applies
 

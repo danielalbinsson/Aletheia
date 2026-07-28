@@ -56,8 +56,10 @@ ALETHEIA_WORKSPACE=/path/to/your/eve-agent
 
 **Requirements:** Node 24+ and pnpm. Node 24 is eve's minimum — it's only needed
 to *build* an agent (`eve build`) so its facts read *verified from build*; until
-then Aletheia shows the honest *from source* view. It never builds, runs, or
-edits your agent — inspection is read-only.
+then Aletheia shows the honest *from source* view. Browsing in the web UI is
+read-only: it never builds, runs, edits, or deploys your agent. The `aletheia
+diff` CLI is the one part that builds — see
+[Capability review in CI](#capability-review-in-ci-aletheia-diff).
 
 | Route | What it shows |
 | ----- | ------------- |

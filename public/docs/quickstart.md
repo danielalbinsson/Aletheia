@@ -1,6 +1,8 @@
 # Quickstart — Aletheia for eve agents
 
-Aletheia is a local-first trust tool for [Vercel eve](https://eve.dev) agents. It reads an agent's files (and optionally the compiled eve manifest) and renders a **self-portrait** plus a **capability review**. It never runs, edits, builds, or deploys the agent.
+Aletheia is a local-first trust tool for [Vercel eve](https://eve.dev) agents. It reads an agent's files (and optionally the compiled eve manifest) and renders a **self-portrait** plus a **capability review**. It never runs, edits, or deploys the agent.
+
+The `aletheia diff` CLI invokes `eve build` by default so its facts can read *verified from build* — pass `--no-build` to skip it. That writes eve's own output under `.eve/` and leaves your agent source untouched. Browsing in the web UI never builds.
 
 **Requirements:** Node 24+ and pnpm.
 
