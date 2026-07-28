@@ -70,6 +70,8 @@ describe("aletheia CLI smoke", () => {
       cwd: repoRoot,
       env: process.env,
     });
+    // Root bin/ is gitignored — create it on clean CI checkouts.
+    await fs.mkdir(path.dirname(binPath), { recursive: true });
     await fs.copyFile(
       path.join(repoRoot, "packages/aletheia-cli/bin/aletheia.mjs"),
       binPath

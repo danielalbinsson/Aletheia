@@ -60,8 +60,17 @@ jobs:
         working-directory: examples/beacon
         run: pnpm install --frozen-lockfile
 
+      # packages/aletheia-cli is not a pnpm workspace member; root
+      # `pnpm build:cli` needs esbuild on PATH, which only this install provides.
+      - name: Install CLI package
+        run: pnpm --dir packages/aletheia-cli install --frozen-lockfile
+
       - name: Build the diff CLI
-        run: pnpm build:cli
+        run: |
+          pnpm --dir packages/aletheia-cli build
+          mkdir -p bin
+          cp packages/aletheia-cli/bin/aletheia.mjs bin/aletheia.mjs
+          chmod +x bin/aletheia.mjs
 
       # No continue-on-error here. capability-diff.sh exits 0 for both "no
       # change" and "authority expanded" so the Gate step can decide, and
