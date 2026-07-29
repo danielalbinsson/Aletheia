@@ -7,10 +7,9 @@ Aletheia ships inspectable [eve](https://eve.dev) agents you can point the tool 
 | Agent | Path | Role |
 | --- | --- | --- |
 | design-qa (Kit Certified) | `agent/` | Orchestrator: subagents, GitHub MCP, bash/write_file disabled, CI + passport |
-| Beacon (Kit Certified) | `examples/beacon/` | Support-style agent with consent, policy, CI gate, cannots, passport |
 | Ledger | `examples/ledger/` | Finance-style agent with bank/QuickBooks reach, night reconcile, auditor subagent |
 
-Beacon uses the standard workspace layout (`agent/agent.ts` under `examples/beacon/`). Point Aletheia at `examples/beacon`, or set `ALETHEIA_WORKSPACE`. Kit Certified definition: https://agentic-kit.dev/docs/kit-certified (passport is hand-authored until `aletheia passport` ships).
+The **support-bot** blueprint (Kit Certified) lives in its own repo: https://github.com/danielalbinsson/eve-blueprints. Kit Certified definition: https://agentic-kit.dev/docs/kit-certified. Generate any agent's passport with `aletheia passport --format markdown` (or `--format json` for the machine-readable result).
 
 ## Gallery narratives
 
@@ -28,13 +27,13 @@ Also referenced: support-bot, code-reviewer, research-assistant — example shap
 
 ```bash
 pnpm install && pnpm dev
-# Browse folder → pick examples/beacon or examples/ledger
+# Browse folder → pick the bundled agent/ or examples/ledger
 ```
 
 Or:
 
 ```bash
-ALETHEIA_WORKSPACE=/absolute/path/to/Aletheia/examples/beacon pnpm dev
+ALETHEIA_WORKSPACE=/absolute/path/to/Aletheia/examples/ledger pnpm dev
 ```
 
 Prefer **verified from build** after `eve build` in that example directory when you need decision-grade facts.

@@ -28,6 +28,12 @@ import {
   type DiffMeta,
   type PortraitView,
 } from "./renderDiff";
+import { evaluatePassport } from "../parser/passport";
+import {
+  renderPassportJson,
+  renderPassportMarkdown,
+  type PassportMeta,
+} from "./renderPassport";
 import type { AgentModel } from "../model";
 import {
   applyConsent,
@@ -84,6 +90,28 @@ async function loadPolicy(root: string): Promise<Policy> {
   } catch {
     return { rules: [] };
   }
+}
+
+/** Like loadPolicy, but reports whether the file actually existed. */
+async function loadPolicyWithPresence(root: string): Promise<{ policy: Policy; present: boolean }> {
+  try {
+    const raw = JSON.parse(await fs.readFile(path.join(root, ".aletheia/policy.json"), "utf8"));
+    return { policy: parsePolicy(raw), present: true };
+  } catch {
+    return { policy: { rules: [] }, present: false };
+  }
+}
+
+/** Read the agent's UX.md (repo-root or agent/), or null if absent. */
+async function loadUxDoc(root: string): Promise<string | null> {
+  for (const rel of ["UX.md", "agent/UX.md"]) {
+    try {
+      return await fs.readFile(path.join(root, rel), "utf8");
+    } catch {
+      /* try next */
+    }
+  }
+  return null;
 }
 
 async function gitShortSha(root: string): Promise<string | undefined> {
@@ -187,15 +215,84 @@ async function runDiff(opts: CliOptions): Promise<number> {
   return verdict(diff, failOn).failing ? 1 : 0;
 }
 
+// `aletheia passport` — mechanically evaluate the Kit Certified checklist and
+// emit a passport generated from the build. Exit: 0 = certified, 1 = not
+// certified, 2 = error (build/manifest failure). Reuses every loader `diff`
+// uses, so the passport and the portrait can never disagree about the facts.
+async function runPassport(opts: CliOptions): Promise<number> {
+  const root = opts.agentDir;
+
+  if (opts.build) {
+    const build = await runEveBuild(root);
+    if (!build.ok) {
+      const msg =
+        build.diagnostics
+          .filter((d) => d.severity === "error")
+          .map((d) => `${d.sourcePath ?? "project"}: ${d.message}`)
+          .join("; ") || build.stderr || "eve build failed";
+      process.stderr.write(`aletheia: build failed — ${msg}\n`);
+      return 2;
+    }
+  }
+
+  const manifest = await runEveManifest(root);
+  if (!manifest.built || !manifest.facts) {
+    process.stderr.write(
+      `aletheia: no compiled manifest. Build the agent first (omit --no-build).\n`
+    );
+    return 2;
+  }
+
+  const gated = await loadConsent(root);
+  const toolSources = await loadToolSources(root);
+  const { policy, present: policyPresent } = await loadPolicyWithPresence(root);
+  const facts = applyConsent(manifest.facts, gated);
+  const current = snapshotFromFacts(facts);
+  const baseline = await resolveBaseline(opts.baseline, root);
+  const failOn = opts.failOnExplicit ? opts.failOn : policy.failOn ?? opts.failOn;
+  const diff = diffSnapshots(baseline, current, { rules: policy.rules });
+
+  const result = evaluatePassport({
+    manifestBuilt: true,
+    facts,
+    consentGated: gated,
+    consentDrift: consentDrift(toolSources, gated),
+    policy,
+    policyPresent,
+    baseline,
+    // A missing baseline is its own failed check; only treat a present baseline's
+    // verdict as the diff signal so "no baseline" isn't double-counted as a pass.
+    diffPasses: baseline !== null && !verdict(diff, failOn).failing,
+    uxDoc: await loadUxDoc(root),
+  });
+
+  const meta: PassportMeta = {
+    headSha: await gitShortSha(root),
+    manifestSha: await manifestSha(root),
+    generatedAt: new Date().toISOString(),
+  };
+
+  const text =
+    opts.format === "json"
+      ? renderPassportJson(result, meta)
+      : renderPassportMarkdown(result, facts, meta);
+  await emit(text, opts.out);
+
+  return result.certified ? 0 : 1;
+}
+
 async function main(): Promise<void> {
   const [command, ...rest] = process.argv.slice(2);
-  if (command !== "diff") {
+  if (command !== "diff" && command !== "passport") {
     process.stderr.write(
-      "usage: aletheia diff [--baseline file:<p>|git:<ref>] [--format markdown|json] [--fail-on elevated|any|never] [--out <file>] [--no-build] [--agent-dir <path>]\n"
+      "usage:\n" +
+        "  aletheia diff     [--baseline file:<p>|git:<ref>] [--format markdown|json] [--fail-on elevated|any|never] [--out <file>] [--no-build] [--agent-dir <path>]\n" +
+        "  aletheia passport [--format markdown|json] [--out <file>] [--no-build] [--agent-dir <path>]\n"
     );
     process.exit(command ? 2 : 0);
   }
-  process.exit(await runDiff(parseArgs(rest)));
+  const opts = parseArgs(rest);
+  process.exit(command === "passport" ? await runPassport(opts) : await runDiff(opts));
 }
 
 void main();

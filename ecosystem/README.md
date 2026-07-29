@@ -13,9 +13,14 @@ templates, plus the publishable CLI and community post draft.
 | `../packages/aletheia-cli/` | npm package `@danielalbinsson/aletheia-cli` (`aletheia` bin) |
 | `eve-discussions-post.md` | Paste into vercel/eve Discussions |
 
-Canonical sources for agent *behavior* remain `examples/beacon` and
-`examples/ledger` in the Aletheia repo. Ecosystem copies are registry-shaped
-(snake_case tools, AI Gateway `agent.ts`, SETUP/evals).
+Canonical source for support-agent *behavior* is the **support-bot** blueprint
+in https://github.com/danielalbinsson/eve-blueprints; `examples/ledger` remains
+in this repo. Ecosystem copies are registry-shaped (snake_case tools, AI Gateway
+`agent.ts`, SETUP/evals).
+
+> Note: the `eve-directory/agents/beacon` and `evex/beacon` submission copies
+> predate the Beacon→support-bot consolidation. Refresh or remove them before
+> submitting; support-bot is the canonical support blueprint now.
 
 ## Submit to Eve Directory
 

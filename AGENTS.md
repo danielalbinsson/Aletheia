@@ -68,8 +68,9 @@ Acknowledge intentional expansion with GitHub label `capability-change-ack` (see
 ### Example blueprints in-repo
 
 - `agent/` — bundled design-qa orchestrator
-- `examples/beacon/` — support-style eve agent
 - `examples/ledger/` — finance-style eve agent with auditor subagent
+
+The support-bot blueprint lives in its own repo: https://github.com/danielalbinsson/eve-blueprints (support-bot).
 - `ecosystem/` — Eve Directory / Evex submission kits (registry-shaped copies)
 
 ## Honesty rules (do not violate)

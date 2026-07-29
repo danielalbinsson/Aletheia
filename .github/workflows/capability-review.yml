@@ -1,20 +1,17 @@
 name: Capability review
 
-# Posts a plain-language capability diff on PRs that touch stamped agents, and
-# blocks merge when authority expands unless acknowledged with the
-# "capability-change-ack" label.
+# Posts a plain-language capability diff on PRs that touch the bundled
+# design-qa agent, and blocks merge when authority expands unless acknowledged
+# with the "capability-change-ack" label.
 #
-# Matrix covers the bundled design-qa agent (repo root) and the Beacon
-# blueprint (examples/beacon). Nested workflows under examples/ are templates
-# for standalone agent repos — GitHub only runs this root workflow here.
+# The support-bot blueprint lives in its own repo (danielalbinsson/eve-blueprints)
+# and runs its own copy of this workflow there.
 
 on:
   pull_request:
     paths:
       - "agent/**"
       - ".aletheia/**"
-      - "examples/beacon/agent/**"
-      - "examples/beacon/.aletheia/**"
       - "src/cli/**"
       - "src/parser/**"
       - "packages/aletheia-cli/**"
@@ -35,9 +32,6 @@ jobs:
           - name: design-qa
             agent_dir: .
             comment_marker: "<!-- aletheia-capability-diff:design-qa -->"
-          - name: beacon
-            agent_dir: examples/beacon
-            comment_marker: "<!-- aletheia-capability-diff:beacon -->"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -53,11 +47,6 @@ jobs:
           cache: pnpm
 
       - name: Install (repo)
-        run: pnpm install --frozen-lockfile
-
-      - name: Install (Beacon workspace)
-        if: matrix.name == 'beacon'
-        working-directory: examples/beacon
         run: pnpm install --frozen-lockfile
 
       # packages/aletheia-cli is not a pnpm workspace member; root
