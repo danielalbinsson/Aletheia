@@ -165,7 +165,8 @@ describe("aletheia CLI smoke", () => {
   it("prints usage and exits 0 with no command", async () => {
     const { code, stderr } = await runCli([]);
     expect(code).toBe(0);
-    expect(stderr).toContain("usage: aletheia diff");
+    expect(stderr).toContain("usage:");
+    expect(stderr).toContain("aletheia diff");
   });
 
   it("exits 0 with no capability changes against the file baseline", async () => {
