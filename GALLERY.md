@@ -1,44 +1,48 @@
 # Gallery
 
-Four eve agents, read by Aletheia. No annotations, no dashboards — each portrait
-is generated from the agent's own compiled manifest, every fact labelled
-*verified from build*. Point Aletheia at a folder of agents and this is what you
-see.
+Three eve agents, read by Aletheia. Each portrait is **generated** by
+`aletheia portrait` from the agent's compiled manifest — most facts are
+*verified from build*; the one exception, "asks first" approval, is source-declared
+because eve does not serialize approval into the manifest.
+
+These portraits are rendered live (and are individually fetchable as
+`aletheia.portrait/v1` JSON) at **[agentic-kit.dev/gallery](https://agentic-kit.dev/gallery)**.
+Generate one yourself:
+
+```bash
+eve build
+aletheia portrait --format text     # or --format json
+```
+
+> Static screenshots were removed on purpose: a picture can't stay true. One
+> earlier JPEG showed a "Mock git diff" tool under a *verified from build*
+> heading after that tool had been deleted. The portrait is now an artifact of
+> the current build, not a snapshot.
 
 ## The moment that matters: authority expanded
 
-Agents change. The review flags it when a new version gives the agent **more
+Agents change. `aletheia diff` flags it when a new version gives the agent **more
 power** — new external reach, a new delegation, a lifted restriction, a removed
-approval gate — and asks a human to look. Routine changes pass quietly.
-
-![Capability review — authority expanded](examples/gallery/capability-review-authority-expanded.jpg)
+approval gate — and, in CI, blocks the merge until a human acknowledges it.
+Routine changes pass quietly.
 
 ## design-qa-agent
 
 An **orchestrator**: it holds no tools of its own — it directs three specialist
-subagents and reaches GitHub over MCP. The portrait shows the delegation, not just
-a name.
-
-![design-qa-agent portrait](examples/gallery/portrait-design-qa-agent.jpg)
+subagents (a11y auditor, design-system checker, heuristic critic) and reaches
+GitHub over MCP. Lives in its own repo: [danielalbinsson/design-qa-agent](https://github.com/danielalbinsson/design-qa-agent).
+Portrait: [agentic-kit.dev/portraits/design-qa-agent.json](https://agentic-kit.dev/portraits/design-qa-agent.json)
 
 ## support-bot
 
 Customer support with real reach: it looks up customers and orders, escalates to a
 human, and **asks approval before issuing a refund** — because that tool charges
-the payment method. This is the trust case in one screen.
-
-![support-bot portrait](examples/gallery/portrait-support-bot.jpg)
+the payment method. This is the trust case in one screen. Lives in
+[danielalbinsson/eve-blueprints](https://github.com/danielalbinsson/eve-blueprints).
+Portrait: [agentic-kit.dev/portraits/support-bot.json](https://agentic-kit.dev/portraits/support-bot.json)
 
 ## code-reviewer
 
 Reviews code changes — reads a git diff, runs a security checklist, submits
 structured feedback. It reaches nothing outside itself.
-
-![code-reviewer portrait](examples/gallery/portrait-code-reviewer.jpg)
-
-## research-assistant
-
-Gathers and weighs sources — search, fetch, compare, and evaluate credibility
-before citing. Acts only when asked.
-
-![research-assistant portrait](examples/gallery/portrait-research-assistant.jpg)
+Portrait: [agentic-kit.dev/portraits/code-reviewer.json](https://agentic-kit.dev/portraits/code-reviewer.json)

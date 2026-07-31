@@ -16,12 +16,36 @@ pnpm add -D @danielalbinsson/aletheia-cli
 npx @danielalbinsson/aletheia-cli diff --baseline git:main
 ```
 
-Bins: `aletheia` and `aletheia-cli` (same entrypoint):
+Bins: `aletheia` and `aletheia-cli` (same entrypoint).
+
+### `diff` — authority diff for CI
 
 ```bash
 aletheia diff --baseline git:main
 # exit 0 = ok, 1 = authority expanded, 2 = error
 ```
+
+### `passport` — Kit Certified checklist, mechanically
+
+Scores the agent against the Kit Certified checklist (compiles, consent mirrors
+gates, policy present, diff green vs baseline, restrictions visible) and emits a
+passport generated from the build.
+
+```bash
+aletheia passport --format json    # or markdown
+# exit 0 = certified, 1 = not certified, 2 = error
+```
+
+### `portrait` — generated capability portrait
+
+Renders the agent's portrait (bust + what it can do / touch / do alone / cannot,
+with honest provenance labels) as a build artifact — not a screenshot.
+
+```bash
+aletheia portrait --format json    # or text
+```
+
+All three accept `--no-build` (read an existing manifest) and `--agent-dir <path>`.
 
 ## Requirements
 
@@ -49,4 +73,4 @@ pnpm exec vitest run src/cli
 pnpm --dir packages/aletheia-cli test
 ```
 
-Covers flag parsing, nested `git:` baselines, consent overlay, and a smoke run of the bundled bin against a fixture agent (`--no-build`).
+Covers flag parsing, nested `git:` baselines, consent overlay, the passport checklist and portrait rendering, and smoke runs of the bundled bin against a fixture agent (`--no-build`).

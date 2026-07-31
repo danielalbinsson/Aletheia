@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-07-26T10:31:51.068Z",
+  "capturedAt": "2026-07-29T06:50:21.716Z",
   "name": "aletheia",
   "mind": {
     "model": "openrouter/anthropic/claude-sonnet-4.6",
@@ -10,7 +10,7 @@
     {
       "label": "github",
       "kind": "api",
-      "detail": "MCP · https://api.githubcopilot.com/mcp/"
+      "detail": "MCP \u00b7 https://api.githubcopilot.com/mcp/"
     }
   ],
   "autonomy": [],

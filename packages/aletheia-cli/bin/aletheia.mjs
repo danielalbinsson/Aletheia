@@ -824,6 +824,241 @@ function renderJson(diff, current, meta, warnings = []) {
   );
 }
 
+// ../../src/parser/passport.ts
+var REQUIRED = true;
+var ADVISORY = false;
+function check(id, title, required, ok, passDetail, failDetail) {
+  const status = ok ? required ? "pass" : "advisory-pass" : required ? "fail" : "advisory-fail";
+  return { id, title, required, status, detail: ok ? passDetail : failDetail };
+}
+function documentsLifecycle(uxDoc) {
+  if (!uxDoc) return false;
+  const text = uxDoc.toLowerCase();
+  return /\bbefore\b/.test(text) && /\bwhile\b/.test(text) && /\bafter\b/.test(text);
+}
+function policyIsSensible(policy, present) {
+  if (!present) return false;
+  return Boolean(policy.failOn) || Array.isArray(policy.rules) && policy.rules.length > 0;
+}
+function evaluatePassport(input) {
+  const facts = input.facts;
+  const restrictionCount = facts?.restrictions?.length ?? 0;
+  const checks = [
+    check(
+      "compiles",
+      "Compiles; portrait verified from build",
+      REQUIRED,
+      input.manifestBuilt && facts !== null,
+      "eve build succeeded and produced a compiled manifest.",
+      "No compiled manifest. Run `eve build` \u2014 until it compiles, the portrait is source-only and cannot be certified."
+    ),
+    check(
+      "consent-mirrors-gates",
+      "consent.json mirrors approval gates (no drift)",
+      REQUIRED,
+      input.consentDrift.length === 0,
+      "Every source-declared approval gate is recorded in consent.json.",
+      `${input.consentDrift.length} tool(s) declare \`approval:\` in source but are missing from consent.json: ${input.consentDrift.join(", ")}.`
+    ),
+    check(
+      "policy-present",
+      "policy.json with failOn + blast-radius rules",
+      REQUIRED,
+      policyIsSensible(input.policy, input.policyPresent),
+      "policy.json sets a failOn threshold and/or blast-radius rules.",
+      input.policyPresent ? "policy.json is present but sets neither a failOn threshold nor any blast-radius rules." : "No .aletheia/policy.json found."
+    ),
+    check(
+      "ci-diff-green",
+      "aletheia diff green against a committed baseline",
+      REQUIRED,
+      input.baseline !== null && input.diffPasses,
+      "A committed baseline exists and the current build introduces no unacknowledged authority expansion.",
+      input.baseline === null ? "No committed baseline (agent/.aletheia/deployed-capabilities.json) to diff against." : "aletheia diff is failing: authority expanded relative to the committed baseline."
+    ),
+    check(
+      "restrictions-visible",
+      'Intentional restrictions visible as "cannots"',
+      REQUIRED,
+      restrictionCount > 0,
+      `${restrictionCount} framework tool(s) explicitly disabled and shown as cannots.`,
+      "No disabled framework tools. A certified agent states what it deliberately cannot do (e.g. bash, write_file)."
+    ),
+    check(
+      "lifecycle-documented",
+      "Before / While / After lifecycle documented",
+      ADVISORY,
+      documentsLifecycle(input.uxDoc),
+      "UX.md documents the before / while / after lifecycle.",
+      "UX.md is missing or does not document all three lifecycle stages (before / while / after)."
+    )
+  ];
+  const failures = checks.filter((c) => c.required && c.status === "fail").length;
+  return {
+    name: facts?.name ?? "agent",
+    certified: failures === 0,
+    checks,
+    failures
+  };
+}
+
+// ../../src/cli/renderPassport.ts
+var STATUS_MARK = {
+  pass: "PASS",
+  fail: "FAIL",
+  "advisory-pass": "PASS (advisory)",
+  "advisory-fail": "SKIP (advisory)"
+};
+function bullets(items) {
+  return items.length ? items.map((i) => `- ${i}`).join("\n") : "- (none)";
+}
+function renderPassportJson(result, meta) {
+  return `${JSON.stringify(
+    {
+      schema: "aletheia.passport/v1",
+      name: result.name,
+      certified: result.certified,
+      stamp: result.certified ? "Kit Certified" : "Not certified",
+      failures: result.failures,
+      generatedAt: meta.generatedAt,
+      headSha: meta.headSha,
+      manifestSha: meta.manifestSha,
+      checks: result.checks.map((c) => ({
+        id: c.id,
+        title: c.title,
+        required: c.required,
+        status: c.status,
+        detail: c.detail
+      }))
+    },
+    null,
+    2
+  )}
+`;
+}
+function renderPassportMarkdown(result, facts, meta) {
+  const can = facts.capabilities.map(
+    (c) => c.consent === "asks-first" ? `${c.label} (**asks first**)` : c.label
+  );
+  const reach = facts.reach.map((r) => r.label);
+  const autonomy = facts.autonomy.map((a) => {
+    const line2 = `${a.when}: ${a.does}`;
+    return a.consent === "asks-first" ? `${line2} (**asks first**)` : line2;
+  });
+  const cannots = (facts.restrictions ?? []).map((r) => `${r.label} (\`${r.tool}\` disabled)`);
+  const subagents = (facts.subagents ?? []).map((s) => s.name);
+  const stampLine = result.certified ? "**Stamp:** Kit Certified \u2014 every required check passed (generated, not hand-authored)" : `**Stamp:** Not certified \u2014 ${result.failures} required check(s) failed (see below)`;
+  const checklist = result.checks.map((c) => `| ${STATUS_MARK[c.status]} | ${c.title} | ${c.detail} |`).join("\n");
+  const provenance = meta.manifestSha ? `Generated from compiled manifest \`${meta.manifestSha.slice(0, 12)}\`${meta.headSha ? ` at commit \`${meta.headSha}\`` : ""}.` : "Generated from the compiled manifest.";
+  return `# Capability passport \u2014 ${result.name}
+
+${stampLine}
+Generated by \`aletheia passport\` on ${meta.generatedAt}. Do not edit by hand \u2014 regenerate.
+
+## Kit Certified checklist
+
+| Result | Check | Detail |
+| --- | --- | --- |
+${checklist}
+
+## What I can do
+
+${bullets(can)}
+
+## What I can touch
+
+${bullets(reach)}
+
+## What I do on my own
+
+${bullets(autonomy)}
+${subagents.length ? `
+## Subagents
+
+${bullets(subagents)}
+` : ""}
+## What I cannot / will not do alone
+
+${bullets(cannots)}
+
+## How to verify
+
+\`\`\`bash
+eve build
+npx @danielalbinsson/aletheia-cli passport --format json
+\`\`\`
+
+## Provenance
+
+${provenance} Prefer **verified from build** facts. This is legibility tooling,
+not a security audit. See https://agentic-kit.dev/docs/disclaimer
+`;
+}
+
+// ../../src/cli/renderPortraitCard.ts
+function buildPortraitCard(facts, bust, meta) {
+  return {
+    schema: "aletheia.portrait/v1",
+    name: facts.name ?? "agent",
+    verified: meta.verified,
+    provenance: meta.verified ? "verified from build \u2014 except \u201Casks first\u201D, which is source-declared (eve does not serialize approval)" : "from source \u2014 build to verify",
+    generatedAt: meta.generatedAt,
+    headSha: meta.headSha,
+    manifestSha: meta.manifestSha,
+    bust,
+    canDo: facts.capabilities.map((c) => ({
+      label: c.label,
+      asksFirst: c.consent === "asks-first"
+    })),
+    canTouch: facts.reach.map((r) => r.label),
+    doesOnItsOwn: facts.autonomy.map((a) => ({
+      when: a.when,
+      does: a.does,
+      asksFirst: a.consent === "asks-first"
+    })),
+    cannot: (facts.restrictions ?? []).map((r) => ({ tool: r.tool, label: r.label })),
+    subagents: (facts.subagents ?? []).map((s) => s.name)
+  };
+}
+function renderPortraitJson(card) {
+  return `${JSON.stringify(card, null, 2)}
+`;
+}
+function bullets2(items) {
+  return items.length ? items.map((i) => `- ${i}`).join("\n") : "- (none)";
+}
+function renderPortraitText(card) {
+  const canDo = card.canDo.map((c) => c.asksFirst ? `${c.label} (asks first)` : c.label);
+  const alone = card.doesOnItsOwn.map(
+    (a) => a.asksFirst ? `${a.when}: ${a.does} (asks first)` : `${a.when}: ${a.does}`
+  );
+  const cannot = card.cannot.map((r) => `${r.label} (\`${r.tool}\` disabled)`);
+  return [
+    card.bust.join("\n"),
+    "",
+    `# ${card.name}`,
+    `_${card.provenance}_`,
+    "",
+    "## What I can do",
+    "",
+    bullets2(canDo),
+    "",
+    "## What I can touch",
+    "",
+    bullets2(card.canTouch),
+    "",
+    "## What I do on my own",
+    "",
+    bullets2(alone),
+    ...card.subagents.length ? ["", "## Subagents", "", bullets2(card.subagents)] : [],
+    "",
+    "## What I cannot do",
+    "",
+    bullets2(cannot),
+    ""
+  ].join("\n");
+}
+
 // ../../src/cli/cliCore.ts
 import { execFile } from "node:child_process";
 import fs3 from "node:fs/promises";
@@ -983,6 +1218,23 @@ async function loadPolicy(root) {
     return { rules: [] };
   }
 }
+async function loadPolicyWithPresence(root) {
+  try {
+    const raw = JSON.parse(await fs4.readFile(path5.join(root, ".aletheia/policy.json"), "utf8"));
+    return { policy: parsePolicy(raw), present: true };
+  } catch {
+    return { policy: { rules: [] }, present: false };
+  }
+}
+async function loadUxDoc(root) {
+  for (const rel of ["UX.md", "agent/UX.md"]) {
+    try {
+      return await fs4.readFile(path5.join(root, rel), "utf8");
+    } catch {
+    }
+  }
+  return null;
+}
 async function gitShortSha(root) {
   try {
     const { stdout } = await execFileAsync2("git", ["rev-parse", "--short", "HEAD"], {
@@ -1067,14 +1319,98 @@ async function runDiff(opts) {
   await emit(text, opts.out);
   return verdict(diff, failOn).failing ? 1 : 0;
 }
+async function runPassport(opts) {
+  const root = opts.agentDir;
+  if (opts.build) {
+    const build = await runEveBuild(root);
+    if (!build.ok) {
+      const msg = build.diagnostics.filter((d) => d.severity === "error").map((d) => `${d.sourcePath ?? "project"}: ${d.message}`).join("; ") || build.stderr || "eve build failed";
+      process.stderr.write(`aletheia: build failed \u2014 ${msg}
+`);
+      return 2;
+    }
+  }
+  const manifest = await runEveManifest(root);
+  if (!manifest.built || !manifest.facts) {
+    process.stderr.write(
+      `aletheia: no compiled manifest. Build the agent first (omit --no-build).
+`
+    );
+    return 2;
+  }
+  const gated = await loadConsent(root);
+  const toolSources = await loadToolSources(root);
+  const { policy, present: policyPresent } = await loadPolicyWithPresence(root);
+  const facts = applyConsent(manifest.facts, gated);
+  const current = snapshotFromFacts(facts);
+  const baseline = await resolveBaseline(opts.baseline, root);
+  const failOn = opts.failOnExplicit ? opts.failOn : policy.failOn ?? opts.failOn;
+  const diff = diffSnapshots(baseline, current, { rules: policy.rules });
+  const result = evaluatePassport({
+    manifestBuilt: true,
+    facts,
+    consentGated: gated,
+    consentDrift: consentDrift(toolSources, gated),
+    policy,
+    policyPresent,
+    baseline,
+    // A missing baseline is its own failed check; only treat a present baseline's
+    // verdict as the diff signal so "no baseline" isn't double-counted as a pass.
+    diffPasses: baseline !== null && !verdict(diff, failOn).failing,
+    uxDoc: await loadUxDoc(root)
+  });
+  const meta = {
+    headSha: await gitShortSha(root),
+    manifestSha: await manifestSha(root),
+    generatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  };
+  const text = opts.format === "json" ? renderPassportJson(result, meta) : renderPassportMarkdown(result, facts, meta);
+  await emit(text, opts.out);
+  return result.certified ? 0 : 1;
+}
+async function runPortrait(opts) {
+  const root = opts.agentDir;
+  if (opts.build) {
+    const build = await runEveBuild(root);
+    if (!build.ok) {
+      const msg = build.diagnostics.filter((d) => d.severity === "error").map((d) => `${d.sourcePath ?? "project"}: ${d.message}`).join("; ") || build.stderr || "eve build failed";
+      process.stderr.write(`aletheia: build failed \u2014 ${msg}
+`);
+      return 2;
+    }
+  }
+  const manifest = await runEveManifest(root);
+  if (!manifest.built || !manifest.facts) {
+    process.stderr.write(
+      `aletheia: no compiled manifest. Build the agent first (omit --no-build).
+`
+    );
+    return 2;
+  }
+  const gated = await loadConsent(root);
+  const facts = applyConsent(manifest.facts, gated);
+  const view = portraitView(facts);
+  const card = buildPortraitCard(facts, view.rows, {
+    verified: true,
+    headSha: await gitShortSha(root),
+    manifestSha: await manifestSha(root),
+    generatedAt: (/* @__PURE__ */ new Date()).toISOString()
+  });
+  const text = opts.format === "json" ? renderPortraitJson(card) : renderPortraitText(card);
+  await emit(text, opts.out);
+  return 0;
+}
 async function main() {
   const [command, ...rest] = process.argv.slice(2);
-  if (command !== "diff") {
+  if (command !== "diff" && command !== "passport" && command !== "portrait") {
     process.stderr.write(
-      "usage: aletheia diff [--baseline file:<p>|git:<ref>] [--format markdown|json] [--fail-on elevated|any|never] [--out <file>] [--no-build] [--agent-dir <path>]\n"
+      "usage:\n  aletheia diff     [--baseline file:<p>|git:<ref>] [--format markdown|json] [--fail-on elevated|any|never] [--out <file>] [--no-build] [--agent-dir <path>]\n  aletheia passport [--format markdown|json] [--out <file>] [--no-build] [--agent-dir <path>]\n  aletheia portrait [--format markdown|json] [--out <file>] [--no-build] [--agent-dir <path>]\n"
     );
     process.exit(command ? 2 : 0);
   }
-  process.exit(await runDiff(parseArgs(rest)));
+  const opts = parseArgs(rest);
+  if (command === "passport") process.exit(await runPassport(opts));
+  if (command === "portrait") process.exit(await runPortrait(opts));
+  process.exit(await runDiff(opts));
 }
 void main();

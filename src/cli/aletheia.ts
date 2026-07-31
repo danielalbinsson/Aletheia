@@ -34,6 +34,11 @@ import {
   renderPassportMarkdown,
   type PassportMeta,
 } from "./renderPassport";
+import {
+  buildPortraitCard,
+  renderPortraitJson,
+  renderPortraitText,
+} from "./renderPortraitCard";
 import type { AgentModel } from "../model";
 import {
   applyConsent,
@@ -281,18 +286,64 @@ async function runPassport(opts: CliOptions): Promise<number> {
   return result.certified ? 0 : 1;
 }
 
+// `aletheia portrait` — emit the portrait as a generated artifact from the
+// build (JSON or text). Replaces shipping stale JPEG screenshots. Exit: 0 ok,
+// 2 = error (build/manifest failure). Reuses the same facts loading as diff and
+// passport, so all three stay consistent.
+async function runPortrait(opts: CliOptions): Promise<number> {
+  const root = opts.agentDir;
+
+  if (opts.build) {
+    const build = await runEveBuild(root);
+    if (!build.ok) {
+      const msg =
+        build.diagnostics
+          .filter((d) => d.severity === "error")
+          .map((d) => `${d.sourcePath ?? "project"}: ${d.message}`)
+          .join("; ") || build.stderr || "eve build failed";
+      process.stderr.write(`aletheia: build failed — ${msg}\n`);
+      return 2;
+    }
+  }
+
+  const manifest = await runEveManifest(root);
+  if (!manifest.built || !manifest.facts) {
+    process.stderr.write(
+      `aletheia: no compiled manifest. Build the agent first (omit --no-build).\n`
+    );
+    return 2;
+  }
+
+  const gated = await loadConsent(root);
+  const facts = applyConsent(manifest.facts, gated);
+  const view = portraitView(facts);
+  const card = buildPortraitCard(facts, view.rows, {
+    verified: true,
+    headSha: await gitShortSha(root),
+    manifestSha: await manifestSha(root),
+    generatedAt: new Date().toISOString(),
+  });
+
+  const text = opts.format === "json" ? renderPortraitJson(card) : renderPortraitText(card);
+  await emit(text, opts.out);
+  return 0;
+}
+
 async function main(): Promise<void> {
   const [command, ...rest] = process.argv.slice(2);
-  if (command !== "diff" && command !== "passport") {
+  if (command !== "diff" && command !== "passport" && command !== "portrait") {
     process.stderr.write(
       "usage:\n" +
         "  aletheia diff     [--baseline file:<p>|git:<ref>] [--format markdown|json] [--fail-on elevated|any|never] [--out <file>] [--no-build] [--agent-dir <path>]\n" +
-        "  aletheia passport [--format markdown|json] [--out <file>] [--no-build] [--agent-dir <path>]\n"
+        "  aletheia passport [--format markdown|json] [--out <file>] [--no-build] [--agent-dir <path>]\n" +
+        "  aletheia portrait [--format markdown|json] [--out <file>] [--no-build] [--agent-dir <path>]\n"
     );
     process.exit(command ? 2 : 0);
   }
   const opts = parseArgs(rest);
-  process.exit(command === "passport" ? await runPassport(opts) : await runDiff(opts));
+  if (command === "passport") process.exit(await runPassport(opts));
+  if (command === "portrait") process.exit(await runPortrait(opts));
+  process.exit(await runDiff(opts));
 }
 
 void main();
