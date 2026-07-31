@@ -14,7 +14,7 @@ Agent-facing map of Aletheia. Prefer Markdown URLs; HTML routes are the human sh
 
 - [Quickstart](/docs/quickstart.md)
 - [Honesty contract](/docs/honesty-contract.md)
-- [Capability review & CLI](/docs/capability-review.md)
+- [Authority diff & CLI](/docs/capability-review.md)
 - [Example eve agents](/docs/example-agents.md)
 - [Passport](/docs/passport.md)
 - [Glossary](/docs/glossary.md)
@@ -26,7 +26,7 @@ Agent-facing map of Aletheia. Prefer Markdown URLs; HTML routes are the human sh
 
 - [About](/)
 - [Self-portrait](/portrait)
-- [Capability review](/review)
+- [Authority diff](/review)
 - [Gallery UI](/gallery)
 - [Manifesto UI](/manifesto)
 - [Privacy UI](/privacy)

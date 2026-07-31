@@ -38,7 +38,7 @@ So legibility has a time axis. The most important view isn't the snapshot; it's 
 
 ## Aletheia
 
-Aletheia is the proof. Point it at any [eve](https://eve.dev) agent and it renders that self-portrait and that capability review. It reads; it never runs, edits, or deploys. It shows verified facts where it can and marks the rest honestly. It makes an agent you didn't write understandable in the time it takes to read a paragraph.
+Aletheia is the proof. Point it at any [eve](https://eve.dev) agent and it renders that self-portrait and that authority diff. It reads; it never runs, edits, or deploys. It shows verified facts where it can and marks the rest honestly. It makes an agent you didn't write understandable in the time it takes to read a paragraph.
 
 It's deliberately small. It's not trying to be a platform. It's an argument, made in working software, for a way of designing.
 

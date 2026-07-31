@@ -1,6 +1,6 @@
 # @danielalbinsson/aletheia-cli
 
-Headless **capability review** for [Vercel eve](https://eve.dev) agents. Diffs
+Headless **authority diff** for [eve (Vercel)](https://eve.dev) agents. Diffs
 what an agent can do / reach / do unprompted against a baseline and fails CI when
 authority expands.
 

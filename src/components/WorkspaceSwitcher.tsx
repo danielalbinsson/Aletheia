@@ -4,7 +4,7 @@ import { useProjectStore } from "../store/ProjectStore";
 /**
  * Point Aletheia at any eve agent: pick from the discovered agents, or open the
  * Folder popover to browse to / type a folder to scan. Switching drives the
- * whole app (portrait + capability review).
+ * whole app (portrait + authority diff).
  */
 export function WorkspaceSwitcher() {
   const {

@@ -772,11 +772,11 @@ function portraitBlock(p) {
 }
 function warningsBlock(warnings) {
   if (warnings.length === 0) return [];
-  return ["#### \u26A0 Integrity warnings", "", ...warnings.map((w) => `- ${w}`), ""];
+  return ["#### Integrity warnings", "", ...warnings.map((w) => `- ${w}`), ""];
 }
 function renderMarkdown(diff, current, meta, portrait, warnings = []) {
   const v = verdict(diff, meta.failOn);
-  const out = [STICKY_MARKER, "", "### Aletheia \u2014 capability review", ""];
+  const out = [STICKY_MARKER, "", "### Aletheia \u2014 authority diff", ""];
   out.push(`**${v.headline}**`, "");
   out.push(...warningsBlock(warnings));
   if (portrait) out.push(...portraitBlock(portrait));
@@ -803,7 +803,7 @@ function renderMarkdown(diff, current, meta, portrait, warnings = []) {
   const elevated = diff.entries.filter((e) => e.risk === "elevated");
   const routine = diff.entries.filter((e) => e.risk === "routine");
   if (elevated.length) {
-    out.push("#### \u26A0 Needs your attention", "");
+    out.push("#### Needs your attention", "");
     for (const e of elevated) out.push(line(e));
     out.push("");
   }
@@ -886,11 +886,11 @@ function evaluatePassport(input) {
     ),
     check(
       "lifecycle-documented",
-      "Before / While / After lifecycle documented",
+      "Before the agent acts / While the agent works / After the agent acts lifecycle documented",
       ADVISORY,
       documentsLifecycle(input.uxDoc),
-      "UX.md documents the before / while / after lifecycle.",
-      "UX.md is missing or does not document all three lifecycle stages (before / while / after)."
+      "UX.md documents the Agentic UX lifecycle (Before the agent acts / While the agent works / After the agent acts).",
+      "UX.md is missing or does not document all three lifecycle stages (before the agent acts / while the agent works / after the agent acts)."
     )
   ];
   const failures = checks.filter((c) => c.required && c.status === "fail").length;

@@ -1,6 +1,6 @@
 // projectClient: browser-side calls to Aletheia's read-only inspection API.
 // No edit/build/run/deploy — just read the agent, its verified facts, its
-// capability review, and switch which agent is inspected.
+// authority diff, and switch which agent is inspected.
 
 import type { EveManifestResult } from "../server/eveObservability";
 import type { RawProject } from "../parser/loadProject";
@@ -46,7 +46,7 @@ export interface CapabilityReviewResponse {
   current?: CapabilitySnapshot;
 }
 
-/** Capability review: how the inspected agent's authority changed vs baseline. */
+/** Authority diff: how the inspected agent's authority changed vs baseline. */
 export async function fetchReview(): Promise<CapabilityReviewResponse> {
   const res = await fetch("/api/project/review");
   return parseResponse<CapabilityReviewResponse>(res);
@@ -87,7 +87,7 @@ export async function pickWorkspaceFolder(): Promise<
   return parseResponse<WorkspacesResponse | { canceled: true }>(res);
 }
 
-/** Switch which agent the portrait + capability review inspect. */
+/** Switch which agent the portrait + authority diff inspect. */
 export async function setActiveWorkspace(path: string): Promise<{ activePath: string }> {
   const res = await fetch("/api/workspaces/active", {
     method: "POST",

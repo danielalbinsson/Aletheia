@@ -17,7 +17,7 @@ export function HomePage() {
           </p>
           <h1>See what an agent can do</h1>
           <p className="home-lede">
-            You cloned an eve agent you didn't write. Before you run it, you'd like to know: what
+            You cloned an eve (Vercel) agent you didn't write. Before you run it, you'd like to know: what
             can it touch? What does it do on its own? What does it ask permission for? What is it{" "}
             <em>forbidden</em> from doing? Today the only way to answer that is to read the source.
           </p>
@@ -28,7 +28,7 @@ export function HomePage() {
             </a>{" "}
             agent and it renders a <strong>self-portrait</strong> — a first-person page where the
             agent lays out its capabilities, its reach, what it does unprompted, and the powers it
-            has given up — plus a <strong>capability review</strong> that shows how that authority
+            has given up — plus an <strong>authority diff</strong> that shows how that authority
             changed over time. It never runs the agent, never edits it, never deploys it. It only
             makes it legible.
           </p>
@@ -75,7 +75,7 @@ pnpm dev            # → http://localhost:5173`}</code>
           <p>
             Click <strong>Browse folder…</strong> and pick a directory. Aletheia scans for eve agents
             — any folder containing <code>agent/agent.ts</code> — and lists them in the Agent
-            dropdown. Pick one; its portrait and capability review render for that agent.
+            dropdown. Pick one; its portrait and authority diff render for that agent.
           </p>
           <p>
             Prefer a fixed target? Set <code>ALETHEIA_WORKSPACE</code> in <code>.env.local</code>.
@@ -109,15 +109,15 @@ pnpm dev            # → http://localhost:5173`}</code>
         </section>
 
         <section>
-          <h2>Capability review — trust over time</h2>
+          <h2>Authority diff — trust over time</h2>
           <p>
             The novel part isn't the picture; it's the <strong>diff</strong>. New external reach, a
             new schedule, a new delegation, a lifted restriction, or a model swap are flagged{" "}
-            <em>needs your attention</em>. Routine changes pass quietly. The same review runs
+            <em>needs your attention</em>. Routine changes pass quietly. The same diff runs
             headless as <code>aletheia diff</code> on pull requests.
           </p>
           <p>
-            <Link to="/review">Open capability review →</Link>
+            <Link to="/review">Open authority diff →</Link>
           </p>
         </section>
 
@@ -128,7 +128,7 @@ pnpm dev            # → http://localhost:5173`}</code>
               <Link to="/portrait">Portrait</Link> — the agent's self-portrait
             </li>
             <li>
-              <Link to="/review">Review</Link> — how its authority changed
+              <Link to="/review">Authority diff</Link> — how its authority changed
             </li>
             <li>
               <Link to="/gallery">Gallery</Link> — example agents read by Aletheia

@@ -142,11 +142,11 @@ export function evaluatePassport(input: PassportInputs): PassportResult {
     ),
     check(
       "lifecycle-documented",
-      "Before / While / After lifecycle documented",
+      "Before the agent acts / While the agent works / After the agent acts lifecycle documented",
       ADVISORY,
       documentsLifecycle(input.uxDoc),
-      "UX.md documents the before / while / after lifecycle.",
-      "UX.md is missing or does not document all three lifecycle stages (before / while / after)."
+      "UX.md documents the Agentic UX lifecycle (Before the agent acts / While the agent works / After the agent acts).",
+      "UX.md is missing or does not document all three lifecycle stages (before the agent acts / while the agent works / after the agent acts)."
     ),
   ];
 

@@ -1,6 +1,6 @@
 # Quickstart — Aletheia for eve agents
 
-Aletheia is a local-first trust tool for [Vercel eve](https://eve.dev) agents. It reads an agent's files (and optionally the compiled eve manifest) and renders a **self-portrait** plus a **capability review**. It never runs, edits, or deploys the agent.
+Aletheia is a local-first trust tool for [eve (Vercel)](https://eve.dev) agents. It reads an agent's files (and optionally the compiled eve manifest) and renders a **self-portrait** plus an **authority diff**. It never runs, edits, or deploys the agent.
 
 The `aletheia diff` CLI invokes `eve build` by default so its facts can read *verified from build* — pass `--no-build` to skip it. That writes eve's own output under `.eve/` and leaves your agent source untouched. Browsing in the web UI never builds.
 
@@ -15,7 +15,7 @@ pnpm install
 pnpm dev            # → http://localhost:5173
 ```
 
-In the app, click **Browse folder…** and pick a directory that contains eve projects (folders with `agent/agent.ts`). Choose an agent from the dropdown. Portrait and capability review render for that agent.
+In the app, click **Browse folder…** and pick a directory that contains eve projects (folders with `agent/agent.ts`). Choose an agent from the dropdown. Portrait and authority diff render for that agent.
 
 ## Fixed workspace
 
@@ -24,7 +24,7 @@ In the app, click **Browse folder…** and pick a directory that contains eve pr
 ALETHEIA_WORKSPACE=/path/to/your/eve-agent
 ```
 
-## Headless capability review (CI)
+## Headless authority diff (CI)
 
 ```bash
 npx @danielalbinsson/aletheia-cli diff --baseline git:main

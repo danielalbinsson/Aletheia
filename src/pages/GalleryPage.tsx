@@ -57,7 +57,7 @@ export function GalleryPage() {
         <img
           className="gallery-shot"
           src={heroDiff}
-          alt="Aletheia capability review flagging that an agent's authority expanded"
+          alt="Aletheia authority diff flagging that an agent's authority expanded"
         />
         <figcaption className="gallery-cap">
           <span className="gallery-name">the moment that matters</span>

@@ -13,7 +13,7 @@ legibility** tool for eve agents. Point it at any agent directory and it renders
 
 1. A **self-portrait** — first-person view of capabilities, reach, schedules, and
    restrictions
-2. A **capability review** — authority diff over time (and `aletheia diff` for PRs)
+2. An **authority diff** over time (and `aletheia diff` for PRs)
 
 It never runs, edits, or deploys the agent. Honesty contract: never present a
 guess as a fact — every claim is **verified from build** or labelled **from source**.

@@ -81,7 +81,7 @@ function portraitBlock(p: PortraitView): string[] {
 
 function warningsBlock(warnings: string[]): string[] {
   if (warnings.length === 0) return [];
-  return ["#### ⚠ Integrity warnings", "", ...warnings.map((w) => `- ${w}`), ""];
+  return ["#### Integrity warnings", "", ...warnings.map((w) => `- ${w}`), ""];
 }
 
 export function renderMarkdown(
@@ -92,7 +92,7 @@ export function renderMarkdown(
   warnings: string[] = []
 ): string {
   const v = verdict(diff, meta.failOn);
-  const out: string[] = [STICKY_MARKER, "", "### Aletheia — capability review", ""];
+  const out: string[] = [STICKY_MARKER, "", "### Aletheia — authority diff", ""];
   out.push(`**${v.headline}**`, "");
   out.push(...warningsBlock(warnings));
   if (portrait) out.push(...portraitBlock(portrait));
@@ -123,7 +123,7 @@ export function renderMarkdown(
   const routine = diff.entries.filter((e) => e.risk === "routine");
 
   if (elevated.length) {
-    out.push("#### ⚠ Needs your attention", "");
+    out.push("#### Needs your attention", "");
     for (const e of elevated) out.push(line(e));
     out.push("");
   }

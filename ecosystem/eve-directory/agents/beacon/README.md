@@ -7,7 +7,7 @@ Slack (MCP).
 **Inspect before you run.** This listing is an Aletheia blueprint — point
 [Aletheia](https://github.com/danielalbinsson/Aletheia) at the installed `agent/`
 (or use this folder as `ALETHEIA_WORKSPACE`) to see the self-portrait and
-capability review before `eve dev` / deploy.
+authority diff before `eve dev` / deploy.
 
 ```bash
 npx skills add danielalbinsson/Aletheia --skill aletheia-eve-trust

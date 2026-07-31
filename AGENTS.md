@@ -1,6 +1,6 @@
 # Aletheia — instructions for coding agents
 
-Aletheia is a **local-first trust / legibility tool** for [Vercel eve](https://eve.dev) agents. It renders a first-person **self-portrait** and a **capability review** (authority diff). It does **not** run, edit, or deploy agents.
+Aletheia is a **local-first trust / legibility tool** for [eve (Vercel)](https://eve.dev) agents. It renders a first-person **self-portrait** and an **authority diff** (authority diff). It does **not** run, edit, or deploy agents.
 
 One exception, stated plainly because the honesty contract applies to Aletheia's own claims too: `aletheia diff` invokes `eve build` by default, so its facts can read *verified from build*. Pass `--no-build` to skip it. Building writes eve's own output under `.eve/` and leaves your agent source untouched. The web UI and dev server never build.
 
@@ -94,7 +94,7 @@ The support-bot blueprint lives in its own repo: https://github.com/danielalbins
 
 - UI: React 18 + Vite + TypeScript
 - Package manager: **pnpm** (not npm for day-to-day)
-- Eve dependency for parsing/build verification; Aletheia itself is not an eve runtime host for user agents in production use
+- eve dependency for parsing/build verification; Aletheia itself is not an eve runtime host for user agents in production use
 
 ## Do not
 

@@ -1,6 +1,6 @@
 # Aletheia — instructions for coding agents
 
-Aletheia is a **local-first trust / legibility tool** for [Vercel eve](https://eve.dev) agents. It renders a first-person **self-portrait** and a **capability review** (authority diff). It does **not** run, edit, build, or deploy agents.
+Aletheia is a **local-first trust / legibility tool** for [eve (Vercel)](https://eve.dev) agents. It renders a first-person **self-portrait** and an **authority diff** (authority diff). It does **not** run, edit, build, or deploy agents.
 
 Prefer Markdown discovery surfaces on this host: [`/llms.txt`](/llms.txt), [`/llms-full.txt`](/llms-full.txt), and this file. Source of truth: https://github.com/danielalbinsson/Aletheia
 

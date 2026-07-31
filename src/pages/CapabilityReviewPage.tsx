@@ -15,13 +15,13 @@ const GLYPH: Record<DiffEntry["change"], string> = {
 function verdictLine(r: CapabilityReviewResponse): { headline: string; tone: string } {
   if (!r.diff) return { headline: "Nothing to review.", tone: "routine" };
   if (r.diff.isInitial) {
-    return { headline: "First snapshot — this is the agent's initial authority.", tone: "elevated" };
+    return { headline: "First snapshot: this is the agent's initial authority.", tone: "elevated" };
   }
   if (!r.diff.hasChanges) {
     return { headline: "No capability changes since the last snapshot.", tone: "routine" };
   }
   if (r.diff.hasElevated) {
-    return { headline: "Authority expanded — review required.", tone: "elevated" };
+    return { headline: "Authority expanded: review required.", tone: "elevated" };
   }
   return { headline: "Routine capability changes only.", tone: "routine" };
 }
@@ -48,7 +48,7 @@ export function CapabilityReviewPage() {
       }
       setReview(await fetchReview());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not load capability review");
+      setError(err instanceof Error ? err.message : "Could not load authority diff");
     } finally {
       setLoading(false);
     }
@@ -64,7 +64,7 @@ export function CapabilityReviewPage() {
   return (
     <main className="app review-app">
       <AppNav
-        subtitle="review"
+        subtitle="authority"
         center={apiAvailable ? <WorkspaceSwitcher /> : undefined}
       />
 
@@ -148,7 +148,7 @@ export function CapabilityReviewPage() {
 
             {elevated.length > 0 && (
               <div className="review-group">
-                <h2 className="review-elevated-head">⚠ Needs your attention</h2>
+                <h2 className="review-elevated-head">Needs your attention</h2>
                 <ul className="review-list">
                   {elevated.map((e, i) => (
                     <li key={i}>

@@ -6,7 +6,7 @@
 [![llms.txt](https://img.shields.io/badge/llms.txt-ready-111)](./public/llms.txt)
 [![AGENTS.md](https://img.shields.io/badge/AGENTS.md-ready-111)](./AGENTS.md)
 
-You cloned an eve agent you didn't write. Before you run it, you'd like to know:
+You cloned an eve (Vercel) agent you didn't write. Before you run it, you'd like to know:
 what can it touch? What does it do on its own? What does it ask permission for?
 What is it *forbidden* from doing? Today the only way to answer that is to read
 the source.
@@ -14,12 +14,12 @@ the source.
 **Aletheia reads it for you.** Point it at any [eve](https://eve.dev) agent and it
 renders a **self-portrait** — a first-person page where the agent lays out its
 capabilities, its reach into the outside world, the things it does unprompted,
-and the powers it has given up — plus a **capability review** that shows how that
+and the powers it has given up — plus an **authority diff** that shows how that
 authority has changed over time. It never runs the agent, never edits it, never
 deploys it. It only makes it legible.
 
 Product shell + Kit Certified gallery: **[agentic-kit.dev](https://agentic-kit.dev)**
-(golden path, CI docs, paid Capability Review).
+(golden path, CI docs, paid [Capability Review](https://agentic-kit.dev/review)).
 
 **Stamped example:** [design-qa-agent](https://github.com/danielalbinsson/design-qa-agent)
 — multi-agent design QA. Portrait and passport on the kit gallery; lifecycle
@@ -50,7 +50,7 @@ pnpm dev            # → http://localhost:5173
 Then in the app, click **Browse folder…** and pick a directory (e.g.
 `~/Documents`, or wherever your eve projects live). Aletheia scans it for eve
 agents — any folder containing `agent/agent.ts` — and lists them in the **Agent**
-dropdown. Pick one; its portrait and capability review render for that agent.
+dropdown. Pick one; its portrait and authority diff render for that agent.
 That's the whole loop.
 
 Prefer a fixed target? Set `ALETHEIA_WORKSPACE` in `.env.local`:
@@ -64,13 +64,13 @@ to *build* an agent (`eve build`) so its facts read *verified from build*; until
 then Aletheia shows the honest *from source* view. Browsing in the web UI is
 read-only: it never builds, runs, edits, or deploys your agent. The `aletheia
 diff` CLI is the one part that builds — see
-[Capability review in CI](#capability-review-in-ci-aletheia-diff).
+[Authority diff in CI](#authority-diff-in-ci-aletheia-diff).
 
 | Route | What it shows |
 | ----- | ------------- |
 | `/` | About — what Aletheia is and how to use it |
 | `/portrait` | The agent's self-portrait |
-| `/review` | Capability review — how its authority changed |
+| `/review` | Authority diff — how its authority changed |
 | `/gallery` | Example agents read by Aletheia |
 | `/manifesto` | The POV behind the project |
 | `/privacy` | Privacy note |
@@ -105,7 +105,7 @@ gate found in tool source that isn't mirrored in the sidecar is reported as
 **drift**, not shown as fact. If a future eve serializes approval, the same field
 simply flips to verified.
 
-## Capability review — trust over time
+## Authority diff: trust over time
 
 The novel part isn't the picture; it's the **diff**. Agents change, and the
 question that matters is *did this version give itself more power?*
@@ -130,7 +130,7 @@ docs/calendar rank *medium* — so the review says "now reaches payments," not
 }
 ```
 
-## Capability review in CI (`aletheia diff`)
+## Authority diff in CI (`aletheia diff`)
 
 The same review runs headless, so it can land on a **pull request** — automatic,
 shareable, and blocking, the way a Vercel preview made deploys feel safe. It
@@ -175,7 +175,7 @@ src/
   ├─ cli/                    `aletheia diff` — the headless PR check
   ├─ portrait/               meaning → visual variables → the ASCII portrait
   ├─ store/ProjectStore.tsx  overlays verified facts onto the source model
-  └─ pages/                  the portrait + the capability review
+  └─ pages/                  the portrait + the authority diff
 ```
 
 `manifestAdapter.ts` is the single point of contact with eve's manifest format
@@ -248,8 +248,8 @@ expose it), and anything Aletheia would have to guess at.
 
 ---
 
-Built by [Daniel Albinsson](https://danielalbinsson.com) — author of the
+Built by [Daniel Albinsson](https://danielalbinsson.com). Author of the
 [Agentic UX](https://agentic-ux.com) framework and [Agentic Kit](https://agentic-kit.dev)
-(Eve agent trust: inspect, gate, stamp). [Hire / consult](https://agentic-ux.com/hire) ·
+(Inspect · Gate · Stamp for eve agents). [Hire / consult](https://agentic-ux.com/hire) ·
 [Capability Review](https://agentic-kit.dev/review) ·
 [daniel.Albinsson@pm.me](mailto:daniel.Albinsson@pm.me)

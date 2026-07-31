@@ -1,6 +1,6 @@
 # Gallery
 
-Three eve agents, read by Aletheia. Each portrait is **generated** by
+Four eve agents, read by Aletheia. Each portrait is **generated** by
 `aletheia portrait` from the agent's compiled manifest — most facts are
 *verified from build*; the one exception, "asks first" approval, is source-declared
 because eve does not serialize approval into the manifest.

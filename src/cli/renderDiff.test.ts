@@ -46,7 +46,7 @@ describe("renderMarkdown", () => {
     const md = renderMarkdown(diffSnapshots(baseSnap, next), next, meta);
     expect(md.startsWith(STICKY_MARKER)).toBe(true);
     expect(md).toContain("Authority expanded");
-    expect(md).toContain("⚠ Needs your attention");
+    expect(md).toContain("Needs your attention");
     expect(md).toContain("stripe");
     expect(md).toContain("baseline `git:main`");
     expect(md).toContain("head `abc1234`");
@@ -67,7 +67,7 @@ describe("renderMarkdown", () => {
     const md = renderMarkdown(diffSnapshots(baseSnap, baseSnap), baseSnap, meta, undefined, [
       "refund declares approval in source but is missing from the sidecar.",
     ]);
-    expect(md).toContain("⚠ Integrity warnings");
+    expect(md).toContain("Integrity warnings");
     expect(md).toContain("missing from the sidecar");
   });
 

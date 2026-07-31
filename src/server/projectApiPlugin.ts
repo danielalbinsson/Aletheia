@@ -232,7 +232,7 @@ export function projectApiPlugin(agentRoot: string, workspaceRoot: string): Plug
             return sendJson(res, 200, await runEveManifest(inspectWorkspace));
           }
 
-          // Capability review: diff the built manifest against the last deployed
+          // Authority diff: diff the built manifest against the last deployed
           // snapshot. Read-only — surfaces how the agent's authority changed.
           if (sub === "review" && method === "GET") {
             const manifest = await runEveManifest(inspectWorkspace);

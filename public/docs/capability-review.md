@@ -1,6 +1,6 @@
-# Capability review and `aletheia diff`
+# Authority diff and `aletheia diff`
 
-The novel part of Aletheia is not only the portrait — it is the **authority diff** over time. The question: *did this version give the agent more power?*
+The novel part of Aletheia is not only the portrait. It is the **authority diff** over time. The question: *did this version give the agent more power?*
 
 ## What is elevated
 
@@ -49,7 +49,7 @@ Baseline file often used: `agent/.aletheia/deployed-capabilities.json` (tracked 
 
 ## Analogy
 
-Capability review should feel like a **Vercel preview** for deploys: automatic, shareable, and blocking when authority expands — before the agent ships with more power than last time.
+Authority diff should feel like a **Vercel preview** for deploys: automatic, shareable, and blocking when authority expands — before the agent ships with more power than last time.
 
 ## Sitemap
 

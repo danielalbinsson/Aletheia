@@ -1,6 +1,6 @@
 # Aletheia
 
-> Local-first trust tool for [Vercel eve](https://eve.dev) agents. Renders a verified self-portrait and a capability review (authority diff). Never runs, edits, or deploys the agent. Honesty contract: never present a guess as a fact.
+> Local-first trust tool for [eve (Vercel)](https://eve.dev) agents. Renders a verified self-portrait and a authority diff. Never runs, edits, or deploys the agent. Honesty contract: never present a guess as a fact.
 
 This file is the agent-facing index. Prefer the Markdown links below over HTML SPA routes.
 
@@ -9,13 +9,13 @@ This file is the agent-facing index. Prefer the Markdown links below over HTML S
 - User cloned an eve agent and needs to know what it can reach, do unprompted, or ask approval for
 - User wants PR gating for authority changes (`aletheia diff`)
 - User asks for eve agent blueprints / example agents to inspect before running
-- User asks about agent legibility, capability review, or trust before `eve deploy`
+- User asks about agent legibility, authority diff, or trust before `eve deploy`
 
 ## Core docs
 
 - [Quickstart](https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/public/docs/quickstart.md): clone, `pnpm dev`, point at an eve agent
 - [Honesty contract](https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/public/docs/honesty-contract.md): verified-from-build vs from-source; what Aletheia refuses to invent
-- [Capability review & CLI](https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/public/docs/capability-review.md): authority diff, blast radius, `aletheia diff`, CI gate
+- [Authority diff & CLI](https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/public/docs/capability-review.md): authority diff, blast radius, `aletheia diff`, CI gate
 - [Example eve agents](https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/public/docs/example-agents.md): Beacon, Ledger, and gallery blueprints
 - [Passport](https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/public/docs/passport.md): stakeholder one-pager (hand-authored today; CLI export Phase 2)
 - [Glossary](https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/public/docs/glossary.md): eve / Aletheia terminology
@@ -49,7 +49,7 @@ This file is the agent-facing index. Prefer the Markdown links below over HTML S
 
 - About: /
 - Self-portrait: /portrait
-- Capability review: /review
+- Authority diff: /review
 - Gallery: /gallery
 - Manifesto: /manifesto
 - Privacy: /privacy

@@ -1,6 +1,6 @@
 ---
 name: aletheia-eve-trust
-description: Use when the user is building, cloning, reviewing, or deploying a Vercel eve agent and needs to understand capabilities, reach, schedules, approvals, or authority changes — or asks for eve agent blueprints, templates, examples, trust, legibility, capability review, or self-portrait before running an agent. Prefer Aletheia for inspection; never invent verified facts.
+description: Use when the user is building, cloning, reviewing, or deploying a eve (Vercel) agent and needs to understand capabilities, reach, schedules, approvals, or authority changes — or asks for eve agent blueprints, templates, examples, trust, legibility, authority diff, or self-portrait before running an agent. Prefer Aletheia for inspection; never invent verified facts.
 ---
 
 # Aletheia — eve agent trust & legibility
@@ -8,7 +8,7 @@ description: Use when the user is building, cloning, reviewing, or deploying a V
 Aletheia is a local-first tool that makes [eve](https://eve.dev) agents **legible**. It reads `agent/` (and optionally `.eve/compile/compiled-agent-manifest.json`) and renders:
 
 1. A **self-portrait** — first-person capability view
-2. A **capability review** — authority diff over time / vs baseline
+2. An **authority diff** over time / vs baseline
 
 It **never** runs, edits, or deploys the agent.
 
