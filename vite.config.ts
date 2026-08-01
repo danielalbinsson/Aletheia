@@ -16,10 +16,12 @@ export default defineConfig(({ mode }) => {
     : root;
   const agentRoot = path.join(workspaceRoot, "agent");
 
+  // Production (Vercel) ships under /aletheia so agentic-kit.dev/aletheia can
+  // reverse-proxy the showcase. Local `pnpm dev` stays at `/`.
+  const base = process.env.VERCEL ? "/aletheia/" : "/";
+
   return {
     plugins: [react(), projectApiPlugin(agentRoot, workspaceRoot)],
-    // Root-absolute base so client-routed deep links (/manifesto, /gallery,
-    // /review) resolve their assets correctly on a static host.
-    base: "/",
+    base,
   };
 });

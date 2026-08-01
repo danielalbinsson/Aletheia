@@ -2,7 +2,38 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "pnpm build",
   "outputDirectory": "dist",
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/aletheia",
+      "permanent": false
+    }
+  ],
   "rewrites": [
+    {
+      "source": "/aletheia/assets/:path*",
+      "destination": "/assets/:path*"
+    },
+    {
+      "source": "/aletheia/docs/:path*",
+      "destination": "/docs/:path*"
+    },
+    {
+      "source": "/aletheia/(llms.txt|llms-full.txt|robots.txt|sitemap.md|sitemap.xml|AGENTS.md|agents.md|manifesto.md|gallery.md|privacy.md)",
+      "destination": "/$1"
+    },
+    {
+      "source": "/aletheia",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/aletheia/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/aletheia/:path*",
+      "destination": "/index.html"
+    },
     {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
@@ -17,6 +48,13 @@
       ]
     },
     {
+      "source": "/aletheia/(llms.txt|llms-full.txt|robots.txt|sitemap.md|AGENTS.md|agents.md|manifesto.md|gallery.md|privacy.md)",
+      "headers": [
+        { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, max-age=300" }
+      ]
+    },
+    {
       "source": "/docs/:path*.md",
       "headers": [
         { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
@@ -24,7 +62,21 @@
       ]
     },
     {
+      "source": "/aletheia/docs/:path*.md",
+      "headers": [
+        { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, max-age=300" }
+      ]
+    },
+    {
       "source": "/sitemap.xml",
+      "headers": [
+        { "key": "Content-Type", "value": "application/xml; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, max-age=300" }
+      ]
+    },
+    {
+      "source": "/aletheia/sitemap.xml",
       "headers": [
         { "key": "Content-Type", "value": "application/xml; charset=utf-8" },
         { "key": "Cache-Control", "value": "public, max-age=300" }
