@@ -21,12 +21,10 @@ deploys it. It only makes it legible.
 Product shell + Kit Certified gallery: **[agentic-kit.dev](https://agentic-kit.dev)**
 (golden path, CI docs, paid [Capability Review](https://agentic-kit.dev/review)).
 
-**Stamped example:** [design-qa-agent](https://github.com/danielalbinsson/design-qa-agent)
+**Stamped example:** [Design QA Agent](https://github.com/danielalbinsson/design-qa-agent)
 — multi-agent design QA. Portrait and passport on the kit gallery; lifecycle
 rationale in [Agentic UX](https://agentic-ux.com); copyable siblings in
 [eve-blueprints](https://github.com/danielalbinsson/eve-blueprints).
-
-Not a dashboard. Not a flowchart. A portrait you can trust.
 
 **For AI agents:** start at [`public/llms.txt`](./public/llms.txt) or
 [`AGENTS.md`](./AGENTS.md). Install the skill:

@@ -14,10 +14,10 @@ interface Entry {
 
 const ENTRIES: Entry[] = [
   {
-    name: "design-qa-agent",
+    name: "Design QA Agent",
     src: portraitDesignQa,
     caption:
-      "An orchestrator — no tools of its own; it directs three specialist subagents and reaches GitHub over MCP.",
+      "An orchestrator with no tools of its own; it directs three specialist subagents and reaches GitHub over MCP.",
   },
   {
     name: "support-bot",
@@ -47,9 +47,10 @@ export function GalleryPage() {
       <header className="gallery-intro">
         <h1>Four agents, read by Aletheia</h1>
         <p>
-          Each portrait is generated from the agent's own compiled manifest — no
-          annotations, every fact <em>verified from build</em>. Point Aletheia at a
-          folder of agents and this is what you see.
+          Example portraits captured from compiled manifests at build time. These
+          are illustrative screenshots from the inspector UI, not live renders.
+          For generated portraits you can fetch and verify, see the{" "}
+          <a href="https://agentic-kit.dev/gallery">Agentic Kit gallery</a>.
         </p>
       </header>
 
