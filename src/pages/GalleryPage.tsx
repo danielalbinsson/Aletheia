@@ -14,7 +14,7 @@ interface Entry {
 
 const ENTRIES: Entry[] = [
   {
-    name: "Design QA Agent",
+    name: "design-qa-agent",
     src: portraitDesignQa,
     caption:
       "An orchestrator with no tools of its own; it directs three specialist subagents and reaches GitHub over MCP.",
@@ -23,19 +23,19 @@ const ENTRIES: Entry[] = [
     name: "support-bot",
     src: portraitSupportBot,
     caption:
-      "Customer support with real reach: looks up customers and orders, escalates to a human, and asks approval before issuing a refund — it charges the payment method.",
+      "Customer support with real reach: looks up customers and orders, escalates to a human, and asks approval before issuing a refund, because that tool charges the payment method.",
   },
   {
     name: "code-reviewer",
     src: portraitCodeReviewer,
     caption:
-      "Reviews code changes — reads a git diff, runs a security checklist, submits structured feedback. Reaches nothing outside itself.",
+      "Reviews code changes: reads a git diff, runs a security checklist, submits structured feedback. Reaches nothing outside itself.",
   },
   {
     name: "research-assistant",
     src: portraitResearch,
     caption:
-      "Gathers and weighs sources — search, fetch, compare, and evaluate credibility before citing. Acts only when asked.",
+      "Gathers and weighs sources: search, fetch, compare, and evaluate credibility before citing. Acts only when asked.",
   },
 ];
 
@@ -61,10 +61,10 @@ export function GalleryPage() {
           alt="Aletheia authority diff flagging that an agent's authority expanded"
         />
         <figcaption className="gallery-cap">
-          <span className="gallery-name">the moment that matters</span>
+          <span className="gallery-name">Authority expanded</span>
           Agents change. When a new version gains external reach, a delegation, or drops an
-          approval gate, the review says so — <em>authority expanded, review required</em> —
-          and asks a human to look. Routine changes pass quietly.
+          approval gate, the authority diff says so: <em>authority expanded, review required</em>.
+          A human has to look. Routine changes pass without a flag.
         </figcaption>
       </figure>
 

@@ -49,7 +49,7 @@ export function PortraitPage() {
 
       <footer className="footer">
         <span>
-          Read from <code>agent/</code> — the files are the truth.
+          Read from <code>agent/</code>. The files are the source of this portrait.
         </span>
       </footer>
       <AppFooter />

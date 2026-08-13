@@ -19,12 +19,12 @@ aletheia portrait --format text     # or --format json
 > heading after that tool had been deleted. The portrait is now an artifact of
 > the current build, not a snapshot.
 
-## The moment that matters: authority expanded
+## Authority expanded
 
 Agents change. `aletheia diff` flags it when a new version gives the agent **more
-power** — new external reach, a new delegation, a lifted restriction, a removed
-approval gate — and, in CI, blocks the merge until a human acknowledges it.
-Routine changes pass quietly.
+power** (new external reach, a new delegation, a lifted restriction, a removed
+approval gate) and, in CI, blocks the merge until a human acknowledges it.
+Routine changes pass without a flag.
 
 ## design-qa-agent
 

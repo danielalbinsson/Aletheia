@@ -1,6 +1,6 @@
 # Authority diff and `aletheia diff`
 
-The novel part of Aletheia is not only the portrait. It is the **authority diff** over time. The question: *did this version give the agent more power?*
+The **authority diff** asks whether this version gave the agent more power.
 
 ## What is elevated
 
@@ -12,7 +12,7 @@ Flagged as **needs your attention**:
 - Lifted restriction / removed approval gate
 - Model swap or system-prompt change that expands authority
 
-Routine changes pass quietly.
+Routine changes pass without a flag.
 
 ## Blast radius
 

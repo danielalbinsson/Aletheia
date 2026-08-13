@@ -105,7 +105,7 @@ See the full [sitemap](/sitemap.md) for all pages.
 
 # Authority diff and `aletheia diff`
 
-The novel part of Aletheia is not only the portrait — it is the **authority diff** over time. The question: *did this version give the agent more power?*
+The **authority diff** asks whether this version gave the agent more power.
 
 ## What is elevated
 
@@ -117,7 +117,7 @@ Flagged as **needs your attention**:
 - Lifted restriction / removed approval gate
 - Model swap or system-prompt change that expands authority
 
-Routine changes pass quietly.
+Routine changes pass without a flag.
 
 ## Blast radius
 
@@ -267,7 +267,7 @@ Call it the **honesty contract**. It's the whole thing.
 
 Agents update. They gain a tool, reach a new system, start acting on a schedule, swap a model, quietly drop an approval gate. Any of those can expand what the agent is allowed to do — and an expansion of authority is exactly the moment a human should be asked to look.
 
-So legibility has a time axis. The most important view isn't the snapshot; it's the **diff**: *this version gives the agent more power than the last one — review required.* Routine changes should pass quietly. Authority changes should stop and ask.
+So legibility has a time axis. The most important view isn't the snapshot; it's the **diff**: *this version gives the agent more power than the last one — review required.* Routine changes should pass without a flag. Authority changes should stop and ask.
 
 ## Aletheia
 

@@ -5,13 +5,13 @@ is generated from the agent's own compiled manifest, every fact labelled
 *verified from build*. Point Aletheia at a folder of agents and this is what you
 see.
 
-## The moment that matters: authority expanded
+## Authority expanded
 
-Agents change. The review flags it when a new version gives the agent **more
-power** — new external reach, a new delegation, a lifted restriction, a removed
-approval gate — and asks a human to look. Routine changes pass quietly.
+Agents change. The authority diff flags it when a new version gives the agent **more
+power** (new external reach, a new delegation, a lifted restriction, a removed
+approval gate) and a human has to look. Routine changes pass without a flag.
 
-![Capability review — authority expanded](examples/gallery/capability-review-authority-expanded.jpg)
+![Authority diff: authority expanded](examples/gallery/capability-review-authority-expanded.jpg)
 
 ## design-qa-agent
 

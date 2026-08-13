@@ -55,7 +55,7 @@ export function WorkspaceSwitcher() {
           {agents.map((a) => (
             <option key={a.path} value={a.path}>
               {a.name}
-              {a.isDefault ? " — default" : ""}
+              {a.isDefault ? " (default)" : ""}
             </option>
           ))}
         </select>
@@ -95,7 +95,7 @@ export function WorkspaceSwitcher() {
           </form>
           {scanRoot && (
             <p className="ws-scan-hint">
-              Scanning {scanRoot} — {discovered} agent{discovered === 1 ? "" : "s"} found
+              Scanning {scanRoot}: {discovered} agent{discovered === 1 ? "" : "s"} found
             </p>
           )}
         </div>

@@ -34,7 +34,7 @@ Call it the **honesty contract**. It's the whole thing.
 
 Agents update. They gain a tool, reach a new system, start acting on a schedule, swap a model, quietly drop an approval gate. Any of those can expand what the agent is allowed to do — and an expansion of authority is exactly the moment a human should be asked to look.
 
-So legibility has a time axis. The most important view isn't the snapshot; it's the **diff**: *this version gives the agent more power than the last one — review required.* Routine changes should pass quietly. Authority changes should stop and ask.
+So legibility has a time axis. The most important view isn't the snapshot; it's the **diff**: *this version gives the agent more power than the last one — review required.* Routine changes should pass without a flag. Authority changes should stop and ask.
 
 ## Aletheia
 

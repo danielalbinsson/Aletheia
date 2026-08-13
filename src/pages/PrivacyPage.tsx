@@ -36,7 +36,7 @@ export function PrivacyPage() {
           <h2>Local tool (when you run <code>pnpm dev</code>)</h2>
           <p>
             The local Aletheia server reads eve agent files from folders you choose on your machine.
-            That data stays on your computer — it is not uploaded to this website or to Aletheia's
+            That data stays on your computer. It is not uploaded to this website or to Aletheia's
             authors. Aletheia does not run, edit, or deploy your agents.
           </p>
           <p>

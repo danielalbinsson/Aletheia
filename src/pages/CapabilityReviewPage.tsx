@@ -13,17 +13,17 @@ const GLYPH: Record<DiffEntry["change"], string> = {
 };
 
 function verdictLine(r: CapabilityReviewResponse): { headline: string; tone: string } {
-  if (!r.diff) return { headline: "Nothing to review.", tone: "routine" };
+  if (!r.diff) return { headline: "No authority changes to show.", tone: "routine" };
   if (r.diff.isInitial) {
     return { headline: "First snapshot: this is the agent's initial authority.", tone: "elevated" };
   }
   if (!r.diff.hasChanges) {
-    return { headline: "No capability changes since the last snapshot.", tone: "routine" };
+    return { headline: "No authority changes since the last snapshot.", tone: "routine" };
   }
   if (r.diff.hasElevated) {
     return { headline: "Authority expanded: review required.", tone: "elevated" };
   }
-  return { headline: "Routine capability changes only.", tone: "routine" };
+  return { headline: "Routine authority changes only.", tone: "routine" };
 }
 
 export function CapabilityReviewPage() {
@@ -70,7 +70,7 @@ export function CapabilityReviewPage() {
 
       <section className="review-body">
         <h1 className="review-title">
-          {model ? model.name : "Agent"} — how its authority changed
+          {model ? model.name : "Agent"}: how its authority changed
         </h1>
 
         {!apiAvailable && !storeLoading && (
@@ -79,20 +79,20 @@ export function CapabilityReviewPage() {
             Showing this agent&apos;s capabilities from source.
           </p>
         )}
-        {loading && <p className="review-note">Loading review…</p>}
+        {loading && <p className="review-note">Loading authority diff…</p>}
         {error && <p className="review-note review-error">{error}</p>}
 
         {review && !loading && !review.built && (
           <div className="review-group">
             {apiAvailable && (
               <p className="review-verdict tone-routine">
-                No compiled manifest yet — showing capabilities <strong>from source</strong>.
+                No compiled manifest yet. Showing capabilities <strong>from source</strong>.
                 Build the agent (in its own project) to verify these and diff authority changes.
               </p>
             )}
             {model && model.capabilities.length > 0 && (
               <>
-                <h2>It can — from source</h2>
+                <h2>It can (from source)</h2>
                 <ul className="review-list">
                   {model.capabilities.map((c, i) => (
                     <li key={i}>{c.label}</li>
@@ -102,7 +102,7 @@ export function CapabilityReviewPage() {
             )}
             {model && model.reach.length > 0 && (
               <>
-                <h2>And reach — from source</h2>
+                <h2>And reach (from source)</h2>
                 <ul className="review-list">
                   {model.reach.map((r, i) => (
                     <li key={i}>

@@ -17,22 +17,21 @@ export function HomePage() {
           </p>
           <h1>See what an agent can do</h1>
           <p className="home-lede">
-            You cloned an eve (Vercel) agent you didn't write. Before you run it, you'd like to know: what
-            can it touch? What does it do on its own? What does it ask permission for? What is it{" "}
-            <em>forbidden</em> from doing? Today the only way to answer that is to read the source.
+            You cloned an eve (Vercel) agent you didn't write. Before you run it, you need to know
+            what it can touch, what it does on its own, what it asks permission for, and what it is{" "}
+            <em>forbidden</em> from doing. Today the only way to answer that is to read the source.
           </p>
           <p className="home-lede">
             <strong>Aletheia reads it for you.</strong> Point it at any{" "}
             <a href="https://eve.dev" target="_blank" rel="noreferrer">
               eve
             </a>{" "}
-            agent and it renders a <strong>self-portrait</strong> — a first-person page where the
+            agent and it renders a <strong>self-portrait</strong>: a first-person page where the
             agent lays out its capabilities, its reach, what it does unprompted, and the powers it
-            has given up — plus an <strong>authority diff</strong> that shows how that authority
-            changed over time. It never runs the agent, never edits it, never deploys it. It only
-            makes it legible.
+            has given up. An <strong>authority diff</strong> shows how that authority changed over
+            time. It never runs, edits, or deploys the agent. It only makes it legible.
           </p>
-          <p className="home-tagline">Not a dashboard. Not a flowchart. A portrait you can trust.</p>
+          <p className="home-tagline">A first-person portrait from the agent's own files.</p>
           <div className="home-cta">
             <Link to="/portrait" className="btn-primary">
               View demo portrait
@@ -46,14 +45,14 @@ export function HomePage() {
         <section>
           <h2>This site vs the local tool</h2>
           <p>
-            You're on the <strong>hosted showcase</strong> — manifesto, gallery, and a bundled demo
-            portrait rendered <em>from source</em>. The full inspector — browse any folder on your
-            machine, read compiled manifests, switch agents — runs locally because browsers cannot
+            You're on the <strong>hosted showcase</strong>: manifesto, gallery, and a bundled demo
+            portrait rendered <em>from source</em>. The full inspector (browse any folder on your
+            machine, read compiled manifests, switch agents) runs locally because browsers cannot
             read your disk.
           </p>
           {apiAvailable ? (
             <p className="home-note home-note-ok">
-              Dev server detected — folder browsing and verified manifests are available in this
+              Dev server detected. Folder browsing and verified manifests are available in this
               session.
             </p>
           ) : (
@@ -67,7 +66,7 @@ export function HomePage() {
         </section>
 
         <section>
-          <h2>Quickstart — for eve builders</h2>
+          <h2>Quickstart for eve builders</h2>
           <p>Default path: run the CLI in your eve agent directory (Node 24+).</p>
           <pre className="home-code">
             <code>{`npx @danielalbinsson/aletheia-cli portrait
@@ -80,21 +79,21 @@ npx @danielalbinsson/aletheia-cli snapshot   # after intentional expansion; comm
             <code>agent/.aletheia/deployed-capabilities.json</code> on the same PR.
           </p>
           <p>
-            <strong>Visual inspector</strong> — clone this repo for the Browse-folder UI:
+            <strong>Visual inspector:</strong> clone this repo for the Browse-folder UI.
           </p>
           <pre className="home-code">
             <code>{`git clone https://github.com/danielalbinsson/Aletheia.git
 cd Aletheia
 pnpm install
-pnpm dev            # → http://localhost:5173`}</code>
+pnpm dev            # http://localhost:5173`}</code>
           </pre>
           <p>
             Click <strong>Browse folder…</strong> and pick a directory. Aletheia scans for eve agents
-            — any folder containing <code>agent/agent.ts</code> — and lists them in the Agent
+            (any folder containing <code>agent/agent.ts</code>) and lists them in the Agent
             dropdown. Pick one; its portrait and authority diff render for that agent.
           </p>
           <p>
-            Prefer a fixed target? Set <code>ALETHEIA_WORKSPACE</code> in <code>.env.local</code>.
+            For a fixed target, set <code>ALETHEIA_WORKSPACE</code> in <code>.env.local</code>.
             Requires Node 24+ and pnpm.
           </p>
         </section>
@@ -109,7 +108,7 @@ pnpm dev            # → http://localhost:5173`}</code>
             <li>
               <strong>Verified from build.</strong> When the agent has a compiled manifest (
               <code>.eve/compile/compiled-agent-manifest.json</code>), the portrait reads eve's
-              own record — tools, reach, schedules, disabled framework tools, subagents. Labelled{" "}
+              own record: tools, reach, schedules, disabled framework tools, subagents. Labelled{" "}
               <em>verified from build</em>.
             </li>
             <li>
@@ -118,22 +117,21 @@ pnpm dev            # → http://localhost:5173`}</code>
             </li>
             <li>
               <strong>Consent, honestly.</strong> Approval gates come from{" "}
-              <code>agent/.aletheia/consent.json</code> when present — always{" "}
+              <code>agent/.aletheia/consent.json</code> when present. Always{" "}
               <em>source-declared</em>, never build-verified until eve serializes them.
             </li>
           </ul>
         </section>
 
         <section>
-          <h2>Authority diff — trust over time</h2>
+          <h2>Authority diff: trust over time</h2>
           <p>
-            The novel part isn't the picture; it's the <strong>diff</strong>. New external reach, a
-            new schedule, a new delegation, a lifted restriction, or a model swap are flagged{" "}
-            <em>needs your attention</em>. Routine changes pass quietly. The same diff runs
-            headless as <code>aletheia diff</code> on pull requests.
+            New external reach, a new schedule, a new delegation, a lifted restriction, or a model
+            swap are flagged <em>needs your attention</em>. Routine changes pass without a flag.
+            The same diff runs headless as <code>aletheia diff</code> on pull requests.
           </p>
           <p>
-            <Link to="/review">Open authority diff →</Link>
+            <Link to="/review">Open the authority diff</Link>
           </p>
         </section>
 
@@ -141,16 +139,16 @@ pnpm dev            # → http://localhost:5173`}</code>
           <h2>Explore</h2>
           <ul className="home-routes">
             <li>
-              <Link to="/portrait">Portrait</Link> — the agent's self-portrait
+              <Link to="/portrait">Portrait</Link>: the agent's self-portrait
             </li>
             <li>
-              <Link to="/review">Authority diff</Link> — how its authority changed
+              <Link to="/review">Authority diff</Link>: how its authority changed
             </li>
             <li>
-              <Link to="/gallery">Gallery</Link> — example agents read by Aletheia
+              <Link to="/gallery">Gallery</Link>: example agents read by Aletheia
             </li>
             <li>
-              <Link to="/manifesto">Manifesto</Link> — the POV behind the project
+              <Link to="/manifesto">Manifesto</Link>: the POV behind the project
             </li>
           </ul>
         </section>
