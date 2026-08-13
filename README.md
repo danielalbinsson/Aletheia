@@ -35,8 +35,23 @@ npx skills add danielalbinsson/Aletheia --skill aletheia-eve-trust
 
 ## Quickstart — for eve builders
 
-Aletheia runs on your machine and reads your agents off disk (a browser alone
-can't — see [Why it runs locally](#why-it-runs-locally)). Clone, install, run:
+Default path: run the CLI **in your eve agent directory**. Aletheia runs on your
+machine and reads agents off disk (a browser alone can't — see
+[Why it runs locally](#why-it-runs-locally)).
+
+```bash
+npx @danielalbinsson/aletheia-cli portrait
+npx @danielalbinsson/aletheia-cli diff --baseline git:main
+npx @danielalbinsson/aletheia-cli snapshot   # after intentional expansion; commit the file
+```
+
+Exit `0` = ok, `1` = authority expanded, `2` = error. After an intentional
+expansion: GitHub label `capability-change-ack`, then `snapshot` and commit
+`agent/.aletheia/deployed-capabilities.json` on the same PR.
+
+### Visual inspector
+
+Clone this repo for the Browse-folder UI:
 
 ```bash
 git clone https://github.com/danielalbinsson/Aletheia.git
@@ -60,8 +75,8 @@ ALETHEIA_WORKSPACE=/path/to/your/eve-agent
 **Requirements:** Node 24+ and pnpm. Node 24 is eve's minimum — it's only needed
 to *build* an agent (`eve build`) so its facts read *verified from build*; until
 then Aletheia shows the honest *from source* view. Browsing in the web UI is
-read-only: it never builds, runs, edits, or deploys your agent. The `aletheia
-diff` CLI is the one part that builds — see
+read-only: it never builds, runs, edits, or deploys your agent. The CLI
+(`diff`, `portrait`, `passport`, `snapshot`) is the part that builds — see
 [Authority diff in CI](#authority-diff-in-ci-aletheia-diff).
 
 | Route | What it shows |
@@ -147,8 +162,9 @@ pnpm build:cli
 ```
 
 The shipped GitHub Action (`.github/workflows/capability-review.yml`) fails a
-required check when authority expands; acknowledge an intended change with the
-`capability-change-ack` label to merge.
+required check when authority expands. Acknowledge an intended change with the
+`capability-change-ack` label, then run `aletheia snapshot` and commit
+`agent/.aletheia/deployed-capabilities.json` on the same PR.
 
 ## How it works
 

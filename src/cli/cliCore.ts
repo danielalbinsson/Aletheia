@@ -82,8 +82,8 @@ export function applyConsent(
 
 /**
  * Path to the committed snapshot as git sees it (repo-root relative).
- * Nested `--agent-dir examples/beacon` must resolve to
- * `examples/beacon/agent/.aletheia/deployed-capabilities.json`.
+ * Nested `--agent-dir examples/ledger` must resolve to
+ * `examples/ledger/agent/.aletheia/deployed-capabilities.json`.
  *
  * Walks up from `agentRoot` for a `.git` directory first so a polluted
  * `GIT_DIR` / outer worktree cannot point `git show` at the wrong repo.

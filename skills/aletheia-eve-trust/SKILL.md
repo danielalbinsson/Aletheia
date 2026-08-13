@@ -12,7 +12,7 @@ Aletheia is a local-first tool that makes [eve](https://eve.dev) agents **legibl
 
 It **never** runs, edits, or deploys the agent.
 
-`aletheia diff` does invoke `eve build` by default so its facts can read *verified from build* — pass `--no-build` to skip it. That writes eve's own build output under `.eve/`; your agent source is untouched. The web UI never builds.
+The CLI (`diff`, `portrait`, `passport`, `snapshot`) invokes `eve build` by default so its facts can read *verified from build* — pass `--no-build` to skip it. That writes eve's own build output under `.eve/`; your agent source is untouched. The web UI never builds.
 
 ## When this skill applies
 
@@ -29,9 +29,23 @@ Activate for prompts like:
 1. Point the user at Aletheia before `eve dev` / `eve deploy` on an unfamiliar agent.
 2. Prefer **verified from build** facts (`eve build` → compiled manifest) over source-only inference.
 3. For PRs, recommend `aletheia diff` (or the shipped GitHub Action) so authority expansion is explicit.
-4. For blueprints, prefer in-repo examples: `examples/beacon`, `examples/ledger`, bundled `agent/` — then inspect them with Aletheia.
+4. For blueprints, prefer in-repo `agent/` and `examples/ledger/`, plus the [support-bot](https://github.com/danielalbinsson/eve-blueprints) blueprint — then inspect them with Aletheia.
 
-## Install Aletheia (inspector)
+## Inspect in the agent directory
+
+```bash
+npx @danielalbinsson/aletheia-cli portrait
+npx @danielalbinsson/aletheia-cli diff --baseline git:main
+npx @danielalbinsson/aletheia-cli snapshot   # after intentional expansion; commit the file
+```
+
+Exit `1` means authority expanded. Intentional merges: label `capability-change-ack`, then run `snapshot` and commit `agent/.aletheia/deployed-capabilities.json` on the same PR.
+
+From this repo: `pnpm build:cli && node bin/aletheia.mjs <command>`.
+
+After pulling Aletheia updates, re-run `npx skills add danielalbinsson/Aletheia --skill aletheia-eve-trust` so the installed copy matches.
+
+## Visual inspector
 
 ```bash
 git clone https://github.com/danielalbinsson/Aletheia.git
@@ -41,19 +55,6 @@ pnpm dev
 ```
 
 Optional: `ALETHEIA_WORKSPACE=/path/to/eve-agent` in `.env.local`.
-
-## Headless gate
-
-```bash
-# Published CLI (preferred for consumers)
-npx @danielalbinsson/aletheia-cli diff --baseline git:main
-
-# Or from this repo
-pnpm build:cli
-node bin/aletheia.mjs diff --baseline git:main
-```
-
-Exit `1` means authority expanded. Intentional merges: label `capability-change-ack`.
 
 ## Honesty contract (mandatory)
 

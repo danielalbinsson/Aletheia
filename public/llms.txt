@@ -13,11 +13,11 @@ This file is the agent-facing index. Prefer the Markdown links below over HTML S
 
 ## Core docs
 
-- [Quickstart](https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/public/docs/quickstart.md): clone, `pnpm dev`, point at an eve agent
+- [Quickstart](https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/public/docs/quickstart.md): `npx @danielalbinsson/aletheia-cli` in the agent directory; clone + `pnpm dev` for the visual inspector
 - [Honesty contract](https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/public/docs/honesty-contract.md): verified-from-build vs from-source; what Aletheia refuses to invent
-- [Authority diff & CLI](https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/public/docs/capability-review.md): authority diff, blast radius, `aletheia diff`, CI gate
-- [Example eve agents](https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/public/docs/example-agents.md): Beacon, Ledger, and gallery blueprints
-- [Passport](https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/public/docs/passport.md): stakeholder one-pager (hand-authored today; CLI export Phase 2)
+- [Authority diff & CLI](https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/public/docs/capability-review.md): authority diff, blast radius, `aletheia diff`, CI gate, `aletheia snapshot`
+- [Example eve agents](https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/public/docs/example-agents.md): bundled `agent/`, `examples/ledger/`, and [support-bot](https://github.com/danielalbinsson/eve-blueprints)
+- [Passport](https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/public/docs/passport.md): stakeholder one-pager via `aletheia passport`
 - [Glossary](https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/public/docs/glossary.md): eve / Aletheia terminology
 - [Manifesto](https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/MANIFESTO.md): why agent legibility matters
 - [AGENTS.md](https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/AGENTS.md): install, config, and usage for coding agents
@@ -30,13 +30,13 @@ This file is the agent-facing index. Prefer the Markdown links below over HTML S
 
 ## CLI (capability gate)
 
-- npm: `npx @danielalbinsson/aletheia-cli diff --baseline git:main` (package `@danielalbinsson/aletheia-cli`, bin `aletheia`)
+- npm: `npx @danielalbinsson/aletheia-cli portrait` (also `diff`, `passport`, `snapshot`; package `@danielalbinsson/aletheia-cli`, bin `aletheia`)
 - Source: [packages/aletheia-cli](https://github.com/danielalbinsson/Aletheia/tree/main/packages/aletheia-cli)
 
 ## Ecosystem blueprints (registry kits)
 
 - Eve Directory / Evex submission kits: [ecosystem/](https://github.com/danielalbinsson/Aletheia/tree/main/ecosystem)
-- Beacon (support), Ledger (finance) — inspect with Aletheia before enabling credentials
+- Ledger (finance) plus [support-bot](https://github.com/danielalbinsson/eve-blueprints) — inspect with Aletheia before enabling credentials
 
 ## Source & product
 

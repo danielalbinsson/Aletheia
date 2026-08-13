@@ -3,8 +3,8 @@
 // ../../src/cli/aletheia.ts
 import { execFile as execFile2 } from "node:child_process";
 import { createHash } from "node:crypto";
-import fs4 from "node:fs/promises";
-import path5 from "node:path";
+import fs5 from "node:fs/promises";
+import path6 from "node:path";
 import { promisify as promisify2 } from "node:util";
 
 // ../../src/server/eveBuild.ts
@@ -285,6 +285,20 @@ async function runEveManifest(workspaceRoot) {
       error: "No compiled manifest found. Build the agent first."
     };
   }
+}
+
+// ../../src/server/capabilitySnapshot.ts
+import fs3 from "node:fs/promises";
+import path4 from "node:path";
+var SNAPSHOT_REL = ".aletheia/deployed-capabilities.json";
+function snapshotPath(agentRoot) {
+  return path4.join(agentRoot, SNAPSHOT_REL);
+}
+async function writeDeployedSnapshot(agentRoot, snapshot) {
+  const dest = snapshotPath(agentRoot);
+  await fs3.mkdir(path4.dirname(dest), { recursive: true });
+  await fs3.writeFile(dest, `${JSON.stringify(snapshot, null, 2)}
+`, "utf8");
 }
 
 // ../../src/parser/consequence.ts
@@ -806,6 +820,10 @@ function renderMarkdown(diff, current, meta, portrait, warnings = []) {
     out.push("#### Needs your attention", "");
     for (const e of elevated) out.push(line(e));
     out.push("");
+    out.push(
+      "After acknowledging with `capability-change-ack`, run `aletheia snapshot` and commit `agent/.aletheia/deployed-capabilities.json` on the same PR.",
+      ""
+    );
   }
   if (routine.length) {
     out.push("#### Other changes", "");
@@ -1061,17 +1079,17 @@ function renderPortraitText(card) {
 
 // ../../src/cli/cliCore.ts
 import { execFile } from "node:child_process";
-import fs3 from "node:fs/promises";
-import path4 from "node:path";
+import fs4 from "node:fs/promises";
+import path5 from "node:path";
 import { promisify } from "node:util";
 var execFileAsync = promisify(execFile);
-var SNAPSHOT_REL = "agent/.aletheia/deployed-capabilities.json";
+var SNAPSHOT_REL2 = "agent/.aletheia/deployed-capabilities.json";
 var MANIFEST_REL = ".eve/compile/compiled-agent-manifest.json";
 var CONSENT_REL = "agent/.aletheia/consent.json";
 var TOOLS_REL = "agent/tools";
 function parseArgs(argv, cwd = process.cwd()) {
   const o = {
-    baseline: `file:${SNAPSHOT_REL}`,
+    baseline: `file:${SNAPSHOT_REL2}`,
     format: "markdown",
     failOn: "elevated",
     failOnExplicit: false,
@@ -1088,7 +1106,7 @@ function parseArgs(argv, cwd = process.cwd()) {
       o.failOnExplicit = true;
     } else if (a === "--out") o.out = next();
     else if (a === "--no-build") o.build = false;
-    else if (a === "--agent-dir") o.agentDir = path4.resolve(cwd, next());
+    else if (a === "--agent-dir") o.agentDir = path5.resolve(cwd, next());
   }
   return o;
 }
@@ -1110,20 +1128,20 @@ function applyConsent(facts, gated) {
   };
 }
 async function gitSnapshotRelPath(agentRoot) {
-  const abs = path4.join(agentRoot, SNAPSHOT_REL);
+  const abs = path5.join(agentRoot, SNAPSHOT_REL2);
   const toplevel = await findGitToplevel(agentRoot) ?? await gitRevParseToplevel(agentRoot);
-  if (!toplevel) return SNAPSHOT_REL;
-  return path4.relative(toplevel, abs).split(path4.sep).join("/");
+  if (!toplevel) return SNAPSHOT_REL2;
+  return path5.relative(toplevel, abs).split(path5.sep).join("/");
 }
 async function findGitToplevel(start) {
-  let dir = path4.resolve(start);
+  let dir = path5.resolve(start);
   for (; ; ) {
     try {
-      const st = await fs3.stat(path4.join(dir, ".git"));
+      const st = await fs4.stat(path5.join(dir, ".git"));
       if (st.isDirectory() || st.isFile()) return dir;
     } catch {
     }
-    const parent = path4.dirname(dir);
+    const parent = path5.dirname(dir);
     if (parent === dir) return null;
     dir = parent;
   }
@@ -1146,7 +1164,7 @@ async function gitRevParseToplevel(cwd) {
 }
 async function readJsonSnapshot(file) {
   try {
-    const parsed = JSON.parse(await fs3.readFile(file, "utf8"));
+    const parsed = JSON.parse(await fs4.readFile(file, "utf8"));
     return Array.isArray(parsed.capabilities) ? parsed : null;
   } catch {
     return null;
@@ -1154,7 +1172,7 @@ async function readJsonSnapshot(file) {
 }
 async function resolveBaseline(spec, root) {
   if (spec.startsWith("file:")) {
-    return readJsonSnapshot(path4.resolve(root, spec.slice("file:".length)));
+    return readJsonSnapshot(path5.resolve(root, spec.slice("file:".length)));
   }
   if (spec.startsWith("git:")) {
     const ref = spec.slice("git:".length);
@@ -1183,18 +1201,18 @@ async function resolveBaseline(spec, root) {
 // ../../src/cli/aletheia.ts
 var execFileAsync2 = promisify2(execFile2);
 async function loadToolSources(root) {
-  const dir = path5.join(root, TOOLS_REL);
+  const dir = path6.join(root, TOOLS_REL);
   const sources = {};
   let names;
   try {
-    names = await fs4.readdir(dir);
+    names = await fs5.readdir(dir);
   } catch {
     return sources;
   }
   await Promise.all(
     names.filter((n) => n.endsWith(".ts")).map(async (n) => {
       try {
-        sources[n.slice(0, -".ts".length)] = await fs4.readFile(path5.join(dir, n), "utf8");
+        sources[n.slice(0, -".ts".length)] = await fs5.readFile(path6.join(dir, n), "utf8");
       } catch {
       }
     })
@@ -1203,7 +1221,7 @@ async function loadToolSources(root) {
 }
 async function loadConsent(root) {
   try {
-    const raw = await fs4.readFile(path5.join(root, CONSENT_REL), "utf8");
+    const raw = await fs5.readFile(path6.join(root, CONSENT_REL), "utf8");
     const parsed = JSON.parse(raw);
     return parsed.gated && typeof parsed.gated === "object" ? parsed.gated : {};
   } catch {
@@ -1212,7 +1230,7 @@ async function loadConsent(root) {
 }
 async function loadPolicy(root) {
   try {
-    const raw = JSON.parse(await fs4.readFile(path5.join(root, ".aletheia/policy.json"), "utf8"));
+    const raw = JSON.parse(await fs5.readFile(path6.join(root, ".aletheia/policy.json"), "utf8"));
     return parsePolicy(raw);
   } catch {
     return { rules: [] };
@@ -1220,7 +1238,7 @@ async function loadPolicy(root) {
 }
 async function loadPolicyWithPresence(root) {
   try {
-    const raw = JSON.parse(await fs4.readFile(path5.join(root, ".aletheia/policy.json"), "utf8"));
+    const raw = JSON.parse(await fs5.readFile(path6.join(root, ".aletheia/policy.json"), "utf8"));
     return { policy: parsePolicy(raw), present: true };
   } catch {
     return { policy: { rules: [] }, present: false };
@@ -1229,7 +1247,7 @@ async function loadPolicyWithPresence(root) {
 async function loadUxDoc(root) {
   for (const rel of ["UX.md", "agent/UX.md"]) {
     try {
-      return await fs4.readFile(path5.join(root, rel), "utf8");
+      return await fs5.readFile(path6.join(root, rel), "utf8");
     } catch {
     }
   }
@@ -1248,7 +1266,7 @@ async function gitShortSha(root) {
 }
 async function manifestSha(root) {
   try {
-    const buf = await fs4.readFile(path5.join(root, MANIFEST_REL));
+    const buf = await fs5.readFile(path6.join(root, MANIFEST_REL));
     return createHash("sha256").update(buf).digest("hex");
   } catch {
     return void 0;
@@ -1274,7 +1292,7 @@ function portraitView(facts) {
   return { name, rows: renderPortrait(deriveSignals(model)) };
 }
 async function emit(text, out) {
-  if (out) await fs4.writeFile(out, text.endsWith("\n") ? text : `${text}
+  if (out) await fs5.writeFile(out, text.endsWith("\n") ? text : `${text}
 `, "utf8");
   else process.stdout.write(`${text}
 `);
@@ -1400,17 +1418,57 @@ async function runPortrait(opts) {
   await emit(text, opts.out);
   return 0;
 }
+async function runSnapshot(opts) {
+  const root = opts.agentDir;
+  if (opts.build) {
+    const build = await runEveBuild(root);
+    if (!build.ok) {
+      const msg = build.diagnostics.filter((d) => d.severity === "error").map((d) => `${d.sourcePath ?? "project"}: ${d.message}`).join("; ") || build.stderr || "eve build failed";
+      process.stderr.write(`aletheia: build failed \u2014 ${msg}
+`);
+      return 2;
+    }
+  }
+  const manifest = await runEveManifest(root);
+  if (!manifest.built || !manifest.facts) {
+    process.stderr.write(
+      `aletheia: no compiled manifest. Build the agent first (omit --no-build).
+`
+    );
+    return 2;
+  }
+  const gated = await loadConsent(root);
+  const facts = applyConsent(manifest.facts, gated);
+  const current = snapshotFromFacts(facts);
+  let dest;
+  if (opts.out) {
+    dest = path6.resolve(opts.out);
+    await fs5.mkdir(path6.dirname(dest), { recursive: true });
+    await fs5.writeFile(dest, `${JSON.stringify(current, null, 2)}
+`, "utf8");
+  } else {
+    await writeDeployedSnapshot(path6.join(root, "agent"), current);
+    dest = path6.join(root, SNAPSHOT_REL2);
+  }
+  process.stdout.write(
+    `Wrote ${dest}
+commit this file so the next \`aletheia diff\` uses it as baseline.
+`
+  );
+  return 0;
+}
 async function main() {
   const [command, ...rest] = process.argv.slice(2);
-  if (command !== "diff" && command !== "passport" && command !== "portrait") {
+  if (command !== "diff" && command !== "passport" && command !== "portrait" && command !== "snapshot") {
     process.stderr.write(
-      "usage:\n  aletheia diff     [--baseline file:<p>|git:<ref>] [--format markdown|json] [--fail-on elevated|any|never] [--out <file>] [--no-build] [--agent-dir <path>]\n  aletheia passport [--format markdown|json] [--out <file>] [--no-build] [--agent-dir <path>]\n  aletheia portrait [--format markdown|json] [--out <file>] [--no-build] [--agent-dir <path>]\n"
+      "usage:\n  aletheia diff     [--baseline file:<p>|git:<ref>] [--format markdown|json] [--fail-on elevated|any|never] [--out <file>] [--no-build] [--agent-dir <path>]\n  aletheia passport [--format markdown|json] [--out <file>] [--no-build] [--agent-dir <path>]\n  aletheia portrait [--format markdown|json] [--out <file>] [--no-build] [--agent-dir <path>]\n  aletheia snapshot [--out <file>] [--no-build] [--agent-dir <path>]\n"
     );
     process.exit(command ? 2 : 0);
   }
   const opts = parseArgs(rest);
   if (command === "passport") process.exit(await runPassport(opts));
   if (command === "portrait") process.exit(await runPortrait(opts));
+  if (command === "snapshot") process.exit(await runSnapshot(opts));
   process.exit(await runDiff(opts));
 }
 void main();

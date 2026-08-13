@@ -24,6 +24,7 @@ const DOC_GLOBS = [
   "skills/aletheia-eve-trust/SKILL.md",
   "public/docs/quickstart.md",
   "public/docs/glossary.md",
+  "public/AGENTS.md",
   "public/llms.txt",
   "public/llms-full.txt",
   "public/manifesto.md",

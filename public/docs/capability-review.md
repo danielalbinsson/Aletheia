@@ -43,9 +43,9 @@ Exit codes: `0` ok, `1` authority expanded, `2` error.
 
 ## CI
 
-`.github/workflows/capability-review.yml` fails a required check when authority expands. Merge intentional changes with the `capability-change-ack` label.
+`.github/workflows/capability-review.yml` fails a required check when authority expands. Acknowledge an intended change with the `capability-change-ack` label, then run `aletheia snapshot` and commit `agent/.aletheia/deployed-capabilities.json` on the same PR — ack and the snapshot commit are one motion.
 
-Baseline file often used: `agent/.aletheia/deployed-capabilities.json` (tracked in git).
+Baseline file: `agent/.aletheia/deployed-capabilities.json` (tracked in git).
 
 ## Analogy
 

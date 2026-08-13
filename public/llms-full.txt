@@ -8,11 +8,25 @@
 
 Aletheia is a local-first trust tool for [eve (Vercel)](https://eve.dev) agents. It reads an agent's files (and optionally the compiled eve manifest) and renders a **self-portrait** plus an **authority diff**. It never runs, edits, or deploys the agent.
 
-The `aletheia diff` CLI invokes `eve build` by default so its facts can read *verified from build* — pass `--no-build` to skip it. That writes eve's own output under `.eve/` and leaves your agent source untouched. Browsing in the web UI never builds.
+The CLI (`diff`, `portrait`, `passport`, `snapshot`) invokes `eve build` by default so its facts can read *verified from build* — pass `--no-build` to skip it. That writes eve's own output under `.eve/` and leaves your agent source untouched. Browsing in the web UI never builds.
 
 **Requirements:** Node 24+ and pnpm.
 
-## Install and run
+## In the agent directory
+
+```bash
+npx @danielalbinsson/aletheia-cli portrait
+npx @danielalbinsson/aletheia-cli diff --baseline git:main
+npx @danielalbinsson/aletheia-cli snapshot   # after intentional expansion; commit the file
+```
+
+Exit `0` = ok, `1` = authority expanded, `2` = error. After an intentional expansion: label `capability-change-ack`, run `snapshot`, and commit `agent/.aletheia/deployed-capabilities.json` on the same PR.
+
+From this repo: `pnpm build:cli && node bin/aletheia.mjs <command>`.
+
+Ship `.github/workflows/capability-review.yml` as a required check.
+
+## Visual inspector
 
 ```bash
 git clone https://github.com/danielalbinsson/Aletheia.git
@@ -29,16 +43,6 @@ In the app, click **Browse folder…** and pick a directory that contains eve pr
 # .env.local
 ALETHEIA_WORKSPACE=/path/to/your/eve-agent
 ```
-
-## Headless authority diff (CI)
-
-```bash
-npx @danielalbinsson/aletheia-cli diff --baseline git:main
-# from this repo: pnpm build:cli && node bin/aletheia.mjs diff --baseline git:main
-# exit 0 = ok, 1 = authority expanded, 2 = error
-```
-
-Ship `.github/workflows/capability-review.yml` as a required check. Acknowledge intentional authority expansion with the `capability-change-ack` label.
 
 ## Agent skill
 
@@ -144,9 +148,9 @@ Exit codes: `0` ok, `1` authority expanded, `2` error.
 
 ## CI
 
-`.github/workflows/capability-review.yml` fails a required check when authority expands. Merge intentional changes with the `capability-change-ack` label.
+`.github/workflows/capability-review.yml` fails a required check when authority expands. Acknowledge an intended change with the `capability-change-ack` label, then run `aletheia snapshot` and commit `agent/.aletheia/deployed-capabilities.json` on the same PR — ack and the snapshot commit are one motion.
 
-Baseline file often used: `agent/.aletheia/deployed-capabilities.json` (tracked in git).
+Baseline file: `agent/.aletheia/deployed-capabilities.json` (tracked in git).
 
 ## Analogy
 
@@ -167,10 +171,9 @@ Aletheia ships inspectable [eve](https://eve.dev) agents you can point the tool 
 | Agent | Path | Role |
 | --- | --- | --- |
 | design-qa (Kit Certified) | `agent/` | Orchestrator: subagents, GitHub MCP, bash/write_file disabled, CI + passport |
-| Beacon (Kit Certified) | `examples/beacon/` | Support-style agent with consent, policy, CI gate, cannots, passport |
 | Ledger | `examples/ledger/` | Finance-style agent with bank/QuickBooks reach, night reconcile, auditor subagent |
 
-Beacon uses the standard workspace layout (`agent/agent.ts` under `examples/beacon/`). Point Aletheia at `examples/beacon`, or set `ALETHEIA_WORKSPACE`. Kit Certified definition: https://agentic-kit.dev/docs/kit-certified (passport is hand-authored until `aletheia passport` ships).
+The **support-bot** blueprint (Kit Certified) lives in its own repo: https://github.com/danielalbinsson/eve-blueprints. Kit Certified definition: https://agentic-kit.dev/docs/kit-certified. Generate any agent's passport with `aletheia passport --format markdown` (or `--format json` for the machine-readable result).
 
 ## Gallery narratives
 
@@ -188,13 +191,13 @@ Also referenced: support-bot, code-reviewer, research-assistant — example shap
 
 ```bash
 pnpm install && pnpm dev
-# Browse folder → pick examples/beacon or examples/ledger
+# Browse folder → pick the bundled agent/ or examples/ledger
 ```
 
 Or:
 
 ```bash
-ALETHEIA_WORKSPACE=/absolute/path/to/Aletheia/examples/beacon pnpm dev
+ALETHEIA_WORKSPACE=/absolute/path/to/Aletheia/examples/ledger pnpm dev
 ```
 
 Prefer **verified from build** after `eve build` in that example directory when you need decision-grade facts.
@@ -284,7 +287,7 @@ That's the work I want to do.
 
 Aletheia is a **local-first trust / legibility tool** for [eve (Vercel)](https://eve.dev) agents. It renders a first-person **self-portrait** and an **authority diff** (authority diff). It does **not** run, edit, or deploy agents.
 
-One exception, stated plainly because the honesty contract applies to Aletheia's own claims too: `aletheia diff` invokes `eve build` by default, so its facts can read *verified from build*. Pass `--no-build` to skip it. Building writes eve's own output under `.eve/` and leaves your agent source untouched. The web UI and dev server never build.
+One exception, stated plainly because the honesty contract applies to Aletheia's own claims too: the CLI (`diff`, `portrait`, `passport`, `snapshot`) invokes `eve build` by default, so its facts can read *verified from build*. Pass `--no-build` to skip it. Building writes eve's own output under `.eve/` and leaves your agent source untouched. The web UI and dev server never build.
 
 Prefer Markdown discovery surfaces: [`/llms.txt`](./public/llms.txt), [`/llms-full.txt`](./public/llms-full.txt), and this file.
 
@@ -303,13 +306,32 @@ Install the skill for progressive disclosure:
 npx skills add danielalbinsson/Aletheia --skill aletheia-eve-trust
 ```
 
-## Installation
+## Usage
+
+Default path: run the CLI **in the eve agent directory**.
+
+```bash
+npx @danielalbinsson/aletheia-cli portrait
+npx @danielalbinsson/aletheia-cli diff --baseline git:main
+npx @danielalbinsson/aletheia-cli snapshot   # after intentional expansion; commit the file
+```
+
+Exit `0` = ok, `1` = authority expanded, `2` = error. Acknowledge intentional expansion with GitHub label `capability-change-ack`, then run `snapshot` and commit `agent/.aletheia/deployed-capabilities.json` on the same PR (see `.github/workflows/capability-review.yml`).
+
+From this repo: `pnpm build:cli && node bin/aletheia.mjs <command>`.
+
+### Visual inspector
+
+Clone this repo for the Browse-folder UI:
 
 ```bash
 git clone https://github.com/danielalbinsson/Aletheia.git
 cd Aletheia
 pnpm install
+pnpm dev    # http://localhost:5173 — Browse folder → pick eve agent
 ```
+
+Routes: `/` about, `/portrait`, `/review`, `/gallery`, `/manifesto`, `/privacy`.
 
 **Requirements:** Node 24.x (eve's minimum) and pnpm.
 
@@ -327,31 +349,12 @@ Optional agent sidecars:
 - `.aletheia/policy.json` — blast-radius / `failOn` rules for diffs
 - `agent/.aletheia/deployed-capabilities.json` — committed deploy baseline
 
-## Usage
-
-### Interactive inspector
-
-```bash
-pnpm dev    # http://localhost:5173 — Browse folder → pick eve agent
-```
-
-Routes: `/` about, `/portrait`, `/review`, `/gallery`, `/manifesto`, `/privacy`.
-
-### Headless diff (CI)
-
-```bash
-npx @danielalbinsson/aletheia-cli diff --baseline git:main
-# from this repo: pnpm build:cli && node bin/aletheia.mjs diff --baseline git:main
-# exit 0 = ok, 1 = authority expanded, 2 = error
-```
-
-Acknowledge intentional expansion with GitHub label `capability-change-ack` (see `.github/workflows/capability-review.yml`).
-
-### Example blueprints in-repo
+## Example blueprints in-repo
 
 - `agent/` — bundled design-qa orchestrator
-- `examples/beacon/` — support-style eve agent
 - `examples/ledger/` — finance-style eve agent with auditor subagent
+
+The support-bot blueprint lives in its own repo: https://github.com/danielalbinsson/eve-blueprints (support-bot).
 - `ecosystem/` — Eve Directory / Evex submission kits (registry-shaped copies)
 
 ## Honesty rules (do not violate)
@@ -375,7 +378,7 @@ Acknowledge intentional expansion with GitHub label `capability-change-ack` (see
 
 - UI: React 18 + Vite + TypeScript
 - Package manager: **pnpm** (not npm for day-to-day)
-- Eve dependency for parsing/build verification; Aletheia itself is not an eve runtime host for user agents in production use
+- eve dependency for parsing/build verification; Aletheia itself is not an eve runtime host for user agents in production use
 
 ## Do not
 

@@ -4,7 +4,8 @@ Finance-style [eve](https://eve.dev) agent (reconcile, QuickBooks/bank reach,
 auditor subagent) used as an inspectable blueprint in
 [Aletheia](https://github.com/danielalbinsson/Aletheia).
 
-**Before you run it**, point Aletheia at this folder:
+This folder is a standard eve workspace (`agent/agent.ts`). Point Aletheia at
+it — Browse folder and `ALETHEIA_WORKSPACE` both resolve that layout:
 
 ```bash
 # from the Aletheia repo root

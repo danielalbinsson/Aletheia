@@ -2,11 +2,25 @@
 
 Aletheia is a local-first trust tool for [eve (Vercel)](https://eve.dev) agents. It reads an agent's files (and optionally the compiled eve manifest) and renders a **self-portrait** plus an **authority diff**. It never runs, edits, or deploys the agent.
 
-The `aletheia diff` CLI invokes `eve build` by default so its facts can read *verified from build* — pass `--no-build` to skip it. That writes eve's own output under `.eve/` and leaves your agent source untouched. Browsing in the web UI never builds.
+The CLI (`diff`, `portrait`, `passport`, `snapshot`) invokes `eve build` by default so its facts can read *verified from build* — pass `--no-build` to skip it. That writes eve's own output under `.eve/` and leaves your agent source untouched. Browsing in the web UI never builds.
 
 **Requirements:** Node 24+ and pnpm.
 
-## Install and run
+## In the agent directory
+
+```bash
+npx @danielalbinsson/aletheia-cli portrait
+npx @danielalbinsson/aletheia-cli diff --baseline git:main
+npx @danielalbinsson/aletheia-cli snapshot   # after intentional expansion; commit the file
+```
+
+Exit `0` = ok, `1` = authority expanded, `2` = error. After an intentional expansion: label `capability-change-ack`, run `snapshot`, and commit `agent/.aletheia/deployed-capabilities.json` on the same PR.
+
+From this repo: `pnpm build:cli && node bin/aletheia.mjs <command>`.
+
+Ship `.github/workflows/capability-review.yml` as a required check.
+
+## Visual inspector
 
 ```bash
 git clone https://github.com/danielalbinsson/Aletheia.git
@@ -23,16 +37,6 @@ In the app, click **Browse folder…** and pick a directory that contains eve pr
 # .env.local
 ALETHEIA_WORKSPACE=/path/to/your/eve-agent
 ```
-
-## Headless authority diff (CI)
-
-```bash
-npx @danielalbinsson/aletheia-cli diff --baseline git:main
-# from this repo: pnpm build:cli && node bin/aletheia.mjs diff --baseline git:main
-# exit 0 = ok, 1 = authority expanded, 2 = error
-```
-
-Ship `.github/workflows/capability-review.yml` as a required check. Acknowledge intentional authority expansion with the `capability-change-ack` label.
 
 ## Agent skill
 

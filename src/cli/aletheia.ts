@@ -1,7 +1,9 @@
 #!/usr/bin/env node
-// aletheia — headless CLI. `aletheia diff` builds the agent, reads eve's
-// compiled manifest, diffs it against a baseline, and prints a PR-ready report.
-// Exit: 0 = ok, 1 = fail-on threshold hit, 2 = error (no manifest / build fail).
+// aletheia — headless CLI. Commands: diff, passport, portrait, snapshot.
+// `aletheia diff` builds the agent, reads eve's compiled manifest, diffs it
+// against a baseline, and prints a PR-ready report.
+// Exit: 0 = ok, 1 = fail-on threshold hit (diff/passport), 2 = error
+// (no manifest / build fail). snapshot never fails on elevation.
 //
 // Thin wrapper over the shipped engine: manifestAdapter + capabilityDiff.
 
@@ -12,6 +14,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { runEveBuild } from "../server/eveBuild";
 import { runEveManifest } from "../server/eveObservability";
+import { writeDeployedSnapshot } from "../server/capabilitySnapshot";
 import {
   diffSnapshots,
   snapshotFromFacts,
@@ -47,6 +50,7 @@ import {
   MANIFEST_REL,
   parseArgs,
   resolveBaseline,
+  SNAPSHOT_REL,
   TOOLS_REL,
   type CliOptions,
 } from "./cliCore";
@@ -329,20 +333,73 @@ async function runPortrait(opts: CliOptions): Promise<number> {
   return 0;
 }
 
+// `aletheia snapshot` — write the committed deploy baseline from current facts.
+// Exit: 0 = wrote, 2 = error (build/manifest failure). Does not fail on elevation.
+async function runSnapshot(opts: CliOptions): Promise<number> {
+  const root = opts.agentDir;
+
+  if (opts.build) {
+    const build = await runEveBuild(root);
+    if (!build.ok) {
+      const msg =
+        build.diagnostics
+          .filter((d) => d.severity === "error")
+          .map((d) => `${d.sourcePath ?? "project"}: ${d.message}`)
+          .join("; ") || build.stderr || "eve build failed";
+      process.stderr.write(`aletheia: build failed — ${msg}\n`);
+      return 2;
+    }
+  }
+
+  const manifest = await runEveManifest(root);
+  if (!manifest.built || !manifest.facts) {
+    process.stderr.write(
+      `aletheia: no compiled manifest. Build the agent first (omit --no-build).\n`
+    );
+    return 2;
+  }
+
+  const gated = await loadConsent(root);
+  const facts = applyConsent(manifest.facts, gated);
+  const current = snapshotFromFacts(facts);
+
+  let dest: string;
+  if (opts.out) {
+    dest = path.resolve(opts.out);
+    await fs.mkdir(path.dirname(dest), { recursive: true });
+    await fs.writeFile(dest, `${JSON.stringify(current, null, 2)}\n`, "utf8");
+  } else {
+    await writeDeployedSnapshot(path.join(root, "agent"), current);
+    dest = path.join(root, SNAPSHOT_REL);
+  }
+
+  process.stdout.write(
+    `Wrote ${dest}\ncommit this file so the next \`aletheia diff\` uses it as baseline.\n`
+  );
+  return 0;
+}
+
 async function main(): Promise<void> {
   const [command, ...rest] = process.argv.slice(2);
-  if (command !== "diff" && command !== "passport" && command !== "portrait") {
+  if (
+    command !== "diff" &&
+    command !== "passport" &&
+    command !== "portrait" &&
+    command !== "snapshot"
+  ) {
     process.stderr.write(
       "usage:\n" +
         "  aletheia diff     [--baseline file:<p>|git:<ref>] [--format markdown|json] [--fail-on elevated|any|never] [--out <file>] [--no-build] [--agent-dir <path>]\n" +
         "  aletheia passport [--format markdown|json] [--out <file>] [--no-build] [--agent-dir <path>]\n" +
-        "  aletheia portrait [--format markdown|json] [--out <file>] [--no-build] [--agent-dir <path>]\n"
+        "  aletheia portrait [--format markdown|json] [--out <file>] [--no-build] [--agent-dir <path>]\n" +
+        "  aletheia snapshot [--out <file>] [--no-build] [--agent-dir <path>]\n"
     );
     process.exit(command ? 2 : 0);
   }
   const opts = parseArgs(rest);
   if (command === "passport") process.exit(await runPassport(opts));
   if (command === "portrait") process.exit(await runPortrait(opts));
+  if (command === "snapshot") process.exit(await runSnapshot(opts));
   process.exit(await runDiff(opts));
 }
 

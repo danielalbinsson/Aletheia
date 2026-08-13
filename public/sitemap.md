@@ -34,6 +34,7 @@ Agent-facing map of Aletheia. Prefer Markdown URLs; HTML routes are the human sh
 ## Repository
 
 - https://github.com/danielalbinsson/Aletheia
-- https://github.com/danielalbinsson/Aletheia/tree/main/examples/beacon
+- https://github.com/danielalbinsson/eve-blueprints (support-bot)
+- https://github.com/danielalbinsson/Aletheia/tree/main/agent
 - https://github.com/danielalbinsson/Aletheia/tree/main/examples/ledger
 - https://github.com/danielalbinsson/Aletheia/tree/main/skills/aletheia-eve-trust

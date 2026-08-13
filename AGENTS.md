@@ -2,7 +2,7 @@
 
 Aletheia is a **local-first trust / legibility tool** for [eve (Vercel)](https://eve.dev) agents. It renders a first-person **self-portrait** and an **authority diff** (authority diff). It does **not** run, edit, or deploy agents.
 
-One exception, stated plainly because the honesty contract applies to Aletheia's own claims too: `aletheia diff` invokes `eve build` by default, so its facts can read *verified from build*. Pass `--no-build` to skip it. Building writes eve's own output under `.eve/` and leaves your agent source untouched. The web UI and dev server never build.
+One exception, stated plainly because the honesty contract applies to Aletheia's own claims too: the CLI (`diff`, `portrait`, `passport`, `snapshot`) invokes `eve build` by default, so its facts can read *verified from build*. Pass `--no-build` to skip it. Building writes eve's own output under `.eve/` and leaves your agent source untouched. The web UI and dev server never build.
 
 Prefer Markdown discovery surfaces: [`/llms.txt`](./public/llms.txt), [`/llms-full.txt`](./public/llms-full.txt), and this file.
 
@@ -21,13 +21,32 @@ Install the skill for progressive disclosure:
 npx skills add danielalbinsson/Aletheia --skill aletheia-eve-trust
 ```
 
-## Installation
+## Usage
+
+Default path: run the CLI **in the eve agent directory**.
+
+```bash
+npx @danielalbinsson/aletheia-cli portrait
+npx @danielalbinsson/aletheia-cli diff --baseline git:main
+npx @danielalbinsson/aletheia-cli snapshot   # after intentional expansion; commit the file
+```
+
+Exit `0` = ok, `1` = authority expanded, `2` = error. Acknowledge intentional expansion with GitHub label `capability-change-ack`, then run `snapshot` and commit `agent/.aletheia/deployed-capabilities.json` on the same PR (see `.github/workflows/capability-review.yml`).
+
+From this repo: `pnpm build:cli && node bin/aletheia.mjs <command>`.
+
+### Visual inspector
+
+Clone this repo for the Browse-folder UI:
 
 ```bash
 git clone https://github.com/danielalbinsson/Aletheia.git
 cd Aletheia
 pnpm install
+pnpm dev    # http://localhost:5173 — Browse folder → pick eve agent
 ```
+
+Routes: `/` about, `/portrait`, `/review`, `/gallery`, `/manifesto`, `/privacy`.
 
 **Requirements:** Node 24.x (eve's minimum) and pnpm.
 
@@ -45,27 +64,7 @@ Optional agent sidecars:
 - `.aletheia/policy.json` — blast-radius / `failOn` rules for diffs
 - `agent/.aletheia/deployed-capabilities.json` — committed deploy baseline
 
-## Usage
-
-### Interactive inspector
-
-```bash
-pnpm dev    # http://localhost:5173 — Browse folder → pick eve agent
-```
-
-Routes: `/` about, `/portrait`, `/review`, `/gallery`, `/manifesto`, `/privacy`.
-
-### Headless diff (CI)
-
-```bash
-npx @danielalbinsson/aletheia-cli diff --baseline git:main
-# from this repo: pnpm build:cli && node bin/aletheia.mjs diff --baseline git:main
-# exit 0 = ok, 1 = authority expanded, 2 = error
-```
-
-Acknowledge intentional expansion with GitHub label `capability-change-ack` (see `.github/workflows/capability-review.yml`).
-
-### Example blueprints in-repo
+## Example blueprints in-repo
 
 - `agent/` — bundled design-qa orchestrator
 - `examples/ledger/` — finance-style eve agent with auditor subagent

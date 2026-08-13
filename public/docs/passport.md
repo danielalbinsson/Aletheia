@@ -2,17 +2,18 @@
 
 Stakeholder one-pager for what an agent can do / touch / do alone / cannot do.
 
-## Today (Kit Certified)
-
-Hand-author `PASSPORT.md` next to the agent so it matches the Aletheia portrait
-(see `examples/beacon/PASSPORT.md` and `agent/PASSPORT.md`). That satisfies the
-Kit Certified checklist until generation ships.
-
-## Planned CLI (Phase 2 — gated until WTP + post–Aug 31)
+## `aletheia passport`
 
 ```bash
-aletheia passport --format md
-# PDF later
+npx @danielalbinsson/aletheia-cli passport --format markdown
+# or --format json
 ```
 
-Product docs: https://agentic-kit.dev/docs/roadmap
+Scores the agent against the Kit Certified checklist (compiles, consent mirrors
+gates, policy present, diff green vs baseline, restrictions visible) and emits a
+passport generated from the build. Pass `--no-build` to skip `eve build`.
+
+In-repo example: `agent/PASSPORT.md` (bundled design-qa). The support-bot
+blueprint lives at https://github.com/danielalbinsson/eve-blueprints.
+
+Product docs: https://agentic-kit.dev/docs/kit-certified

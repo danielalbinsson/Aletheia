@@ -62,7 +62,7 @@ describe("parseArgs", () => {
         "--out",
         "diff.md",
         "--agent-dir",
-        "examples/beacon",
+        "examples/ledger",
       ],
       "/repo"
     );
@@ -72,7 +72,7 @@ describe("parseArgs", () => {
     expect(o.failOnExplicit).toBe(true);
     expect(o.build).toBe(false);
     expect(o.out).toBe("diff.md");
-    expect(o.agentDir).toBe(path.resolve("/repo", "examples/beacon"));
+    expect(o.agentDir).toBe(path.resolve("/repo", "examples/ledger"));
   });
 });
 
@@ -125,10 +125,10 @@ describe("gitSnapshotRelPath", () => {
   });
 
   it("prefixes nested agent dirs from the git toplevel", async () => {
-    const nested = path.join(root, "examples", "beacon");
+    const nested = path.join(root, "examples", "ledger");
     await fs.mkdir(nested, { recursive: true });
     expect(await gitSnapshotRelPath(nested)).toBe(
-      "examples/beacon/agent/.aletheia/deployed-capabilities.json"
+      "examples/ledger/agent/.aletheia/deployed-capabilities.json"
     );
   });
 });
@@ -169,12 +169,12 @@ describe("resolveBaseline", () => {
     await execFileAsync("git", ["config", "user.email", "test@example.com"], { cwd: root });
     await execFileAsync("git", ["config", "user.name", "Test"], { cwd: root });
 
-    const nested = path.join(root, "examples", "beacon");
+    const nested = path.join(root, "examples", "ledger");
     const snapPath = path.join(nested, SNAPSHOT_REL);
     await fs.mkdir(path.dirname(snapPath), { recursive: true });
     const snap: CapabilitySnapshot = {
       capturedAt: "2026-07-26T00:00:00.000Z",
-      name: "beacon",
+      name: "ledger",
       capabilities: [{ source: "tools/search-docs.ts", label: "Search docs" }],
       reach: [],
       autonomy: [],
@@ -186,7 +186,7 @@ describe("resolveBaseline", () => {
     await execFileAsync("git", ["commit", "-m", "baseline"], { cwd: root });
 
     const loaded = await resolveBaseline("git:HEAD", nested);
-    expect(loaded?.name).toBe("beacon");
+    expect(loaded?.name).toBe("ledger");
     expect(loaded?.capabilities[0]?.label).toBe("Search docs");
   });
 

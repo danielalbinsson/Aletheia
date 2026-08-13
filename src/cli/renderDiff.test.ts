@@ -48,6 +48,9 @@ describe("renderMarkdown", () => {
     expect(md).toContain("Authority expanded");
     expect(md).toContain("Needs your attention");
     expect(md).toContain("stripe");
+    expect(md).toContain("aletheia snapshot");
+    expect(md).toContain("agent/.aletheia/deployed-capabilities.json");
+    expect(md).toContain("capability-change-ack");
     expect(md).toContain("baseline `git:main`");
     expect(md).toContain("head `abc1234`");
   });
@@ -61,6 +64,7 @@ describe("renderMarkdown", () => {
   it("says no changes when identical", () => {
     const md = renderMarkdown(diffSnapshots(baseSnap, baseSnap), baseSnap, meta);
     expect(md).toContain("No capability changes");
+    expect(md).not.toContain("aletheia snapshot");
   });
 
   it("renders an integrity-warnings block when warnings are passed", () => {

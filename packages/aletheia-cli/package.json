@@ -1,6 +1,6 @@
 {
   "name": "@danielalbinsson/aletheia-cli",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Headless capability review for Vercel eve agents — aletheia diff gates authority expansion in PRs.",
   "license": "MIT",
   "type": "module",

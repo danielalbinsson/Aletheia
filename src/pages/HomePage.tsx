@@ -58,14 +58,30 @@ export function HomePage() {
             </p>
           ) : (
             <p className="home-note">
-              To inspect your own agents, clone the repo and run{" "}
-              <code>pnpm install && pnpm dev</code> on your machine.
+              To inspect your own agents, run{" "}
+              <code>npx @danielalbinsson/aletheia-cli portrait</code> in the agent
+              directory. For the visual inspector, clone the repo and run{" "}
+              <code>pnpm install && pnpm dev</code>.
             </p>
           )}
         </section>
 
         <section>
           <h2>Quickstart — for eve builders</h2>
+          <p>Default path: run the CLI in your eve agent directory (Node 24+).</p>
+          <pre className="home-code">
+            <code>{`npx @danielalbinsson/aletheia-cli portrait
+npx @danielalbinsson/aletheia-cli diff --baseline git:main
+npx @danielalbinsson/aletheia-cli snapshot   # after intentional expansion; commit the file`}</code>
+          </pre>
+          <p>
+            After an intentional authority expansion, acknowledge with{" "}
+            <code>capability-change-ack</code>, run <code>snapshot</code>, and commit{" "}
+            <code>agent/.aletheia/deployed-capabilities.json</code> on the same PR.
+          </p>
+          <p>
+            <strong>Visual inspector</strong> — clone this repo for the Browse-folder UI:
+          </p>
           <pre className="home-code">
             <code>{`git clone https://github.com/danielalbinsson/Aletheia.git
 cd Aletheia

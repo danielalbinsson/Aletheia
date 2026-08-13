@@ -9,14 +9,16 @@ trust tool for eve agent legibility.
 
 ## Install
 
+In your eve agent directory:
+
 ```bash
-# in an eve agent project (eve available on PATH / as a dependency)
-pnpm add -D @danielalbinsson/aletheia-cli
-# or one-shot:
+npx @danielalbinsson/aletheia-cli portrait
 npx @danielalbinsson/aletheia-cli diff --baseline git:main
+npx @danielalbinsson/aletheia-cli snapshot   # after intentional expansion; commit the file
 ```
 
-Bins: `aletheia` and `aletheia-cli` (same entrypoint).
+Or add as a dev dependency: `pnpm add -D @danielalbinsson/aletheia-cli`. Bins:
+`aletheia` and `aletheia-cli` (same entrypoint).
 
 ### `diff` — authority diff for CI
 
@@ -45,7 +47,21 @@ with honest provenance labels) as a build artifact — not a screenshot.
 aletheia portrait --format json    # or text
 ```
 
-All three accept `--no-build` (read an existing manifest) and `--agent-dir <path>`.
+### `snapshot` — write the committed deploy baseline
+
+Writes `agent/.aletheia/deployed-capabilities.json` from current facts so the
+next `aletheia diff` uses it as baseline. After an intentional authority
+expansion (and the `capability-change-ack` label), run this and commit the file
+on the same PR.
+
+```bash
+aletheia snapshot
+# exit 0 = wrote, 2 = error (build/manifest failure)
+# does not fail on elevation
+# --out <file> overrides the path
+```
+
+All four accept `--no-build` (read an existing manifest) and `--agent-dir <path>`.
 
 ## Requirements
 

@@ -167,6 +167,7 @@ describe("aletheia CLI smoke", () => {
     expect(code).toBe(0);
     expect(stderr).toContain("usage:");
     expect(stderr).toContain("aletheia diff");
+    expect(stderr).toContain("aletheia snapshot");
   });
 
   it("exits 0 with no capability changes against the file baseline", async () => {
@@ -225,6 +226,32 @@ describe("aletheia CLI smoke", () => {
     expect(code).toBe(1);
     expect(stdout).toContain("Authority expanded");
     expect(stdout).toContain("stripe");
+    expect(stdout).toContain("aletheia snapshot");
+    expect(stdout).toContain("agent/.aletheia/deployed-capabilities.json");
+  });
+
+  it("--no-build snapshot writes deployed-capabilities.json matching the fixture", async () => {
+    const dest = path.join(agentRoot, "agent/.aletheia/deployed-capabilities.json");
+    await fs.rm(dest);
+    const { code, stdout } = await runCli(["snapshot", "--no-build"]);
+    expect(code).toBe(0);
+    const snap = JSON.parse(await fs.readFile(dest, "utf8")) as CapabilitySnapshot;
+    expect(snap.capabilities).toEqual([
+      {
+        source: "tools/draft-reply.ts",
+        label: "Draft reply",
+        consent: "asks-first",
+      },
+      { source: "tools/search-docs.ts", label: "Search docs" },
+    ]);
+    expect(snap.reach).toEqual([
+      { label: "slack", kind: "api", detail: "MCP · https://mcp.slack.com" },
+    ]);
+    expect(snap.restrictions).toEqual([
+      { tool: "bash", label: "run shell commands" },
+      { tool: "write_file", label: "write files" },
+    ]);
+    expect(stdout).toContain("commit this file so the next `aletheia diff` uses it as baseline.");
   });
 
   it("exits 2 when there is no compiled manifest", async () => {

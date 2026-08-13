@@ -2,13 +2,15 @@
 
 ## Install (published)
 
+In the eve agent directory:
+
 ```bash
-pnpm add -D @danielalbinsson/aletheia-cli
-# or
+npx @danielalbinsson/aletheia-cli portrait
 npx @danielalbinsson/aletheia-cli diff --baseline git:main
+npx @danielalbinsson/aletheia-cli snapshot   # after intentional expansion; commit the file
 ```
 
-The binary name is `aletheia` either way.
+Or `pnpm add -D @danielalbinsson/aletheia-cli`. The binary name is `aletheia` either way.
 
 ## Build from this repo
 
@@ -30,6 +32,19 @@ Typical baselines:
 - `git:main` / `git:<ref>` — compare to committed snapshot at that ref
 - File path to `agent/.aletheia/deployed-capabilities.json`
 
+## Snapshot (commit the baseline)
+
+After an intentional authority expansion, write and commit the new baseline:
+
+```bash
+aletheia snapshot
+# writes agent/.aletheia/deployed-capabilities.json
+# --no-build, --agent-dir <path>, --out <file>
+```
+
+Exit `0` on write, `2` on build/manifest failure. Does not fail on elevation.
+Commit the file so the next `aletheia diff` uses it as baseline.
+
 ## Exit codes
 
 | Code | Meaning |
@@ -40,7 +55,7 @@ Typical baselines:
 
 ## CI
 
-Use `.github/workflows/capability-review.yml`. Fail required checks on elevated changes. Acknowledge with label `capability-change-ack`.
+Use `.github/workflows/capability-review.yml`. Fail required checks on elevated changes. Acknowledge with label `capability-change-ack`, then run `aletheia snapshot` and commit `agent/.aletheia/deployed-capabilities.json` on the same PR.
 
 ## Policy
 

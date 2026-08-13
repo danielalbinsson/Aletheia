@@ -126,6 +126,10 @@ export function renderMarkdown(
     out.push("#### Needs your attention", "");
     for (const e of elevated) out.push(line(e));
     out.push("");
+    out.push(
+      "After acknowledging with `capability-change-ack`, run `aletheia snapshot` and commit `agent/.aletheia/deployed-capabilities.json` on the same PR.",
+      ""
+    );
   }
   if (routine.length) {
     out.push("#### Other changes", "");

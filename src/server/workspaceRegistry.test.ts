@@ -2,12 +2,15 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   isEveWorkspace,
   readAgentName,
   discoverAgents,
   expandHome,
 } from "./workspaceRegistry";
+
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
 let root: string;
 
@@ -36,6 +39,10 @@ describe("isEveWorkspace", () => {
   it("true only when agent/agent.ts exists", async () => {
     expect(await isEveWorkspace(path.join(root, "alpha"))).toBe(true);
     expect(await isEveWorkspace(path.join(root, "not-an-agent"))).toBe(false);
+  });
+
+  it("examples/ledger is a standard eve workspace", async () => {
+    expect(await isEveWorkspace(path.join(repoRoot, "examples", "ledger"))).toBe(true);
   });
 });
 

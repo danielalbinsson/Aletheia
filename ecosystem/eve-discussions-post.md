@@ -27,10 +27,20 @@ explicit before merge.
 
 ## Try it
 
+In your eve agent directory:
+
+```bash
+npx @danielalbinsson/aletheia-cli portrait
+npx @danielalbinsson/aletheia-cli diff --baseline git:main
+npx @danielalbinsson/aletheia-cli snapshot   # after intentional expansion; commit the file
+```
+
+Visual inspector:
+
 ```bash
 git clone https://github.com/danielalbinsson/Aletheia.git
 cd Aletheia && pnpm install && pnpm dev
-# Browse folder → pick examples/beacon or examples/ledger
+# Browse folder → pick agent/ or examples/ledger
 ```
 
 Coding agents:
@@ -49,9 +59,10 @@ Agent index: https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/pub
 
 ## Blueprints
 
-We're submitting **Beacon** (support) and **Ledger** (finance + auditor subagent)
-to Eve Directory / Evex as inspectable blueprints — each README tells you to
-run Aletheia before enabling real credentials.
+Inspectable examples: bundled `agent/` (design-qa), `examples/ledger/` (finance +
+auditor subagent), and [support-bot](https://github.com/danielalbinsson/eve-blueprints).
+Eve Directory / Evex kits live under `ecosystem/` — each README tells you to run
+Aletheia before enabling real credentials.
 
 Feedback welcome — especially on what eve should serialize next so approval /
 read-write can become build-verified instead of source-declared.
