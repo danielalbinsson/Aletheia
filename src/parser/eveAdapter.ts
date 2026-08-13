@@ -19,7 +19,7 @@ import type {
 import type { RawProject } from "./loadProject";
 import { extractOpenRouterModelId } from "../serializer/openRouterAgent";
 import { frameworkRestriction } from "./manifestAdapter";
-import { consentDrift, hasDisableTool } from "./sourceScan";
+import { consentDrift, hasDisableTool, hasDisableRoute } from "./sourceScan";
 import { themeForMotif } from "../theme/personalityTheme";
 
 /** Pull a quoted string value for `key:` from a blob (single or double quotes). */
@@ -119,8 +119,8 @@ function parseCapabilities(raw: RawProject): Capability[] {
         origin: "skill",
         source: path,
       });
-    } else if (/^subagents\/.+\.ts$/.test(path)) {
-      const name = field(src, "name") ?? path;
+    } else if (isSubagentDeclaration(path)) {
+      const name = field(src, "name") ?? path.split("/")[1];
       const detail = field(src, "description") ?? "";
       caps.push({
         label: `Delegates to ${titleCase(name)}`,
@@ -138,18 +138,6 @@ function toolLabelFromPath(filePath: string): string {
   return humanizeToolName(base);
 }
 
-function parseReachComment(src: string): Reach | null {
-  const m = src.match(
-    /\/\/\s*@reach\s+label:\s*([^|]+)\|\s*kind:\s*(\w+)\s*\|\s*access:\s*([\w-]+)/
-  );
-  if (!m) return null;
-  return {
-    label: m[1].trim(),
-    kind: m[2].trim() as Reach["kind"],
-    access: m[3].trim() as Reach["access"],
-  };
-}
-
 function parseMetaComment(src: string, key: string): string | undefined {
   const m = src.match(new RegExp(`//\\s*@${key}\\s+(.+)$`, "m"));
   return m?.[1]?.trim();
@@ -159,45 +147,57 @@ function titleFromInstructions(md: string): string | undefined {
   return md.match(/^#\s+(.+)$/m)?.[1]?.trim();
 }
 
+function logicalSlug(filePath: string, prefix: string): string {
+  return filePath.replace(new RegExp(`^${prefix}/`), "").replace(/\.ts$/, "");
+}
+
+/** Declared local subagent (`subagents/<id>/agent.ts`) or remote (`subagents/<id>.ts`). */
+function isSubagentDeclaration(filePath: string): boolean {
+  return /^subagents\/[^/]+\/agent\.ts$/.test(filePath) || /^subagents\/[^/]+\.ts$/.test(filePath);
+}
+
 function parseReach(raw: RawProject): Reach[] {
   const seen = new Map<string, Reach>();
   const add = (r: Reach) => {
-    const key = r.label.toLowerCase();
-    const prev = seen.get(key);
-    // Keep the broadest access if the same target shows up twice.
-    if (!prev) seen.set(key, r);
-    else if (prev.access !== r.access) seen.set(key, { ...prev, access: "read-write" });
+    const key = (r.id ?? r.label).toLowerCase();
+    if (!seen.has(key)) seen.set(key, r);
   };
 
   for (const [path, src] of Object.entries(raw.files)) {
+    // From source: connections and channels by path-derived identity only.
+    // Do not invent access, and ignore Aletheia-only `@reach` / `reach: {}`.
     if (/^channels\/.+\.ts$/.test(path)) {
-      const label = field(src, "label") ?? field(src, "name") ?? path;
-      const access = (field(src, "access") as Reach["access"]) ?? "read";
-      add({ label, kind: "channel", access });
+      if (hasDisableRoute(src)) continue;
+      const slug = logicalSlug(path, "channels");
+      add({ label: slug, kind: "channel", id: path });
     }
-    if (/^tools\/.+\.ts$/.test(path)) {
-      const fromComment = parseReachComment(src);
-      if (fromComment) add(fromComment);
-      const block = src.match(/reach\s*:\s*\{([^}]*)\}/);
-      if (block) {
-        const b = block[1];
-        const label = field(b, "label");
-        if (label) {
-          add({
-            label,
-            kind: (field(b, "kind") as Reach["kind"]) ?? "api",
-            access: (field(b, "access") as Reach["access"]) ?? "read",
-          });
-        }
-      }
+    if (/^connections\/.+\.ts$/.test(path)) {
+      const slug = logicalSlug(path, "connections");
+      add({ label: slug, kind: "api", id: path });
     }
   }
   return [...seen.values()];
 }
 
+function parseScheduleMarkdown(src: string): { when: string; does: string } {
+  const fm = src.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+  const head = fm?.[1] ?? "";
+  const body = (fm?.[2] ?? src).trim();
+  const cron = head.match(/^cron:\s*["']?([^\n"']+)/m)?.[1]?.trim();
+  return {
+    when: cron ? `On schedule (${cron})` : "On a schedule",
+    does: body.replace(/\s+/g, " ").trim(),
+  };
+}
+
 function parseAutonomy(raw: RawProject): Autonomy[] {
   const out: Autonomy[] = [];
   for (const [path, src] of Object.entries(raw.files)) {
+    if (/^schedules\/.+\.md$/.test(path)) {
+      const parsed = parseScheduleMarkdown(src);
+      out.push({ when: parsed.when, does: parsed.does });
+      continue;
+    }
     if (!/^schedules\/.+\.ts$/.test(path)) continue;
     const when =
       parseMetaComment(src, "when") ??
@@ -208,16 +208,11 @@ function parseAutonomy(raw: RawProject): Autonomy[] {
       field(src, "does") ??
       field(src, "markdown") ??
       "";
-    const consent =
-      (parseMetaComment(src, "consent") as Autonomy["consent"]) ??
-      (field(src, "consent") as Autonomy["consent"]) ??
-      "asks-first";
-    out.push({ when, does, consent });
+    // Consent is unknown from source. Inventing asks-first made an unbuilt
+    // clone look safer than the verified path (schedules are acts-on-its-own).
+    out.push({ when, does });
   }
-  // Acts-on-its-own first — it's the more striking fact.
-  return out.sort((a, b) =>
-    a.consent === b.consent ? 0 : a.consent === "acts-on-its-own" ? -1 : 1
-  );
+  return out;
 }
 
 // Source fallback: a flat RawProject can't see a nested subagent package's own
@@ -226,14 +221,15 @@ function parseAutonomy(raw: RawProject): Autonomy[] {
 function parseSubagents(raw: RawProject): Subagent[] {
   const subs: Subagent[] = [];
   for (const [path, src] of Object.entries(raw.files)) {
-    if (/^subagents\/.+\.ts$/.test(path)) {
-      subs.push({
-        name: titleCase(field(src, "name") ?? path.split("/")[1]),
-        description: field(src, "description") || undefined,
-        capabilities: [],
-        reach: [],
-      });
-    }
+    if (!isSubagentDeclaration(path)) continue;
+    const id = path.startsWith("subagents/") ? path.split("/")[1].replace(/\.ts$/, "") : path;
+    subs.push({
+      name: titleCase(field(src, "name") ?? id),
+      description: field(src, "description") || undefined,
+      capabilities: [],
+      reach: [],
+      id: path,
+    });
   }
   return subs;
 }

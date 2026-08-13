@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   stripCodeComments,
   hasDisableTool,
+  hasDisableRoute,
   hasApprovalGate,
   consentDrift,
 } from "./sourceScan";
@@ -14,6 +15,16 @@ describe("stripCodeComments", () => {
 
   it("does not eat the // in a url string", () => {
     expect(stripCodeComments(`const u = "https://x.dev";`)).toContain("https://x.dev");
+  });
+});
+
+describe("hasDisableRoute", () => {
+  it("detects a live disableRoute() call", () => {
+    expect(hasDisableRoute(`export default disableRoute();`)).toBe(true);
+  });
+
+  it("ignores a commented-out disableRoute()", () => {
+    expect(hasDisableRoute(`// disableRoute();`)).toBe(false);
   });
 });
 

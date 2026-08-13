@@ -10,7 +10,8 @@ import type { CapabilitySnapshot } from "../parser/capabilityDiff";
 
 const execFileAsync = promisify(execFile);
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const binPath = path.join(repoRoot, "bin", "aletheia.mjs");
+const trackedBin = path.join(repoRoot, "packages", "aletheia-cli", "bin", "aletheia.mjs");
+const actionBin = path.join(repoRoot, ".github", "actions", "capability-review", "aletheia.mjs");
 const pkgJsonPath = path.join(repoRoot, "packages", "aletheia-cli", "package.json");
 
 const fixtureManifest: CompiledManifest = {
@@ -65,18 +66,33 @@ describe("aletheia CLI smoke", () => {
   let agentRoot: string;
 
   beforeAll(async () => {
-    // Ensure the bundled bin matches current sources (includes cliCore).
-    await execFileAsync("pnpm", ["--dir", path.join(repoRoot, "packages/aletheia-cli"), "build"], {
-      cwd: repoRoot,
-      env: process.env,
-    });
-    // Root bin/ is gitignored — create it on clean CI checkouts.
-    await fs.mkdir(path.dirname(binPath), { recursive: true });
-    await fs.copyFile(
-      path.join(repoRoot, "packages/aletheia-cli/bin/aletheia.mjs"),
-      binPath
-    );
-    await fs.chmod(binPath, 0o755);
+    const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "aletheia-cli-rebuild-"));
+    const out = path.join(tmp, "aletheia.mjs");
+    const cliPkg = path.join(repoRoot, "packages", "aletheia-cli");
+    try {
+      await execFileAsync(
+        "pnpm",
+        [
+          "exec",
+          "esbuild",
+          "../../src/cli/aletheia.ts",
+          "--bundle",
+          "--platform=node",
+          "--format=esm",
+          "--target=node24",
+          `--outfile=${out}`,
+        ],
+        { cwd: cliPkg, env: process.env }
+      );
+      const rebuiltRaw = await fs.readFile(out, "utf8");
+      const rebuilt = Buffer.from(rebuiltRaw.replace(/[ \t]+$/gm, ""));
+      const tracked = await fs.readFile(trackedBin);
+      expect(rebuilt.equals(tracked), "packages/aletheia-cli/bin/aletheia.mjs is stale — run pnpm --dir packages/aletheia-cli build").toBe(true);
+      const actionCopy = await fs.readFile(actionBin);
+      expect(actionCopy.equals(tracked), ".github/actions/capability-review/aletheia.mjs is stale — rebuild the CLI").toBe(true);
+    } finally {
+      await fs.rm(tmp, { recursive: true, force: true });
+    }
   }, 60_000);
 
   beforeEach(async () => {
@@ -141,7 +157,7 @@ describe("aletheia CLI smoke", () => {
 
   async function runCli(args: string[]): Promise<{ code: number; stdout: string; stderr: string }> {
     try {
-      const { stdout, stderr } = await execFileAsync(process.execPath, [binPath, ...args], {
+      const { stdout, stderr } = await execFileAsync(process.execPath, [trackedBin, ...args], {
         cwd: agentRoot,
         env: process.env,
         maxBuffer: 2 * 1024 * 1024,
@@ -168,9 +184,31 @@ describe("aletheia CLI smoke", () => {
     expect(stderr).toContain("usage:");
     expect(stderr).toContain("aletheia diff");
     expect(stderr).toContain("aletheia snapshot");
+    expect(stderr).toContain("aletheia init");
   });
 
-  it("exits 0 with no capability changes against the file baseline", async () => {
+  it("maps unknown flags and malformed baselines to exit 2", async () => {
+    const unknown = await runCli(["diff", "--no-build", "--explode"]);
+    expect(unknown.code).toBe(2);
+    expect(unknown.stderr).toMatch(/unknown flag/);
+
+    const force = await runCli(["diff", "--no-build", "--force"]);
+    expect(force.code).toBe(2);
+    expect(force.stderr).toMatch(/only valid with aletheia init/);
+
+    const badFile = path.join(agentRoot, "bad-baseline.json");
+    await fs.writeFile(badFile, "{ not json");
+    const malformed = await runCli([
+      "diff",
+      "--no-build",
+      "--baseline",
+      `file:${badFile}`,
+    ]);
+    expect(malformed.code).toBe(2);
+    expect(malformed.stderr).toMatch(/malformed baseline JSON/);
+  });
+
+  it("exits 0 with no authority changes against the file baseline", async () => {
     const out = path.join(agentRoot, "diff.json");
     const { code, stdout } = await runCli([
       "diff",
@@ -191,7 +229,7 @@ describe("aletheia CLI smoke", () => {
       current: CapabilitySnapshot;
     };
     expect(report.failing).toBe(false);
-    expect(report.headline).toMatch(/No capability changes/i);
+    expect(report.headline).toMatch(/No authority changes/i);
     expect(report.current.restrictions?.map((r) => r.tool)).toEqual(["bash", "write_file"]);
     expect(stdout).toBe("");
   });
@@ -245,7 +283,7 @@ describe("aletheia CLI smoke", () => {
       { source: "tools/search-docs.ts", label: "Search docs" },
     ]);
     expect(snap.reach).toEqual([
-      { label: "slack", kind: "api", detail: "MCP · https://mcp.slack.com" },
+      { label: "slack", kind: "api", detail: "MCP · https://mcp.slack.com", id: "connections/slack.ts" },
     ]);
     expect(snap.restrictions).toEqual([
       { tool: "bash", label: "run shell commands" },
@@ -264,5 +302,87 @@ describe("aletheia CLI smoke", () => {
     ]);
     expect(code).toBe(2);
     expect(stderr).toMatch(/no compiled manifest/i);
+  });
+
+  it("init --no-snapshot writes sidecars; second run is a no-op without --force", async () => {
+    const fresh = await fs.mkdtemp(path.join(os.tmpdir(), "aletheia-init-smoke-"));
+    try {
+      await fs.mkdir(path.join(fresh, "agent"), { recursive: true });
+      await fs.writeFile(path.join(fresh, "agent/agent.ts"), "export default {};\n");
+
+      const first = await execFileAsync(process.execPath, [trackedBin, "init", "--no-snapshot"], {
+        cwd: fresh,
+        env: process.env,
+      });
+      expect(first.stdout).toContain("wrote .aletheia/policy.json");
+      expect(first.stdout).toContain("wrote agent/.aletheia/consent.json");
+      expect(first.stdout).toContain("wrote .github/workflows/capability-review.yml");
+      expect(first.stdout).toContain("does not run or deploy the agent");
+      expect(first.stdout).toContain("skipped snapshot (--no-snapshot)");
+
+      const policy = JSON.parse(
+        await fs.readFile(path.join(fresh, ".aletheia/policy.json"), "utf8")
+      ) as { failOn: string; rules: unknown[] };
+      expect(policy).toEqual({ failOn: "elevated", rules: [] });
+      const consent = JSON.parse(
+        await fs.readFile(path.join(fresh, "agent/.aletheia/consent.json"), "utf8")
+      ) as { gated: Record<string, string> };
+      expect(consent).toEqual({ gated: {} });
+      const workflow = await fs.readFile(
+        path.join(fresh, ".github/workflows/capability-review.yml"),
+        "utf8"
+      );
+      expect(workflow).toContain("danielalbinsson/Aletheia/.github/actions/capability-review@");
+      expect(workflow).toContain("git:origin/${{ github.base_ref }}");
+      expect(workflow).toContain("pnpm install --frozen-lockfile");
+      expect(workflow).not.toContain("@main");
+
+      const custom = '{"failOn":"never","rules":[]}\n';
+      await fs.writeFile(path.join(fresh, ".aletheia/policy.json"), custom);
+      const second = await execFileAsync(process.execPath, [trackedBin, "init", "--no-snapshot"], {
+        cwd: fresh,
+        env: process.env,
+      });
+      expect(second.stdout).toContain("kept .aletheia/policy.json");
+      expect(second.stdout).toContain("kept agent/.aletheia/consent.json");
+      expect(second.stdout).toContain("kept .github/workflows/capability-review.yml");
+      expect(second.stdout).not.toMatch(/^wrote /m);
+      expect(await fs.readFile(path.join(fresh, ".aletheia/policy.json"), "utf8")).toBe(custom);
+
+      const noBuild = await execFileAsync(process.execPath, [trackedBin, "init", "--no-build"], {
+        cwd: fresh,
+        env: process.env,
+      });
+      expect(noBuild.stdout).toContain("skipped snapshot (--no-build)");
+    } finally {
+      await fs.rm(fresh, { recursive: true, force: true });
+    }
+  });
+
+  it("init without agent/ exits 2", async () => {
+    const empty = await fs.mkdtemp(path.join(os.tmpdir(), "aletheia-init-empty-"));
+    try {
+      let code = 0;
+      let stderr = "";
+      try {
+        await execFileAsync(process.execPath, [trackedBin, "init", "--no-snapshot"], {
+          cwd: empty,
+          env: process.env,
+        });
+      } catch (err) {
+        const e = err as { status?: number; code?: number | string; stderr?: string };
+        code =
+          typeof e.status === "number"
+            ? e.status
+            : typeof e.code === "number"
+              ? e.code
+              : 1;
+        stderr = e.stderr ?? String(err);
+      }
+      expect(code).toBe(2);
+      expect(stderr).toMatch(/missing agent\//);
+    } finally {
+      await fs.rm(empty, { recursive: true, force: true });
+    }
   });
 });

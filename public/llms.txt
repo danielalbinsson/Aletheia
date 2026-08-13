@@ -1,6 +1,6 @@
 # Aletheia
 
-> Local-first trust tool for [eve (Vercel)](https://eve.dev) agents. Renders a verified self-portrait and a authority diff. Never runs, edits, or deploys the agent. Honesty contract: never present a guess as a fact.
+> Local-first trust tool for [eve (Vercel)](https://eve.dev) agents. Renders a verified self-portrait and an authority diff. Never runs or deploys the agent. `init`/`snapshot` write Aletheia inspection files. Honesty contract: never present a guess as a fact.
 
 This file is the agent-facing index. Prefer the Markdown links below over HTML SPA routes.
 
@@ -28,9 +28,9 @@ This file is the agent-facing index. Prefer the Markdown links below over HTML S
 - Install: `npx skills add danielalbinsson/Aletheia --skill aletheia-eve-trust`
 - Skill source: [skills/aletheia-eve-trust/SKILL.md](https://raw.githubusercontent.com/danielalbinsson/Aletheia/main/skills/aletheia-eve-trust/SKILL.md)
 
-## CLI (capability gate)
+## CLI (authority diff)
 
-- npm: `npx @danielalbinsson/aletheia-cli portrait` (also `diff`, `passport`, `snapshot`; package `@danielalbinsson/aletheia-cli`, bin `aletheia`)
+- npm: `npx @danielalbinsson/aletheia-cli portrait` (also `diff`, `passport`, `snapshot`; package `@danielalbinsson/aletheia-cli`, bin `aletheia`). `init` and `build:<ref>` are source-only until the next npm publish.
 - Source: [packages/aletheia-cli](https://github.com/danielalbinsson/Aletheia/tree/main/packages/aletheia-cli)
 
 ## Ecosystem blueprints (registry kits)

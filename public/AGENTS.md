@@ -1,8 +1,8 @@
 # Aletheia — instructions for coding agents
 
-Aletheia is a **local-first trust / legibility tool** for [eve (Vercel)](https://eve.dev) agents. It renders a first-person **self-portrait** and an **authority diff** (authority diff). It does **not** run, edit, or deploy agents.
+Aletheia is a **local-first trust / legibility tool** for [eve (Vercel)](https://eve.dev) agents. It renders a first-person **self-portrait** and an **authority diff**. It does **not** run or deploy agents.
 
-One exception, stated plainly because the honesty contract applies to Aletheia's own claims too: the CLI (`diff`, `portrait`, `passport`, `snapshot`) invokes `eve build` by default, so its facts can read *verified from build*. Pass `--no-build` to skip it. Building writes eve's own output under `.eve/` and leaves your agent source untouched. The web UI and dev server never build.
+One exception, stated plainly because the honesty contract applies to Aletheia's own claims too: the CLI (`diff`, `portrait`, `passport`, `snapshot`, `init`) invokes `eve build` by default, so its facts can read *verified from build*. Pass `--no-build` to skip the build and reuse an existing compiled manifest (exits `2` if none exists — it does not produce from-source facts). Building writes eve's own output under `.eve/` and leaves your agent source untouched. `init` and `snapshot` write Aletheia inspection files (policy, consent sidecar, PR workflow, deploy baseline). The web UI and dev server never build.
 
 Prefer Markdown discovery surfaces on this host: [`/llms.txt`](/llms.txt), [`/llms-full.txt`](/llms-full.txt), and this file. Source of truth: https://github.com/danielalbinsson/Aletheia
 
@@ -23,6 +23,8 @@ npx @danielalbinsson/aletheia-cli portrait
 npx @danielalbinsson/aletheia-cli diff --baseline git:main
 npx @danielalbinsson/aletheia-cli snapshot   # after intentional expansion; commit the file
 ```
+
+The published npm package is **0.4.0** and does not include `init` or `build:<ref>`. Those commands, and the remote Action, are source/unreleased until the next publish. From this repo: `pnpm build:cli && node bin/aletheia.mjs <command>`.
 
 ## Visual inspector
 

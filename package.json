@@ -4,7 +4,7 @@
   "version": "0.2.0",
   "license": "MIT",
   "type": "module",
-  "description": "Local-first trust tool for Vercel eve agents — verified self-portrait and capability review (agent legibility).",
+  "description": "Local-first trust tool for Vercel eve agents — verified self-portrait and authority diff (agent legibility).",
   "keywords": [
     "eve",
     "vercel-eve",
@@ -34,7 +34,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "build:agent": "eve build",
-    "build:cli": "esbuild src/cli/aletheia.ts --bundle --platform=node --format=esm --target=node24 --packages=external --outfile=bin/aletheia.mjs",
+    "build:cli": "pnpm --dir packages/aletheia-cli build && mkdir -p bin && cp packages/aletheia-cli/bin/aletheia.mjs bin/aletheia.mjs && chmod +x bin/aletheia.mjs",
     "build:cli:npm": "pnpm --dir packages/aletheia-cli build",
     "pack:cli": "pnpm --dir packages/aletheia-cli pack",
     "preview": "vite preview",

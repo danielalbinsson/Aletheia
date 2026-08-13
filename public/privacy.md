@@ -12,7 +12,7 @@ Pages may load the Archivo typeface from Google Fonts. When your browser request
 
 ## Local tool (`pnpm dev`)
 
-The local Aletheia server reads eve agent files from folders you choose on your machine. That data stays on your computer — it is not uploaded to this website or to Aletheia's authors. Aletheia does not run, edit, or deploy your agents.
+The local Aletheia server reads eve agent files from folders you choose on your machine. That data stays on your computer — it is not uploaded to this website or to Aletheia's authors. Aletheia does not run or deploy your agents.
 
 The dev server may persist your last scan root in `~/.aletheia/workspaces.json` on your machine for convenience.
 

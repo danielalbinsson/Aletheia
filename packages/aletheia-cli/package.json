@@ -1,7 +1,7 @@
 {
   "name": "@danielalbinsson/aletheia-cli",
   "version": "0.4.0",
-  "description": "Headless capability review for Vercel eve agents — aletheia diff gates authority expansion in PRs.",
+  "description": "Headless authority diff for Vercel eve agents — aletheia diff gates authority expansion in PRs.",
   "license": "MIT",
   "type": "module",
   "bin": {
@@ -14,7 +14,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "esbuild ../../src/cli/aletheia.ts --bundle --platform=node --format=esm --target=node24 --outfile=bin/aletheia.mjs && node -e \"require('fs').chmodSync('bin/aletheia.mjs', 0o755)\"",
+    "build": "esbuild ../../src/cli/aletheia.ts --bundle --platform=node --format=esm --target=node24 --outfile=bin/aletheia.mjs && node -e \"const fs=require('fs'); const p='bin/aletheia.mjs'; fs.writeFileSync(p, fs.readFileSync(p,'utf8').replace(/[ \\t]+$/gm,'')); fs.chmodSync(p, 0o755); fs.copyFileSync(p, '../../.github/actions/capability-review/aletheia.mjs')\"",
     "prepack": "pnpm build",
     "prepublishOnly": "pnpm build",
     "test": "pnpm --dir ../.. exec vitest run src/cli"

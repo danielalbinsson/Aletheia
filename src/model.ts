@@ -37,9 +37,9 @@ export interface Reach {
   kind: "data" | "api" | "channel";
   /**
    * "read" | "write" | "read-write" — how much it can do there. Optional:
-   * eve's compiled manifest does not declare read/write on a connection, so
-   * manifest-derived reach leaves this unset rather than inventing it. The
-   * source-parsed fallback may still set it from `@reach` annotations.
+   * eve does not declare read/write on a connection, so both the compiled
+   * manifest and the from-source fallback leave this unset rather than
+   * inventing it.
    */
   access?: "read" | "write" | "read-write";
   /**
@@ -47,6 +47,11 @@ export interface Reach {
    * "OPENAPI · https://api.intercom.io". Shown beneath the label.
    */
   detail?: string;
+  /**
+   * Stable identity for diffs: compiled logical path or source path.
+   * Labels are display-only and can collide or change without a reach change.
+   */
+  id?: string;
 }
 
 /**
@@ -66,6 +71,8 @@ export interface Subagent {
   capabilities: Capability[];
   /** What the subagent itself can reach (its own connections/channels). */
   reach: Reach[];
+  /** Compiled node id or source path. Used to match delegation edges. */
+  id?: string;
 }
 
 /**
@@ -87,8 +94,12 @@ export interface Autonomy {
   when: string;
   /** What it does at that time. */
   does: string;
-  /** Whether it acts on its own or asks first. The trust line. */
-  consent: "acts-on-its-own" | "asks-first";
+  /**
+   * Whether it acts on its own or asks first. Optional: from-source
+   * schedules omit it (unknown — never treated as asks-first). The verified
+   * adapter sets `acts-on-its-own` because eve schedules fire unattended.
+   */
+  consent?: "acts-on-its-own" | "asks-first";
 }
 
 /** The fully parsed agent — the single source of truth for rendering. */
@@ -122,6 +133,29 @@ export interface AgentModel {
   restrictions: Restriction[];
   /** Subagents it can delegate to, each with its own capability/reach slice. */
   subagents: Subagent[];
+  /**
+   * Parent→child delegation from eve's compiled `subagentEdges`. Undefined
+   * means the field was absent (unknown), not "no edges". Verified from build
+   * when set — including an explicit empty list.
+   */
+  delegation?: {
+    parent: string;
+    child: string;
+    parentId?: string;
+    childId?: string;
+  }[];
+  /**
+   * Authored sandbox presence from eve's compiled `sandbox` /
+   * `sandboxWorkspaces`. Undefined means those fields were absent (unknown),
+   * not "no sandbox". `present` is set only when `sandbox` itself was
+   * serialized (`true` for an object, `false` for `null`). Verified from build
+   * when set. Evals are not on this model — eve does not put them on the
+   * compiled manifest.
+   */
+  sandbox?: {
+    present?: boolean;
+    workspaceCount?: number;
+  };
 }
 
 /** Derived signals the portrait system maps to visual variables. */

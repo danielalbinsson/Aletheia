@@ -4,6 +4,7 @@ import {
   applyManifest,
   summarizeInputs,
   manifestRestrictionWarning,
+  sandboxPortraitLine,
   type CompiledManifest,
 } from "./manifestAdapter";
 import type { AgentModel } from "../model";
@@ -145,6 +146,115 @@ describe("mapManifest", () => {
       { name: "Auditor", description: undefined, runsOn: undefined, capabilities: [], reach: [] },
     ]);
   });
+
+  it("does not invent extra compiled fields when they are absent", () => {
+    expect(facts.sandbox).toBeUndefined();
+    expect(facts.delegation).toBeUndefined();
+    expect(facts.reach.find((r) => r.label === "intercom")?.detail).toBe(
+      "OPENAPI · https://api.intercom.io",
+    );
+    expect(facts.reach.find((r) => r.label === "intercom")?.access).toBeUndefined();
+    expect(JSON.stringify(facts)).not.toMatch(/oauth/i);
+    expect(JSON.stringify(facts)).not.toMatch(/evals/i);
+    expect(JSON.stringify(facts)).not.toMatch(/env var/i);
+  });
+});
+
+describe("mapManifest extra compiled fields (eve 0.18.2)", () => {
+  it("maps subagentEdges to named parent→child delegation", () => {
+    const f = mapManifest({
+      config: { name: "design-qa-agent" },
+      subagents: [
+        {
+          nodeId: "sub:a11y",
+          name: "a11y-auditor",
+          agent: { config: { name: "a11y-auditor" } },
+        },
+      ],
+      subagentEdges: [{ parentNodeId: "__root__", childNodeId: "sub:a11y" }],
+    });
+    expect(f.delegation).toEqual([
+      { parent: "design-qa-agent", child: "A11y auditor", parentId: "__root__", childId: "sub:a11y" },
+    ]);
+  });
+
+  it("keeps compiled node ids when a subagent has no nodeId to resolve", () => {
+    const f = mapManifest({
+      subagentEdges: [{ parentNodeId: "__root__", childNodeId: "missing" }],
+    });
+    expect(f.delegation).toEqual([{ parent: "root", child: "missing", parentId: "__root__", childId: "missing" }]);
+  });
+
+  it("treats an explicit empty subagentEdges list as a verified empty graph", () => {
+    expect(mapManifest({ subagentEdges: [] }).delegation).toEqual([]);
+  });
+
+  it("maps sandbox object as present and workspace count, not scores", () => {
+    const f = mapManifest({
+      sandbox: { logicalPath: "sandbox.ts", backendName: "native" },
+      sandboxWorkspaces: [{ logicalPath: "sandbox/workspace" }, { logicalPath: "sandbox/other" }],
+    });
+    expect(f.sandbox).toEqual({ present: true, workspaceCount: 2 });
+    expect(sandboxPortraitLine(f.sandbox!)).toBe(
+      "An authored sandbox is configured. 2 sandbox workspace folders.",
+    );
+  });
+
+  it("maps sandbox: null as present: false", () => {
+    const f = mapManifest({ sandbox: null, sandboxWorkspaces: [] });
+    expect(f.sandbox).toEqual({ present: false, workspaceCount: 0 });
+    expect(sandboxPortraitLine(f.sandbox!)).toContain("No authored sandbox is configured.");
+  });
+
+  it("puts channel adapterKind on reach detail and skips disabled routes", () => {
+    const f = mapManifest({
+      channels: [
+        { name: "eve", kind: "channel", adapterKind: "http" },
+        { name: "slack", kind: "channel", adapterKind: "slack", logicalPath: "channels/slack.ts" },
+        { name: "old-hook", kind: "disabled", logicalPath: "channels/old-hook.ts" },
+      ],
+    });
+    expect(f.reach).toEqual([{ label: "slack", kind: "channel", detail: "slack", id: "channels/slack.ts" }]);
+  });
+
+  it("leaves channel detail unset when adapterKind is absent", () => {
+    const f = mapManifest({
+      channels: [{ name: "slack", logicalPath: "channels/slack.ts" }],
+    });
+    expect(f.reach).toEqual([{ label: "slack", kind: "channel", id: "channels/slack.ts" }]);
+  });
+
+  it("appends vercelConnect.connector and does not invent OAuth scopes or read/write", () => {
+    const f = mapManifest({
+      connections: [
+        {
+          connectionName: "linear",
+          protocol: "mcp",
+          url: "https://mcp.linear.app",
+          vercelConnect: { connector: "oauth/mcp-linear-app" },
+        },
+      ],
+    });
+    const linear = f.reach[0];
+    expect(linear.access).toBeUndefined();
+    expect(linear.detail).toBe("MCP · https://mcp.linear.app · Vercel Connect (oauth/mcp-linear-app)");
+    expect(linear.detail).not.toMatch(/scope/i);
+    expect(linear.detail).not.toMatch(/read-write|read\/write/i);
+  });
+
+  it("ignores evals and required-env keys that eve does not serialize on the compiled manifest", () => {
+    const withUnknown = {
+      tools: [{ name: "ping", description: "" }],
+      evals: [{ name: "accuracy", score: 0.99 }],
+      requiredEnv: ["OPENAI_API_KEY"],
+    } as CompiledManifest & { evals: unknown; requiredEnv: unknown };
+    const f = mapManifest(withUnknown);
+    expect(f).not.toHaveProperty("evals");
+    expect(f).not.toHaveProperty("requiredEnv");
+    expect(f.sandbox).toBeUndefined();
+    expect(JSON.stringify(f)).not.toMatch(/OPENAI_API_KEY/);
+    expect(JSON.stringify(f)).not.toMatch(/accuracy/);
+  });
 });
 
 describe("applyManifest", () => {
@@ -208,6 +318,19 @@ describe("applyManifest", () => {
     expect(
       merged.capabilities.find((c) => c.source === "tools/search-docs.ts")?.consent,
     ).toBeUndefined();
+  });
+
+  it("overlays verified sandbox and delegation from the manifest", () => {
+    const merged = applyManifest(
+      base,
+      mapManifest({
+        sandbox: { logicalPath: "sandbox.ts" },
+        subagents: [{ nodeId: "sub:a", name: "auditor" }],
+        subagentEdges: [{ parentNodeId: "__root__", childNodeId: "sub:a" }],
+      }),
+    );
+    expect(merged.sandbox).toEqual({ present: true });
+    expect(merged.delegation).toEqual([{ parent: "root", child: "Auditor", parentId: "__root__", childId: "sub:a" }]);
   });
 });
 

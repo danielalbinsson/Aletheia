@@ -18,7 +18,7 @@ Install the trust skill for coding agents:
 
 ```bash
 npx skills add danielalbinsson/Aletheia --skill aletheia-eve-trust
-# capability gate (after npm publish):
+# authority diff (after npm publish):
 npx @danielalbinsson/aletheia-cli diff --baseline git:main
 ```
 

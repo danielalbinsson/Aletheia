@@ -9,7 +9,8 @@
 // Pure module: no fs, no eve. The server persists snapshots; this just maps
 // and compares them. See docs/specs/diff-on-deploy.md.
 
-import type { AgentModel, Autonomy, Reach, Restriction } from "../model";
+import { z } from "zod";
+import type { AgentModel, Autonomy, Reach, Restriction, Subagent } from "../model";
 import { classifyReach, type ConsequenceRule } from "./consequence";
 
 /** Options for diffSnapshots — e.g. team-defined consequence rules from policy. */
@@ -28,15 +29,38 @@ export interface SnapshotReach {
   kind: Reach["kind"];
   access?: Reach["access"];
   detail?: string;
+  /** Stable identity (logical path). Optional on legacy snapshots. */
+  id?: string;
 }
 export interface SnapshotAutonomy {
   does: string;
   when: string;
-  consent: Autonomy["consent"];
+  /** Omitted when source-only schedules have not been verified. */
+  consent?: Autonomy["consent"];
 }
 export interface SnapshotRestriction {
   tool: string;
   label: string;
+}
+
+export interface SnapshotSubagentSlice {
+  name: string;
+  id?: string;
+  runsOn?: string;
+  capabilities: SnapshotCapability[];
+  reach: SnapshotReach[];
+}
+
+export interface SnapshotDelegation {
+  parent: string;
+  child: string;
+  parentId?: string;
+  childId?: string;
+}
+
+export interface SnapshotSandbox {
+  present?: boolean;
+  workspaceCount?: number;
 }
 
 /**
@@ -59,13 +83,22 @@ export interface CapabilitySnapshot {
   capabilities: SnapshotCapability[];
   reach: SnapshotReach[];
   autonomy: SnapshotAutonomy[];
-  subagents: string[];
+  /**
+   * Legacy snapshots store names only (`string[]`). New snapshots store a
+   * capability/reach slice per subagent. Diffing nested authority is skipped
+   * until the baseline has slices.
+   */
+  subagents: Array<string | SnapshotSubagentSlice>;
   /**
    * Framework tools the agent disabled. Optional: baselines captured before
    * restrictions were tracked omit it, and we skip the diff rather than
    * false-flag a "restriction lifted" on every old snapshot.
    */
   restrictions?: SnapshotRestriction[];
+  /** Optional: omitted on baselines captured before sandbox tracking. */
+  sandbox?: SnapshotSandbox;
+  /** Optional: omitted on baselines captured before delegation tracking. */
+  delegation?: SnapshotDelegation[];
 }
 
 export type DiffRisk = "elevated" | "routine";
@@ -76,7 +109,9 @@ export type DiffKind =
   | "autonomy"
   | "subagent"
   | "restriction"
-  | "mind";
+  | "mind"
+  | "sandbox"
+  | "delegation";
 
 export interface DiffEntry {
   kind: DiffKind;
@@ -98,6 +133,80 @@ export interface CapabilityDiff {
   hasChanges: boolean;
 }
 
+const SnapshotCapabilitySchema = z.object({
+  source: z.string(),
+  label: z.string(),
+  consent: z.literal("asks-first").optional(),
+});
+
+const SnapshotReachSchema = z.object({
+  label: z.string(),
+  kind: z.enum(["data", "api", "channel"]),
+  access: z.enum(["read", "write", "read-write"]).optional(),
+  detail: z.string().optional(),
+  id: z.string().optional(),
+});
+
+const SnapshotAutonomySchema = z.object({
+  does: z.string(),
+  when: z.string(),
+  consent: z.enum(["acts-on-its-own", "asks-first"]).optional(),
+});
+
+const SnapshotRestrictionSchema = z.object({
+  tool: z.string(),
+  label: z.string(),
+});
+
+const SnapshotSubagentSliceSchema = z.object({
+  name: z.string(),
+  id: z.string().optional(),
+  runsOn: z.string().optional(),
+  capabilities: z.array(SnapshotCapabilitySchema),
+  reach: z.array(SnapshotReachSchema),
+});
+
+const SnapshotDelegationSchema = z.object({
+  parent: z.string(),
+  child: z.string(),
+  parentId: z.string().optional(),
+  childId: z.string().optional(),
+});
+
+const SnapshotSandboxSchema = z.object({
+  present: z.boolean().optional(),
+  workspaceCount: z.number().optional(),
+});
+
+const CapabilitySnapshotSchema = z.object({
+  capturedAt: z.string(),
+  name: z.string(),
+  mind: z
+    .object({
+      model: z.string().optional(),
+      instructionsHash: z.string().optional(),
+    })
+    .optional(),
+  capabilities: z.array(SnapshotCapabilitySchema),
+  reach: z.array(SnapshotReachSchema),
+  autonomy: z.array(SnapshotAutonomySchema),
+  subagents: z.array(z.union([z.string(), SnapshotSubagentSliceSchema])),
+  restrictions: z.array(SnapshotRestrictionSchema).optional(),
+  sandbox: SnapshotSandboxSchema.optional(),
+  delegation: z.array(SnapshotDelegationSchema).optional(),
+});
+
+/** Parse a persisted snapshot. Throws if the payload is not a valid snapshot. */
+export function parseCapabilitySnapshot(raw: unknown, source = "snapshot"): CapabilitySnapshot {
+  const parsed = CapabilitySnapshotSchema.safeParse(raw);
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    const path = issue?.path.length ? issue.path.join(".") : "root";
+    throw new Error(`${source} is not a valid capability snapshot (${path}: ${issue?.message ?? "invalid"})`);
+  }
+  return parsed.data;
+}
+
 /** Capture the trust slice of a model as a deploy snapshot. */
 export function snapshotFromModel(
   model: AgentModel,
@@ -110,39 +219,74 @@ export function snapshotFromModel(
 export type SnapshotInput = Pick<
   AgentModel,
   "capabilities" | "reach" | "autonomy" | "subagents"
-> & { name?: string; mind?: SnapshotMind; restrictions?: Restriction[] };
+> & {
+  name?: string;
+  mind?: SnapshotMind;
+  restrictions?: Restriction[];
+  sandbox?: AgentModel["sandbox"];
+  delegation?: AgentModel["delegation"];
+};
+
+function snapCap(c: { source: string; label: string; consent?: "asks-first" }): SnapshotCapability {
+  return {
+    source: c.source,
+    label: c.label,
+    ...(c.consent ? { consent: c.consent } : {}),
+  };
+}
+
+function snapReach(r: Reach): SnapshotReach {
+  return {
+    label: r.label,
+    kind: r.kind,
+    ...(r.access ? { access: r.access } : {}),
+    ...(r.detail ? { detail: r.detail } : {}),
+    ...(r.id ? { id: r.id } : {}),
+  };
+}
+
+function snapSubagent(s: Subagent): SnapshotSubagentSlice {
+  return {
+    name: s.name,
+    ...(s.id ? { id: s.id } : {}),
+    ...(s.runsOn ? { runsOn: s.runsOn } : {}),
+    capabilities: s.capabilities.map(snapCap),
+    reach: s.reach.map(snapReach),
+  };
+}
 
 /** Capture a snapshot from manifest facts (or any model-shaped trust slice). */
 export function snapshotFromFacts(
   facts: SnapshotInput,
   capturedAt = new Date().toISOString()
 ): CapabilitySnapshot {
-  return {
+  const snap: CapabilitySnapshot = {
     capturedAt,
     name: facts.name ?? "agent",
     mind: facts.mind,
-    capabilities: facts.capabilities.map((c) => ({
-      source: c.source,
-      label: c.label,
-      ...(c.consent ? { consent: c.consent } : {}),
-    })),
-    reach: facts.reach.map((r) => ({
-      label: r.label,
-      kind: r.kind,
-      access: r.access,
-      detail: r.detail,
-    })),
+    capabilities: facts.capabilities.map(snapCap),
+    reach: facts.reach.map(snapReach),
     autonomy: facts.autonomy.map((a) => ({
       does: a.does,
       when: a.when,
-      consent: a.consent,
+      ...(a.consent ? { consent: a.consent } : {}),
     })),
-    subagents: facts.subagents.map((s) => s.name),
+    subagents: facts.subagents.map(snapSubagent),
     restrictions: (facts.restrictions ?? []).map((r) => ({
       tool: r.tool,
       label: r.label,
     })),
   };
+  if (facts.sandbox) snap.sandbox = { ...facts.sandbox };
+  if (facts.delegation) {
+    snap.delegation = facts.delegation.map((e) => ({
+      parent: e.parent,
+      child: e.child,
+      ...(e.parentId ? { parentId: e.parentId } : {}),
+      ...(e.childId ? { childId: e.childId } : {}),
+    }));
+  }
+  return snap;
 }
 
 const ACCESS_RANK: Record<NonNullable<Reach["access"]>, number> = {
@@ -167,20 +311,46 @@ function indexBy<T>(items: T[], key: (t: T) => string): Map<string, T> {
   return m;
 }
 
+function reachKey(r: SnapshotReach): string {
+  return (r.id || r.label).toLowerCase();
+}
+
+function indexReach(items: SnapshotReach[]): Map<string, SnapshotReach> {
+  const byId = new Map<string, SnapshotReach>();
+  const byLabel = new Map<string, SnapshotReach>();
+  for (const r of items) {
+    if (r.id) byId.set(r.id.toLowerCase(), r);
+    byLabel.set(r.label.toLowerCase(), r);
+  }
+  const merged = new Map<string, SnapshotReach>();
+  for (const r of items) merged.set(reachKey(r), r);
+  // Preserve both indexes for lookup in diffReach.
+  for (const [k, v] of byId) merged.set(`id:${k}`, v);
+  for (const [k, v] of byLabel) merged.set(`label:${k}`, v);
+  return merged;
+}
+
+function lookupReach(index: Map<string, SnapshotReach>, r: SnapshotReach): SnapshotReach | undefined {
+  if (r.id) {
+    const byId = index.get(`id:${r.id.toLowerCase()}`);
+    if (byId) return byId;
+  }
+  return index.get(`label:${r.label.toLowerCase()}`);
+}
+
 function diffReach(
   prev: SnapshotReach[],
   next: SnapshotReach[],
   rules: ConsequenceRule[]
 ): DiffEntry[] {
-  const prevByLabel = indexBy(prev, (r) => r.label.toLowerCase());
-  const nextByLabel = indexBy(next, (r) => r.label.toLowerCase());
+  const prevIndex = indexReach(prev);
+  const nextIndex = indexReach(next);
+  const seenPrev = new Set<SnapshotReach>();
   const entries: DiffEntry[] = [];
 
-  for (const [key, r] of nextByLabel) {
-    const before = prevByLabel.get(key);
+  for (const r of next) {
+    const before = lookupReach(prevIndex, r);
     if (!before) {
-      // New reach is elevated when it touches an external system; its blast
-      // radius (payments, secrets, infra…) drives emphasis and the headline.
       const c = isExternal(r) ? classifyReach(r.label, r.detail, rules) : null;
       entries.push({
         kind: "reach",
@@ -190,7 +360,10 @@ function diffReach(
         category: c?.category,
         severity: c?.severity,
       });
-    } else if (rank(r.access) > rank(before.access)) {
+      continue;
+    }
+    seenPrev.add(before);
+    if (rank(r.access) > rank(before.access)) {
       entries.push({
         kind: "reach",
         change: "changed",
@@ -205,16 +378,34 @@ function diffReach(
         risk: "routine",
       });
     }
-  }
-  for (const [key, r] of prevByLabel) {
-    if (!nextByLabel.has(key)) {
+    if (before.kind !== r.kind) {
       entries.push({
         kind: "reach",
-        change: "removed",
-        summary: `No longer reaches ${r.label}`,
-        risk: "routine",
+        change: "changed",
+        summary: `${r.label}: kind changed from ${before.kind} to ${r.kind}`,
+        risk: isExternal(r) ? "elevated" : "routine",
       });
     }
+    const beforeDetail = before.detail ?? "";
+    const nextDetail = r.detail ?? "";
+    if (beforeDetail !== nextDetail) {
+      entries.push({
+        kind: "reach",
+        change: "changed",
+        summary: `${r.label}: endpoint or connector changed`,
+        risk: isExternal(r) || isExternal(before) ? "elevated" : "routine",
+      });
+    }
+  }
+  for (const r of prev) {
+    if (seenPrev.has(r)) continue;
+    if (lookupReach(nextIndex, r)) continue;
+    entries.push({
+      kind: "reach",
+      change: "removed",
+      summary: `No longer reaches ${r.label}`,
+      risk: "routine",
+    });
   }
   return entries;
 }
@@ -233,13 +424,10 @@ function diffCapabilities(
       entries.push({
         kind: "capability",
         change: "added",
-        // A new tool that arrives gated is reassuring; ungated is the baseline.
         summary: `New capability: ${c.label}${c.consent ? " (asks first)" : ""}`,
         risk: "routine",
       });
     } else if (before.consent === "asks-first" && c.consent !== "asks-first") {
-      // The gate was removed from a tool that still exists — it now runs without
-      // asking. That is an expansion of authority, so it's elevated.
       entries.push({
         kind: "capability",
         change: "changed",
@@ -280,13 +468,17 @@ function diffAutonomy(
   for (const [k, a] of nextBy) {
     if (!prevBy.has(k)) {
       const onOwn = a.consent === "acts-on-its-own";
+      const unknown = a.consent !== "acts-on-its-own" && a.consent !== "asks-first";
+      const how = unknown
+        ? "consent unknown"
+        : onOwn
+          ? "acts on its own"
+          : "asks first";
       entries.push({
         kind: "autonomy",
         change: "added",
-        summary: `New autonomous action: ${a.does} — ${
-          onOwn ? "acts on its own" : "asks first"
-        } (${a.when})`,
-        risk: onOwn ? "elevated" : "routine",
+        summary: `New autonomous action: ${a.does} — ${how} (${a.when})`,
+        risk: onOwn || unknown ? "elevated" : "routine",
       });
     }
   }
@@ -303,29 +495,72 @@ function diffAutonomy(
   return entries;
 }
 
-function diffSubagents(prev: string[], next: string[]): DiffEntry[] {
-  const prevSet = new Set(prev.map((s) => s.toLowerCase()));
-  const nextSet = new Set(next.map((s) => s.toLowerCase()));
+function subagentName(s: string | SnapshotSubagentSlice): string {
+  return typeof s === "string" ? s : s.name;
+}
+
+function isSlice(s: string | SnapshotSubagentSlice): s is SnapshotSubagentSlice {
+  return typeof s !== "string";
+}
+
+function diffSubagents(
+  prev: Array<string | SnapshotSubagentSlice>,
+  next: Array<string | SnapshotSubagentSlice>
+): DiffEntry[] {
+  const prevSet = new Set(prev.map((s) => subagentName(s).toLowerCase()));
+  const nextSet = new Set(next.map((s) => subagentName(s).toLowerCase()));
   const entries: DiffEntry[] = [];
   for (const s of next) {
-    if (!prevSet.has(s.toLowerCase())) {
+    const name = subagentName(s);
+    if (!prevSet.has(name.toLowerCase())) {
       entries.push({
         kind: "subagent",
         change: "added",
-        summary: `Now delegates to ${s}`,
+        summary: `Now delegates to ${name}`,
         risk: "elevated",
       });
     }
   }
   for (const s of prev) {
-    if (!nextSet.has(s.toLowerCase())) {
+    const name = subagentName(s);
+    if (!nextSet.has(name.toLowerCase())) {
       entries.push({
         kind: "subagent",
         change: "removed",
-        summary: `No longer delegates to ${s}`,
+        summary: `No longer delegates to ${name}`,
         risk: "routine",
       });
     }
+  }
+
+  const prevSlices = prev.filter(isSlice);
+  const nextSlices = next.filter(isSlice);
+  if (prevSlices.length === 0 || nextSlices.length === 0) return entries;
+
+  const prevBy = indexBy(prevSlices, (s) => (s.id || s.name).toLowerCase());
+  for (const n of nextSlices) {
+    const before = prevBy.get((n.id || n.name).toLowerCase()) ?? prevBy.get(n.name.toLowerCase());
+    if (!before) continue;
+    const nested = [
+      ...diffCapabilities(before.capabilities, n.capabilities).map((e) => ({
+        ...e,
+        summary: `${n.name}: ${e.summary.charAt(0).toLowerCase()}${e.summary.slice(1)}`,
+        risk: e.change === "added" || (e.change === "changed" && e.risk === "elevated") ? "elevated" as const : e.risk,
+      })),
+      ...diffReach(before.reach, n.reach, []).map((e) => ({
+        ...e,
+        summary: `${n.name}: ${e.summary.charAt(0).toLowerCase()}${e.summary.slice(1)}`,
+      })),
+    ];
+    if (before.runsOn && n.runsOn && before.runsOn !== n.runsOn) {
+      nested.push({
+        kind: "subagent",
+        change: "changed",
+        summary: `${n.name}: model changed: ${before.runsOn} → ${n.runsOn}`,
+        risk: "elevated",
+      });
+    }
+    entries.push(...nested);
   }
   return entries;
 }
@@ -361,6 +596,78 @@ function diffRestrictions(
         kind: "restriction",
         change: "added",
         summary: `Now restricted: cannot ${r.label} (${tool} disabled)`,
+        risk: "routine",
+      });
+    }
+  }
+  return entries;
+}
+
+function diffSandbox(
+  prev: SnapshotSandbox | undefined,
+  next: SnapshotSandbox | undefined
+): DiffEntry[] {
+  if (!prev) return [];
+  const after = next ?? {};
+  const entries: DiffEntry[] = [];
+  if (prev.present === true && after.present === false) {
+    entries.push({
+      kind: "sandbox",
+      change: "removed",
+      summary: "Authored sandbox removed",
+      risk: "elevated",
+    });
+  } else if (prev.present === false && after.present === true) {
+    entries.push({
+      kind: "sandbox",
+      change: "added",
+      summary: "Authored sandbox configured",
+      risk: "routine",
+    });
+  }
+  if (
+    prev.workspaceCount !== undefined &&
+    after.workspaceCount !== undefined &&
+    after.workspaceCount < prev.workspaceCount
+  ) {
+    entries.push({
+      kind: "sandbox",
+      change: "changed",
+      summary: `Sandbox workspace folders reduced (${prev.workspaceCount} → ${after.workspaceCount})`,
+      risk: "elevated",
+    });
+  }
+  return entries;
+}
+
+function delegationKey(e: SnapshotDelegation): string {
+  return `${(e.parentId || e.parent).toLowerCase()}->${(e.childId || e.child).toLowerCase()}`;
+}
+
+function diffDelegation(
+  prev: SnapshotDelegation[] | undefined,
+  next: SnapshotDelegation[] | undefined
+): DiffEntry[] {
+  if (!prev) return [];
+  const prevBy = indexBy(prev, delegationKey);
+  const nextBy = indexBy(next ?? [], delegationKey);
+  const entries: DiffEntry[] = [];
+  for (const [key, e] of nextBy) {
+    if (!prevBy.has(key)) {
+      entries.push({
+        kind: "delegation",
+        change: "added",
+        summary: `New delegation: ${e.parent} → ${e.child}`,
+        risk: "elevated",
+      });
+    }
+  }
+  for (const [key, e] of prevBy) {
+    if (!nextBy.has(key)) {
+      entries.push({
+        kind: "delegation",
+        change: "removed",
+        summary: `Delegation removed: ${e.parent} → ${e.child}`,
         risk: "routine",
       });
     }
@@ -419,8 +726,9 @@ export function diffSnapshots(
     ...diffAutonomy(prev.autonomy, next.autonomy),
     ...diffSubagents(prev.subagents, next.subagents),
     ...diffRestrictions(prev.restrictions, next.restrictions),
+    ...diffSandbox(prev.sandbox, next.sandbox),
+    ...diffDelegation(prev.delegation, next.delegation),
   ];
-  // Elevated first, then highest blast radius first, for a scannable list.
   const sev = (e: DiffEntry) => (e.severity === "high" ? 0 : e.severity === "medium" ? 1 : 2);
   entries.sort((a, b) => {
     if (a.risk !== b.risk) return a.risk === "elevated" ? -1 : 1;

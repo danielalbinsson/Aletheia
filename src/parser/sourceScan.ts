@@ -21,6 +21,11 @@ export function hasDisableTool(src: string): boolean {
   return /\bdisableTool\s*\(/.test(stripCodeComments(src));
 }
 
+/** True if a channel file disables its route via `disableRoute(...)`. */
+export function hasDisableRoute(src: string): boolean {
+  return /\bdisableRoute\s*\(/.test(stripCodeComments(src));
+}
+
 /**
  * True if the source declares an approval gate. Tightened to the eve call form
  * `approval: <fn>(` (e.g. `approval: always()`), so a tool *description*

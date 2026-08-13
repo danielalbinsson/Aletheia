@@ -10,7 +10,7 @@ import type { CapabilitySnapshot } from "../parser/capabilityDiff";
 
 const execFileAsync = promisify(execFile);
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const binPath = path.join(repoRoot, "bin", "aletheia.mjs");
+const binPath = path.join(repoRoot, "packages", "aletheia-cli", "bin", "aletheia.mjs");
 
 const manifest: CompiledManifest = {
   config: {
@@ -53,13 +53,8 @@ describe("aletheia passport (CLI)", () => {
   let agentRoot: string;
 
   beforeAll(async () => {
-    await execFileAsync("pnpm", ["--dir", path.join(repoRoot, "packages/aletheia-cli"), "build"], {
-      cwd: repoRoot,
-      env: process.env,
-    });
-    await fs.copyFile(path.join(repoRoot, "packages/aletheia-cli/bin/aletheia.mjs"), binPath);
-    await fs.chmod(binPath, 0o755);
-  }, 60_000);
+    await fs.access(binPath);
+  });
 
   beforeEach(async () => {
     agentRoot = await fs.mkdtemp(path.join(os.tmpdir(), "aletheia-passport-"));

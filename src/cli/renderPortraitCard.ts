@@ -12,7 +12,7 @@
 // approval — is marked per item, because eve does not serialize approval into
 // the manifest (see SelfPortrait.tsx and the honesty contract).
 
-import type { ManifestFacts } from "../parser/manifestAdapter";
+import { sandboxPortraitLine, type ManifestFacts } from "../parser/manifestAdapter";
 
 export interface PortraitMeta {
   verified: boolean;
@@ -35,6 +35,10 @@ export interface PortraitCard {
   doesOnItsOwn: { when: string; does: string; asksFirst: boolean }[];
   cannot: { tool: string; label: string }[];
   subagents: string[];
+  /** Verified sandbox presence line, omitted when the compiled fields were absent. */
+  sandbox?: string;
+  /** Verified parent→child edges, omitted when `subagentEdges` was absent. */
+  delegation?: string[];
 }
 
 export function buildPortraitCard(
@@ -42,7 +46,8 @@ export function buildPortraitCard(
   bust: string[],
   meta: PortraitMeta
 ): PortraitCard {
-  return {
+  const sandbox = facts.sandbox ? sandboxPortraitLine(facts.sandbox) : undefined;
+  const card: PortraitCard = {
     schema: "aletheia.portrait/v1",
     name: facts.name ?? "agent",
     verified: meta.verified,
@@ -57,7 +62,7 @@ export function buildPortraitCard(
       label: c.label,
       asksFirst: c.consent === "asks-first",
     })),
-    canTouch: facts.reach.map((r) => r.label),
+    canTouch: facts.reach.map((r) => (r.detail ? `${r.label} · ${r.detail}` : r.label)),
     doesOnItsOwn: facts.autonomy.map((a) => ({
       when: a.when,
       does: a.does,
@@ -66,6 +71,11 @@ export function buildPortraitCard(
     cannot: (facts.restrictions ?? []).map((r) => ({ tool: r.tool, label: r.label })),
     subagents: (facts.subagents ?? []).map((s) => s.name),
   };
+  if (sandbox) card.sandbox = sandbox;
+  if (facts.delegation) {
+    card.delegation = facts.delegation.map((e) => `${e.parent} → ${e.child}`);
+  }
+  return card;
 }
 
 export function renderPortraitJson(card: PortraitCard): string {
@@ -96,11 +106,31 @@ export function renderPortraitText(card: PortraitCard): string {
     "## What I can touch",
     "",
     bullets(card.canTouch),
+    ...(card.sandbox
+      ? [
+          "",
+          "## Sandbox",
+          "",
+          `_${card.verified ? "verified from build" : "from source — build to verify"}_`,
+          "",
+          bullets([card.sandbox]),
+        ]
+      : []),
     "",
     "## What I do on my own",
     "",
     bullets(alone),
-    ...(card.subagents.length ? ["", "## Subagents", "", bullets(card.subagents)] : []),
+    ...(card.subagents.length || card.delegation?.length
+      ? [
+          "",
+          "## Subagents",
+          "",
+          bullets([
+            ...card.subagents,
+            ...(card.delegation ?? []).map((edge) => `delegates: ${edge}`),
+          ]),
+        ]
+      : []),
     "",
     "## What I cannot do",
     "",

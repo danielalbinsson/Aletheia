@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { renderMarkdown, verdict, STICKY_MARKER, type DiffMeta } from "./renderDiff";
+import {
+  renderMarkdown,
+  renderJson,
+  verdict,
+  STICKY_MARKER,
+  BLAST_RADIUS_HEURISTIC_NOTE,
+  type DiffMeta,
+} from "./renderDiff";
 import { snapshotFromFacts, diffSnapshots } from "../parser/capabilityDiff";
 import type { AgentModel } from "../model";
 
@@ -26,7 +33,15 @@ describe("verdict", () => {
   });
 
   it("does not fail on routine-only", () => {
-    const next = snapshotFromFacts(facts({ capabilities: [], reach: [{ label: "zendesk", kind: "api" }] }));
+    const next = snapshotFromFacts(
+      facts({
+        capabilities: [
+          { label: "Search docs", detail: "", origin: "tool", source: "tools/search-docs.ts" },
+          { label: "Draft reply", detail: "", origin: "tool", source: "tools/draft-reply.ts" },
+        ],
+        reach: [{ label: "zendesk", kind: "api", detail: "OPENAPI" }],
+      })
+    );
     const d = diffSnapshots(baseSnap, next);
     expect(d.hasElevated).toBe(false);
     expect(verdict(d, "elevated").failing).toBe(false);
@@ -53,6 +68,16 @@ describe("renderMarkdown", () => {
     expect(md).toContain("capability-change-ack");
     expect(md).toContain("baseline `git:main`");
     expect(md).toContain("head `abc1234`");
+    expect(md).toContain(BLAST_RADIUS_HEURISTIC_NOTE);
+  });
+
+  it("names a custom ack label in the remediation copy", () => {
+    const next = snapshotFromFacts(
+      facts({ reach: [{ label: "zendesk", kind: "api" }, { label: "stripe", kind: "api" }] })
+    );
+    const md = renderMarkdown(diffSnapshots(baseSnap, next), next, { ...meta, ackLabel: "my-ack" });
+    expect(md).toContain("my-ack");
+    expect(md).not.toContain("capability-change-ack");
   });
 
   it("renders the initial-capabilities view when there is no baseline", () => {
@@ -63,7 +88,7 @@ describe("renderMarkdown", () => {
 
   it("says no changes when identical", () => {
     const md = renderMarkdown(diffSnapshots(baseSnap, baseSnap), baseSnap, meta);
-    expect(md).toContain("No capability changes");
+    expect(md).toContain("No authority changes");
     expect(md).not.toContain("aletheia snapshot");
   });
 
@@ -88,5 +113,49 @@ describe("renderMarkdown", () => {
     expect(md).toContain("<details><summary>Portrait</summary>");
     expect(md).toContain("Beacon");
     expect(md).toContain("▓██▓");
+  });
+});
+
+describe("blast-radius heuristic qualifier", () => {
+  it("labels classified elevated markdown and JSON meta as policy/heuristics, not eve", () => {
+    const next = snapshotFromFacts(
+      facts({ reach: [{ label: "zendesk", kind: "api" }, { label: "stripe", kind: "api" }] })
+    );
+    const d = diffSnapshots(baseSnap, next);
+    expect(d.hasElevated).toBe(true);
+    expect(verdict(d, "elevated").failing).toBe(true);
+
+    const md = renderMarkdown(d, next, meta);
+    expect(md).toContain(BLAST_RADIUS_HEURISTIC_NOTE);
+    expect(md).toContain("now reaches payments");
+
+    const json = JSON.parse(renderJson(d, next, meta));
+    expect(json.failing).toBe(true);
+    expect(json.meta.failOn).toBe("elevated");
+    expect(json.meta.blastRadiusNote).toBe(BLAST_RADIUS_HEURISTIC_NOTE);
+  });
+
+  it("omits the qualifier when no category came from classifyReach/policy", () => {
+    const next = snapshotFromFacts(
+      facts({ reach: [{ label: "zendesk", kind: "api" }, { label: "acme-widget", kind: "api" }] })
+    );
+    const d = diffSnapshots(baseSnap, next);
+    expect(d.hasElevated).toBe(true);
+    expect(d.entries.some((e) => e.category)).toBe(false);
+
+    const md = renderMarkdown(d, next, meta);
+    expect(md).not.toContain(BLAST_RADIUS_HEURISTIC_NOTE);
+    expect(verdict(d, "elevated").failing).toBe(true);
+
+    const json = JSON.parse(renderJson(d, next, meta));
+    expect(json.meta.blastRadiusNote).toBeUndefined();
+  });
+
+  it("does not change fail-on when the qualifier is present", () => {
+    const next = snapshotFromFacts(facts({ reach: [{ label: "stripe", kind: "api" }] }));
+    const d = diffSnapshots(baseSnap, next);
+    expect(verdict(d, "never").failing).toBe(false);
+    expect(verdict(d, "elevated").failing).toBe(true);
+    expect(renderMarkdown(d, next, { ...meta, failOn: "never" })).toContain(BLAST_RADIUS_HEURISTIC_NOTE);
   });
 });

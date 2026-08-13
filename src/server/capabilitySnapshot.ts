@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { CapabilitySnapshot } from "../parser/capabilityDiff";
+import { parseCapabilitySnapshot, type CapabilitySnapshot } from "../parser/capabilityDiff";
 
 // Persists the capability snapshot taken at deploy time. It lives under the
 // agent directory so it is tracked in git and travels with the code — the
@@ -15,14 +15,21 @@ function snapshotPath(agentRoot: string): string {
 export async function readDeployedSnapshot(
   agentRoot: string
 ): Promise<CapabilitySnapshot | null> {
+  const dest = snapshotPath(agentRoot);
+  let raw: string;
   try {
-    const raw = await fs.readFile(snapshotPath(agentRoot), "utf8");
-    const parsed = JSON.parse(raw) as CapabilitySnapshot;
-    if (!Array.isArray(parsed.capabilities)) return null;
-    return parsed;
-  } catch {
-    return null;
+    raw = await fs.readFile(dest, "utf8");
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw err;
   }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw) as unknown;
+  } catch {
+    throw new Error(`${dest} is malformed JSON`);
+  }
+  return parseCapabilitySnapshot(parsed, dest);
 }
 
 /** Record the snapshot for the version just deployed. */

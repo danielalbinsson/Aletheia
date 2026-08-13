@@ -1,9 +1,11 @@
 #!/usr/bin/env node
-// aletheia — headless CLI. Commands: diff, passport, portrait, snapshot.
+// aletheia — headless CLI. Commands: diff, passport, portrait, snapshot, init.
 // `aletheia diff` builds the agent, reads eve's compiled manifest, diffs it
 // against a baseline, and prints a PR-ready report.
 // Exit: 0 = ok, 1 = fail-on threshold hit (diff/passport), 2 = error
 // (no manifest / build fail). snapshot never fails on elevation.
+// init writes inspection sidecars and a PR workflow; it does not operate
+// the agent.
 //
 // Thin wrapper over the shipped engine: manifestAdapter + capabilityDiff.
 
@@ -12,12 +14,14 @@ import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
+import { resolveBuildBaseline } from "../server/buildBaseline";
 import { runEveBuild } from "../server/eveBuild";
 import { runEveManifest } from "../server/eveObservability";
 import { writeDeployedSnapshot } from "../server/capabilitySnapshot";
 import {
   diffSnapshots,
   snapshotFromFacts,
+  type CapabilitySnapshot,
 } from "../parser/capabilityDiff";
 import { parsePolicy, type Policy } from "../parser/policy";
 import { consentDrift } from "../parser/sourceScan";
@@ -49,11 +53,14 @@ import {
   driftWarnings,
   MANIFEST_REL,
   parseArgs,
+  readJsonSnapshot,
   resolveBaseline,
   SNAPSHOT_REL,
   TOOLS_REL,
+  type CliCommand,
   type CliOptions,
 } from "./cliCore";
+import { assertEveWorkspace, writeInitFiles } from "./initWorkspace";
 
 const execFileAsync = promisify(execFile);
 
@@ -170,6 +177,22 @@ async function emit(text: string, out?: string): Promise<void> {
   else process.stdout.write(`${text}\n`);
 }
 
+/**
+ * `git:` / `file:` may be null (first snapshot). `build:<ref>` never is —
+ * checkout or eve build failure throws and the CLI exits 2.
+ */
+async function loadBaseline(spec: string, root: string): Promise<CapabilitySnapshot | null> {
+  if (spec.startsWith("build:")) {
+    return resolveBuildBaseline(spec, root);
+  }
+  return resolveBaseline(spec, root);
+}
+
+function baselineErrorMessage(err: unknown): string {
+  const msg = err instanceof Error ? err.message : String(err);
+  return msg.startsWith("aletheia:") ? msg : `aletheia: ${msg}`;
+}
+
 async function runDiff(opts: CliOptions): Promise<number> {
   const root = opts.agentDir;
 
@@ -200,7 +223,13 @@ async function runDiff(opts: CliOptions): Promise<number> {
   const gated = await loadConsent(root);
   const facts = applyConsent(manifest.facts, gated);
   const current = snapshotFromFacts(facts);
-  const baseline = await resolveBaseline(opts.baseline, root);
+  let baseline: CapabilitySnapshot | null;
+  try {
+    baseline = await loadBaseline(opts.baseline, root);
+  } catch (err) {
+    process.stderr.write(`${baselineErrorMessage(err)}\n`);
+    return 2;
+  }
   const diff = diffSnapshots(baseline, current, { rules: policy.rules });
 
   const warnings = [
@@ -213,6 +242,7 @@ async function runDiff(opts: CliOptions): Promise<number> {
     manifestSha: await manifestSha(root),
     baseline: opts.baseline,
     failOn,
+    ackLabel: opts.ackLabel,
   };
 
   const text =
@@ -257,7 +287,13 @@ async function runPassport(opts: CliOptions): Promise<number> {
   const { policy, present: policyPresent } = await loadPolicyWithPresence(root);
   const facts = applyConsent(manifest.facts, gated);
   const current = snapshotFromFacts(facts);
-  const baseline = await resolveBaseline(opts.baseline, root);
+  let baseline: CapabilitySnapshot | null;
+  try {
+    baseline = await loadBaseline(opts.baseline, root);
+  } catch (err) {
+    process.stderr.write(`${baselineErrorMessage(err)}\n`);
+    return 2;
+  }
   const failOn = opts.failOnExplicit ? opts.failOn : policy.failOn ?? opts.failOn;
   const diff = diffSnapshots(baseline, current, { rules: policy.rules });
 
@@ -379,28 +415,83 @@ async function runSnapshot(opts: CliOptions): Promise<number> {
   return 0;
 }
 
+// `aletheia init` — write policy, consent sidecar, and a thin PR workflow
+// wrapping the composite Action. Inspection only: does not run or deploy
+// the agent. Then the same path as `aletheia snapshot` unless skipped.
+async function runInit(opts: CliOptions): Promise<number> {
+  const root = opts.agentDir;
+  try {
+    await assertEveWorkspace(root);
+  } catch (err) {
+    process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
+    return 2;
+  }
+
+  const result = await writeInitFiles(root, {
+    force: opts.force,
+    actionRef: opts.actionRef ?? process.env.ALETHEIA_ACTION_SHA,
+  });
+  for (const rel of result.written) process.stdout.write(`wrote ${rel}\n`);
+  for (const rel of result.kept) {
+    process.stdout.write(`kept ${rel} (exists; pass --force to overwrite)\n`);
+  }
+  process.stdout.write(
+    "Aletheia writes inspection sidecars and a PR workflow; it does not run or deploy the agent.\n"
+  );
+
+  const skipSnapshot = !opts.snapshot || !opts.build;
+  if (skipSnapshot) {
+    const reason = !opts.snapshot ? "--no-snapshot" : "--no-build";
+    process.stdout.write(`skipped snapshot (${reason})\n`);
+    return 0;
+  }
+
+  const existing = await readJsonSnapshot(path.join(root, SNAPSHOT_REL));
+  if (existing) {
+    process.stdout.write(
+      `kept ${SNAPSHOT_REL} (exists; run \`aletheia snapshot\` to update)\n`
+    );
+    return 0;
+  }
+
+  return runSnapshot(opts);
+}
+
 async function main(): Promise<void> {
   const [command, ...rest] = process.argv.slice(2);
   if (
     command !== "diff" &&
     command !== "passport" &&
     command !== "portrait" &&
-    command !== "snapshot"
+    command !== "snapshot" &&
+    command !== "init"
   ) {
     process.stderr.write(
       "usage:\n" +
-        "  aletheia diff     [--baseline file:<p>|git:<ref>] [--format markdown|json] [--fail-on elevated|any|never] [--out <file>] [--no-build] [--agent-dir <path>]\n" +
+        "  aletheia diff     [--baseline file:<p>|git:<ref>|build:<ref>] [--format markdown|json] [--fail-on elevated|any|never] [--out <file>] [--no-build] [--agent-dir <path>] [--ack-label <label>]\n" +
         "  aletheia passport [--format markdown|json] [--out <file>] [--no-build] [--agent-dir <path>]\n" +
         "  aletheia portrait [--format markdown|json] [--out <file>] [--no-build] [--agent-dir <path>]\n" +
-        "  aletheia snapshot [--out <file>] [--no-build] [--agent-dir <path>]\n"
+        "  aletheia snapshot [--out <file>] [--no-build] [--agent-dir <path>]\n" +
+        "  aletheia init     [--force] [--no-snapshot] [--no-build] [--agent-dir <path>] [--action-ref <sha>]\n"
     );
     process.exit(command ? 2 : 0);
   }
-  const opts = parseArgs(rest);
-  if (command === "passport") process.exit(await runPassport(opts));
-  if (command === "portrait") process.exit(await runPortrait(opts));
-  if (command === "snapshot") process.exit(await runSnapshot(opts));
-  process.exit(await runDiff(opts));
+  try {
+    const opts = parseArgs(rest, process.cwd(), command as CliCommand);
+    if (command === "passport") process.exit(await runPassport(opts));
+    if (command === "portrait") process.exit(await runPortrait(opts));
+    if (command === "snapshot") process.exit(await runSnapshot(opts));
+    if (command === "init") process.exit(await runInit(opts));
+    process.exit(await runDiff(opts));
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    process.stderr.write(`${msg.startsWith("aletheia:") ? msg : `aletheia: ${msg}`}\n`);
+    process.exit(2);
+  }
 }
 
-void main();
+void main().catch((err) => {
+  const msg = err instanceof Error ? err.message : String(err);
+  process.stderr.write(`${msg.startsWith("aletheia:") ? msg : `aletheia: ${msg}`}\n`);
+  process.exit(2);
+});

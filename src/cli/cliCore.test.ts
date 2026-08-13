@@ -6,6 +6,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import {
   applyConsent,
+  AletheiaCliError,
   driftWarnings,
   gitSnapshotRelPath,
   parseArgs,
@@ -45,6 +46,9 @@ describe("parseArgs", () => {
     expect(o.failOn).toBe("elevated");
     expect(o.failOnExplicit).toBe(false);
     expect(o.build).toBe(true);
+    expect(o.force).toBe(false);
+    expect(o.snapshot).toBe(true);
+    expect(o.ackLabel).toBe("capability-change-ack");
     expect(o.format).toBe("markdown");
     expect(o.agentDir).toBe("/tmp/agent");
   });
@@ -59,6 +63,8 @@ describe("parseArgs", () => {
         "--fail-on",
         "never",
         "--no-build",
+        "--force",
+        "--no-snapshot",
         "--out",
         "diff.md",
         "--agent-dir",
@@ -71,8 +77,39 @@ describe("parseArgs", () => {
     expect(o.failOn).toBe("never");
     expect(o.failOnExplicit).toBe(true);
     expect(o.build).toBe(false);
+    expect(o.force).toBe(true);
+    expect(o.snapshot).toBe(false);
     expect(o.out).toBe("diff.md");
     expect(o.agentDir).toBe(path.resolve("/repo", "examples/ledger"));
+  });
+
+  it("rejects an invalid --fail-on instead of disabling the gate", () => {
+    expect(() => parseArgs(["--fail-on", "elevatd"])).toThrow(AletheiaCliError);
+    expect(() => parseArgs(["--fail-on", "elevatd"])).toThrow(/invalid --fail-on/);
+  });
+
+  it("rejects a missing --fail-on value", () => {
+    expect(() => parseArgs(["--fail-on"])).toThrow(/missing value/);
+  });
+
+  it("rejects unknown flags", () => {
+    expect(() => parseArgs(["--explode"])).toThrow(/unknown flag/);
+  });
+
+  it("rejects --no-build with build:<ref>", () => {
+    expect(() => parseArgs(["--no-build", "--baseline", "build:main"])).toThrow(/cannot be combined/i);
+  });
+
+  it("rejects --force, --no-snapshot, and --action-ref on non-init commands", () => {
+    expect(() => parseArgs(["--force"], "/tmp", "diff")).toThrow(/only valid with aletheia init/);
+    expect(() => parseArgs(["--no-snapshot"], "/tmp", "snapshot")).toThrow(/only valid with aletheia init/);
+    expect(() =>
+      parseArgs(["--action-ref", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"], "/tmp", "portrait")
+    ).toThrow(/only valid with aletheia init/);
+  });
+
+  it("rejects a non-SHA --action-ref", () => {
+    expect(() => parseArgs(["--action-ref", "main"], "/tmp", "init")).toThrow(/40-character commit SHA/);
   });
 });
 
@@ -164,6 +201,18 @@ describe("resolveBaseline", () => {
     expect(await resolveBaseline("file:missing.json", root)).toBeNull();
   });
 
+  it("throws for malformed file baseline JSON", async () => {
+    const file = path.join(root, "bad.json");
+    await fs.writeFile(file, "{ not json");
+    await expect(resolveBaseline(`file:${file}`, root)).rejects.toThrow(/malformed baseline JSON/);
+  });
+
+  it("throws for a snapshot missing required fields", async () => {
+    const file = path.join(root, "partial.json");
+    await fs.writeFile(file, JSON.stringify({ name: "x" }));
+    await expect(resolveBaseline(`file:${file}`, root)).rejects.toThrow(/not a valid capability snapshot/);
+  });
+
   it("loads a git: baseline from a nested agent path", async () => {
     await execFileAsync("git", ["init"], { cwd: root });
     await execFileAsync("git", ["config", "user.email", "test@example.com"], { cwd: root });
@@ -190,7 +239,22 @@ describe("resolveBaseline", () => {
     expect(loaded?.capabilities[0]?.label).toBe("Search docs");
   });
 
+  it("throws for an unknown git ref instead of a null (first-snapshot) baseline", async () => {
+    await execFileAsync("git", ["init"], { cwd: root });
+    await execFileAsync("git", ["config", "user.email", "test@example.com"], { cwd: root });
+    await execFileAsync("git", ["config", "user.name", "Test"], { cwd: root });
+    await fs.mkdir(path.join(root, "agent"), { recursive: true });
+    await fs.writeFile(path.join(root, "agent/agent.ts"), "export default {};\n");
+    await execFileAsync("git", ["add", "."], { cwd: root });
+    await execFileAsync("git", ["commit", "-m", "init"], { cwd: root });
+    await expect(resolveBaseline("git:does-not-exist", root)).rejects.toThrow(/unknown git ref/);
+  });
+
   it("rejects unsupported baseline schemes", async () => {
     await expect(resolveBaseline("url:https://example.com", root)).rejects.toThrow(/Unsupported/);
+  });
+
+  it("rejects build: instead of returning a null (first-snapshot) baseline", async () => {
+    await expect(resolveBaseline("build:main", root)).rejects.toThrow(/isolated checkout/);
   });
 });

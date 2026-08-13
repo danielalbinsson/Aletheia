@@ -62,8 +62,11 @@ async function readDiagnostics(workspaceRoot: string): Promise<EveDiagnostic[]> 
   }
 }
 
-export async function runEveBuild(workspaceRoot: string): Promise<EveBuildResult> {
-  const result = await runEveCommand(workspaceRoot, ["build"]);
+export async function runEveBuild(
+  workspaceRoot: string,
+  options?: { eveBin?: string }
+): Promise<EveBuildResult> {
+  const result = await runEveCommand(workspaceRoot, ["build"], undefined, options);
   const diagnostics = await readDiagnostics(workspaceRoot);
   const outputMatch = result.stdout.match(/built output at (.+)$/m);
 

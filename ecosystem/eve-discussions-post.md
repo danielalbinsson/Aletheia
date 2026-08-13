@@ -15,7 +15,7 @@ legibility** tool for eve agents. Point it at any agent directory and it renders
    restrictions
 2. An **authority diff** over time (and `aletheia diff` for PRs)
 
-It never runs, edits, or deploys the agent. Honesty contract: never present a
+It never runs or deploys the agent. Honesty contract: never present a
 guess as a fact — every claim is **verified from build** or labelled **from source**.
 
 ## Why

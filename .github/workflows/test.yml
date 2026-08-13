@@ -24,13 +24,11 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # packages/aletheia-cli is not a pnpm workspace member; install its
-      # lockfile separately so `esbuild` is available for the CLI bundle.
-      # cliSmoke.test.ts also rebuilds this package in beforeAll.
+      # lockfile separately so `esbuild` is available. cliSmoke.test.ts rebuilds
+      # into temp storage and compares against the tracked bundle — do not
+      # rewrite the tracked artifact here, or that comparison is vacuous.
       - name: Install CLI package
         run: pnpm --dir packages/aletheia-cli install --frozen-lockfile
-
-      - name: Build CLI
-        run: pnpm --dir packages/aletheia-cli build
 
       - name: Test
         run: pnpm test

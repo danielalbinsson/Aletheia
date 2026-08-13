@@ -15,8 +15,9 @@ the source.
 renders a **self-portrait** — a first-person page where the agent lays out its
 capabilities, its reach into the outside world, the things it does unprompted,
 and the powers it has given up — plus an **authority diff** that shows how that
-authority has changed over time. It never runs the agent, never edits it, never
-deploys it. It only makes it legible.
+authority has changed over time. It never runs the agent, never deploys it.
+`init` and `snapshot` write Aletheia inspection files; they do not edit agent
+source. It only makes the agent legible.
 
 Product shell + Kit Certified gallery: **[agentic-kit.dev](https://agentic-kit.dev)**
 (golden path, CI docs, paid [Capability Review](https://agentic-kit.dev/review)).
@@ -44,6 +45,8 @@ npx @danielalbinsson/aletheia-cli portrait
 npx @danielalbinsson/aletheia-cli diff --baseline git:main
 npx @danielalbinsson/aletheia-cli snapshot   # after intentional expansion; commit the file
 ```
+
+The published npm package is **0.4.0** and does not include `init` or `build:<ref>`. Those commands, and the remote Action, are source/unreleased until the next publish. From this repo: `pnpm build:cli && node bin/aletheia.mjs <command>`.
 
 Exit `0` = ok, `1` = authority expanded, `2` = error. After an intentional
 expansion: GitHub label `capability-change-ack`, then `snapshot` and commit
@@ -75,8 +78,8 @@ ALETHEIA_WORKSPACE=/path/to/your/eve-agent
 **Requirements:** Node 24+ and pnpm. Node 24 is eve's minimum — it's only needed
 to *build* an agent (`eve build`) so its facts read *verified from build*; until
 then Aletheia shows the honest *from source* view. Browsing in the web UI is
-read-only: it never builds, runs, edits, or deploys your agent. The CLI
-(`diff`, `portrait`, `passport`, `snapshot`) is the part that builds — see
+read-only: it never builds, runs, or deploys your agent. The CLI
+(`diff`, `portrait`, `passport`, `snapshot`, `init`) is the part that builds — see
 [Authority diff in CI](#authority-diff-in-ci-aletheia-diff).
 
 | Route | What it shows |
@@ -250,12 +253,10 @@ the tool runs where your agents live.
 
 ## What's deliberately out
 
-Aletheia inspects agents; it does not operate them. Running, editing, building,
-deploying, and live trace-viewing were removed on purpose — that's the job of
-the eve CLI and the Vercel dev environment, and dragging them in only added
-runtime dependencies (sandboxes, Node versions, credentials) that have nothing to
-do with *understanding* an agent. The full-IDE version lives on the
-`archive/full-ide` branch.
+Aletheia inspects agents; it does not operate them. Running, deploying, and live
+trace-viewing stay with the eve CLI. The Aletheia CLI does invoke `eve build`
+by default (`--no-build` reuses an existing compiled manifest). `init` and
+`snapshot` write Aletheia inspection files, not agent source.
 
 Also out, on principle: **approval/read-write as a verified fact** (eve doesn't
 expose it), and anything Aletheia would have to guess at.

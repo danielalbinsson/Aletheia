@@ -6,6 +6,7 @@ import type {
   Restriction,
   Subagent,
 } from "../model";
+import { sandboxPortraitLine } from "../parser/manifestAdapter";
 import { Portrait } from "./Portrait";
 
 /**
@@ -23,6 +24,11 @@ export function SelfPortrait({
   const introParas = agent.intro.split(/\n\s*\n/).filter(Boolean);
   const actsOnOwn = agent.autonomy.filter((a) => a.consent === "acts-on-its-own");
   const asksFirst = agent.autonomy.filter((a) => a.consent === "asks-first");
+  const consentUnknown = agent.autonomy.filter(
+    (a) => a.consent !== "acts-on-its-own" && a.consent !== "asks-first"
+  );
+  const sandboxLine = agent.sandbox ? sandboxPortraitLine(agent.sandbox) : undefined;
+  const delegation = agent.delegation ?? [];
 
   return (
     <article className="self-portrait">
@@ -82,10 +88,10 @@ export function SelfPortrait({
                 : "Nothing declared yet."}
             </p>
           ) : (
-            <ul className="can-touch">
-              {agent.reach.map((r) => (
-                <ReachItem key={r.label} reach={r} />
-              ))}
+              <ul className="can-touch">
+                {agent.reach.map((r) => (
+                  <ReachItem key={r.id ?? r.label} reach={r} />
+                ))}
             </ul>
           )}
         </Section>
@@ -121,6 +127,14 @@ export function SelfPortrait({
                 ))}
               </div>
             )}
+            {consentUnknown.length > 0 && (
+              <div className="autonomy-group">
+                <p className="autonomy-kind unknown">Consent unknown — build to verify</p>
+                {consentUnknown.map((a, i) => (
+                  <AutonomyLine key={i} a={a} />
+                ))}
+              </div>
+            )}
             {agent.autonomy.length === 0 && (
               <p className="autonomy-none">
                 I only act when you ask. I never run on my own.
@@ -129,16 +143,36 @@ export function SelfPortrait({
           </div>
         </Section>
 
-        {agent.subagents.length > 0 && (
+        {sandboxLine && (
+          <Section
+            label="Sandbox"
+            note={verified ? "verified from build" : "from source — build to verify"}
+          >
+            <p className="sandbox-line">{sandboxLine}</p>
+          </Section>
+        )}
+
+        {(agent.subagents.length > 0 || delegation.length > 0) && (
           <Section
             label="Who I delegate to"
             note={verified ? "verified from build" : "from source — build to verify"}
           >
-            <ul className="subagents">
-              {agent.subagents.map((s) => (
-                <SubagentItem key={s.name} sub={s} />
-              ))}
-            </ul>
+            {delegation.length > 0 && (
+              <ul className="delegation-edges">
+                {delegation.map((e) => (
+                  <li key={`${e.parent}->${e.child}`}>
+                    {e.parent} → {e.child}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {agent.subagents.length > 0 && (
+              <ul className="subagents">
+                {agent.subagents.map((s) => (
+                  <SubagentItem key={s.id ?? s.name} sub={s} />
+                ))}
+              </ul>
+            )}
           </Section>
         )}
       </div>
@@ -230,8 +264,8 @@ function SubagentItem({ sub }: { sub: Subagent }) {
       )}
       {sub.reach.length > 0 && (
         <ul className="subagent-reach">
-          {sub.reach.map((r) => (
-            <li key={r.label} className={`reach-item kind-${r.kind}`}>
+            {sub.reach.map((r) => (
+              <li key={r.id ?? r.label} className={`reach-item kind-${r.kind}`}>
               <span className="reach-dot" aria-hidden />
               <span className="reach-label">
                 {r.label}

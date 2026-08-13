@@ -21,9 +21,10 @@ export type EveCommandOnData = (
 export function runEveCommand(
   workspaceRoot: string,
   args: string[],
-  onData?: EveCommandOnData
+  onData?: EveCommandOnData,
+  options?: { eveBin?: string }
 ): Promise<EveCommandResult> {
-  const eveBin = eveBinPath(workspaceRoot);
+  const eveBin = options?.eveBin ?? eveBinPath(workspaceRoot);
 
   return new Promise((resolve) => {
     const child = spawn(process.execPath, [eveBin, ...args], {

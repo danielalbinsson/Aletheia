@@ -11,7 +11,7 @@ authority diff before `eve dev` / deploy.
 
 ```bash
 npx skills add danielalbinsson/Aletheia --skill aletheia-eve-trust
-# or CLI capability gate:
+# or CLI authority diff:
 npx @danielalbinsson/aletheia-cli diff --baseline git:main
 ```
 

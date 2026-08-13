@@ -10,6 +10,8 @@ npx @danielalbinsson/aletheia-cli diff --baseline git:main
 npx @danielalbinsson/aletheia-cli snapshot   # after intentional expansion; commit the file
 ```
 
+`init` and `build:<ref>` are in this source tree and are **not** in the published npm 0.4.0 package. From this repo: `pnpm build:cli && node bin/aletheia.mjs <command>`.
+
 Or `pnpm add -D @danielalbinsson/aletheia-cli`. The binary name is `aletheia` either way.
 
 ## Build from this repo
@@ -29,8 +31,24 @@ aletheia diff --baseline git:main
 
 Typical baselines:
 
-- `git:main` / `git:<ref>` — compare to committed snapshot at that ref
-- File path to `agent/.aletheia/deployed-capabilities.json`
+- `git:main` / `git:<ref>` — compare to the committed snapshot file at that ref
+- `file:<path>` — compare to a snapshot file (default `agent/.aletheia/deployed-capabilities.json`)
+- `build:<ref>` — check out that ref, install its frozen `pnpm-lock.yaml`, run `eve build`, and snapshot (source/unreleased until the next npm publish)
+
+Do not pass `--no-build` with `build:<ref>`.
+
+## Init (sidecars + PR workflow)
+
+After `eve init`, scaffold inspection files. Writes Aletheia sidecars and a PR workflow; does not run or deploy the agent. **Not in the published npm 0.4.0 package** — run from this repo until the next release.
+
+```bash
+# from the Aletheia repo
+pnpm build:cli && node bin/aletheia.mjs init --action-ref <40-char-sha>
+# writes .aletheia/policy.json, agent/.aletheia/consent.json,
+# .github/workflows/capability-review.yml (thin Action wrapper, pinned SHA)
+# then `aletheia snapshot` only when no deploy baseline exists
+# --force overwrites existing sidecars; existing snapshots stay until `aletheia snapshot`
+```
 
 ## Snapshot (commit the baseline)
 
@@ -55,7 +73,18 @@ Commit the file so the next `aletheia diff` uses it as baseline.
 
 ## CI
 
-Use `.github/workflows/capability-review.yml`. Fail required checks on elevated changes. Acknowledge with label `capability-change-ack`, then run `aletheia snapshot` and commit `agent/.aletheia/deployed-capabilities.json` on the same PR.
+Pin the composite action at an immutable commit SHA (no Marketplace listing). The Action runs the CLI bundled at that revision — not npm `latest`.
+
+```yaml
+- uses: danielalbinsson/Aletheia/.github/actions/capability-review@<commit-sha>
+  with:
+    baseline: git:origin/${{ github.base_ref }}
+    fail-on: elevated
+```
+
+Inputs: `baseline`, `fail-on`, `agent-dir`, `ack-label` (default `capability-change-ack`), `cli` (optional override; default is the bundled Action CLI). This Aletheia repo dogfoods `cli: node ${{ github.workspace }}/bin/aletheia.mjs` after building the local bin.
+
+Fail required checks on elevated changes. Acknowledge with label `capability-change-ack`, then run `aletheia snapshot` and commit `agent/.aletheia/deployed-capabilities.json` on the same PR.
 
 ## Policy
 

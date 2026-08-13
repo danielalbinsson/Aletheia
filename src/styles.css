@@ -763,6 +763,8 @@ code { font-family: var(--sans); color: var(--muted); }
 .autonomy-kind.on-own::before { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
 .autonomy-kind.asks { color: var(--muted); }
 .autonomy-kind.asks::before { border: 1.5px solid var(--muted); }
+.autonomy-kind.unknown { color: var(--muted); }
+.autonomy-kind.unknown::before { border: 1.5px dashed var(--muted); }
 
 .autonomy-line {
   display: grid;
@@ -820,6 +822,20 @@ code { font-family: var(--sans); color: var(--muted); }
 .subagent-caps .cap-detail { font-size: 12px; }
 .subagent-reach { list-style: none; margin: 9px 0 0; padding: 0; display: grid; gap: 6px; }
 .subagent-reach .reach-label { font-size: 13.5px; }
+.sandbox-line {
+  margin: 0;
+  font-size: 14.5px;
+  color: var(--muted);
+}
+.delegation-edges {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  font-size: 13.5px;
+  color: var(--muted);
+}
 
 /* ── Footer ─────────────────────────────────────────────────────────── */
 .footer {

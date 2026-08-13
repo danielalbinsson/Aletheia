@@ -34,14 +34,23 @@ describe("capability gate decision", () => {
   it("passes when there is no capability change", async () => {
     const { code, stdout } = await runBash(gateScript, { env: { DIFF_EXIT: "0", ACK: "false", NAME: "design-qa" } });
     expect(code).toBe(0);
-    expect(stdout).toMatch(/no capability change/i);
+    expect(stdout).toMatch(/Authority diff passed/i);
   });
 
   it("BLOCKS when authority expanded and there is no ack label", async () => {
     const { code, stderr } = await runBash(gateScript, { env: { DIFF_EXIT: "1", ACK: "false", NAME: "design-qa" } });
     expect(code).toBe(1);
-    expect(stderr).toContain("Agent authority expanded");
+    expect(stderr).toContain("Authority-diff threshold hit");
     expect(stderr).toContain("capability-change-ack");
+  });
+
+  it("names a custom ACK_LABEL in the block message", async () => {
+    const { code, stderr } = await runBash(gateScript, {
+      env: { DIFF_EXIT: "1", ACK: "false", ACK_LABEL: "my-ack", NAME: "design-qa" },
+    });
+    expect(code).toBe(1);
+    expect(stderr).toContain("my-ack");
+    expect(stderr).not.toContain("capability-change-ack");
   });
 
   it("allows an acknowledged expansion", async () => {
@@ -68,7 +77,15 @@ describe("capability gate decision", () => {
   it("fails closed on a non-numeric result", async () => {
     const { code, stderr } = await runBash(gateScript, { env: { DIFF_EXIT: "boom", ACK: "true" } });
     expect(code).toBe(1);
-    expect(stderr).toMatch(/unexpected capability-diff result/i);
+    expect(stderr).toMatch(/failed to run/i);
+  });
+
+  it("fails closed on an oversized numeric result", async () => {
+    const { code, stderr } = await runBash(gateScript, {
+      env: { DIFF_EXIT: "99999999999999999999", ACK: "true" },
+    });
+    expect(code).toBe(1);
+    expect(stderr).toMatch(/failed to run/i);
   });
 
   it("blocks a tooling failure even when acknowledged", async () => {
@@ -130,6 +147,8 @@ describe("capability diff exit-code capture", () => {
 });
 
 describe("workflow contract", () => {
+  const actionDir = path.join(repoRoot, ".github/actions/capability-review");
+
   it("no workflow reintroduces the aborted exit-code capture", async () => {
     const files = (await fs.readdir(workflowDir)).filter((f) => f.endsWith(".yml") || f.endsWith(".yaml"));
     expect(files.length).toBeGreaterThan(0);
@@ -137,21 +156,45 @@ describe("workflow contract", () => {
       const yaml = await fs.readFile(path.join(workflowDir, file), "utf8");
       // `echo "exit=$?"` is only correct immediately after the command whose
       // status is wanted, which YAML `run:` blocks under `bash -e` never reach.
-      expect(yaml, `${file} must capture the exit code via scripts/ci/capability-diff.sh`).not.toMatch(
+      expect(yaml, `${file} must capture the exit code via capability-diff.sh`).not.toMatch(
         /echo\s+"exit=\$\?"/
       );
     }
   });
 
-  it("the capability-review diff step does not swallow failures with continue-on-error", async () => {
-    const yaml = await fs.readFile(path.join(workflowDir, "capability-review.yml"), "utf8");
-    const diffStep = yaml.slice(yaml.indexOf("- name: Capability diff"), yaml.indexOf("- name: Post sticky comment"));
-    expect(diffStep).not.toContain("continue-on-error");
+  it("the composite action ships copies of the fail-closed scripts", async () => {
+    for (const name of ["capability-diff.sh", "capability-gate.sh"]) {
+      const src = await fs.readFile(path.join(repoRoot, "scripts/ci", name), "utf8");
+      const copy = await fs.readFile(path.join(actionDir, name), "utf8");
+      expect(copy, `${name} in the action must match scripts/ci/${name}`).toBe(src);
+    }
   });
 
-  it("the gate step delegates to the tested script", async () => {
+  it("declares the documented inputs and does not swallow failures", async () => {
+    const yaml = await fs.readFile(path.join(actionDir, "action.yml"), "utf8");
+    expect(yaml).toMatch(/using:\s*composite/);
+    expect(yaml).toContain("baseline:");
+    expect(yaml).toContain("fail-on:");
+    expect(yaml).toContain("agent-dir:");
+    expect(yaml).toContain("ack-label:");
+    expect(yaml).toContain("capability-change-ack");
+    expect(yaml).toContain("GITHUB_ACTION_PATH");
+    expect(yaml).toContain("aletheia.mjs");
+    expect(yaml).not.toContain("npx --yes @danielalbinsson/aletheia-cli");
+    expect(yaml).toContain("capability-diff.sh");
+    expect(yaml).toContain("capability-gate.sh");
+    expect(yaml).toMatch(/Post sticky comment[\s\S]*continue-on-error:\s*true/);
+    expect(yaml).not.toMatch(/echo\s+"exit=\$\?"/);
+    const diffStep = yaml.split("- name: Capability diff")[1]?.split("- name:")[0] ?? "";
+    expect(diffStep).not.toMatch(/continue-on-error/);
+  });
+
+  it("this repo dogfoods the action with the local CLI bin", async () => {
     const yaml = await fs.readFile(path.join(workflowDir, "capability-review.yml"), "utf8");
-    expect(yaml).toContain("scripts/ci/capability-gate.sh");
-    expect(yaml).toContain("scripts/ci/capability-diff.sh");
+    expect(yaml).toContain("./.github/actions/capability-review");
+    expect(yaml).toContain("node ${{ github.workspace }}/bin/aletheia.mjs");
+    expect(yaml).toContain("types: [opened, synchronize, reopened, labeled, unlabeled]");
+    expect(yaml).toContain("persist-credentials: false");
+    expect(yaml).not.toMatch(/^\s*continue-on-error\s*:/m);
   });
 });

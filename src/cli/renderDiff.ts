@@ -15,6 +15,26 @@ export interface DiffMeta {
   baseline: string;
   /** The fail-on threshold the run used. */
   failOn: "elevated" | "any" | "never";
+  /** PR label named in remediation copy. */
+  ackLabel?: string;
+  /**
+   * Set when a blast-radius `category` came from classifyReach / policy
+   * heuristics, not from eve.
+   */
+  blastRadiusNote?: string;
+}
+
+/** Qualifier when a reach category was assigned by policy/heuristics, not eve. */
+export const BLAST_RADIUS_HEURISTIC_NOTE =
+  "Blast radius classified by policy/heuristics, not by eve.";
+
+function heuristicBlastRadiusNote(diff: CapabilityDiff): string | undefined {
+  return diff.entries.some((e) => e.category) ? BLAST_RADIUS_HEURISTIC_NOTE : undefined;
+}
+
+function metaWithHeuristic(diff: CapabilityDiff, meta: DiffMeta): DiffMeta {
+  const blastRadiusNote = heuristicBlastRadiusNote(diff);
+  return blastRadiusNote ? { ...meta, blastRadiusNote } : meta;
 }
 
 const GLYPH: Record<DiffEntry["change"], string> = {
@@ -42,21 +62,21 @@ export function verdict(diff: CapabilityDiff, failOn: DiffMeta["failOn"]): {
   headline: string;
 } {
   if (diff.isInitial) {
-    return { failing: failOn !== "never", headline: "First deploy — review the initial capabilities." };
+    return { failing: failOn !== "never", headline: "First deploy: review the initial authority." };
   }
   if (!diff.hasChanges) {
-    return { failing: false, headline: "No capability changes since the baseline." };
+    return { failing: false, headline: "No authority changes since the baseline." };
   }
   if (diff.hasElevated) {
     const topHigh = diff.entries.find((e) => e.severity === "high");
     return {
       failing: failOn === "elevated" || failOn === "any",
       headline: topHigh
-        ? `Authority expanded — now reaches ${topHigh.category}. Review required.`
-        : "Authority expanded — review required.",
+        ? `Authority expanded: now reaches ${topHigh.category}. Review required.`
+        : "Authority expanded: review required.",
     };
   }
-  return { failing: failOn === "any", headline: "Routine capability changes only." };
+  return { failing: failOn === "any", headline: "Routine authority changes only." };
 }
 
 /** Optional portrait rows + the agent's display name, for the collapsed block. */
@@ -92,8 +112,10 @@ export function renderMarkdown(
   warnings: string[] = []
 ): string {
   const v = verdict(diff, meta.failOn);
+  const renderedMeta = metaWithHeuristic(diff, meta);
   const out: string[] = [STICKY_MARKER, "", "### Aletheia — authority diff", ""];
   out.push(`**${v.headline}**`, "");
+  if (renderedMeta.blastRadiusNote) out.push(renderedMeta.blastRadiusNote, "");
   out.push(...warningsBlock(warnings));
   if (portrait) out.push(...portraitBlock(portrait));
 
@@ -110,12 +132,12 @@ export function renderMarkdown(
       out.push("", "And it cannot:", "");
       for (const r of current.restrictions) out.push(`- ${r.label} (${r.tool} disabled)`);
     }
-    out.push("", footer(meta));
+    out.push("", footer(renderedMeta));
     return out.join("\n");
   }
 
   if (!diff.hasChanges) {
-    out.push(footer(meta));
+    out.push(footer(renderedMeta));
     return out.join("\n");
   }
 
@@ -127,7 +149,7 @@ export function renderMarkdown(
     for (const e of elevated) out.push(line(e));
     out.push("");
     out.push(
-      "After acknowledging with `capability-change-ack`, run `aletheia snapshot` and commit `agent/.aletheia/deployed-capabilities.json` on the same PR.",
+      `After acknowledging with \`${meta.ackLabel ?? "capability-change-ack"}\`, run \`aletheia snapshot\` and commit \`agent/.aletheia/deployed-capabilities.json\` on the same PR.`,
       ""
     );
   }
@@ -136,7 +158,7 @@ export function renderMarkdown(
     for (const e of routine) out.push(line(e));
     out.push("");
   }
-  out.push(footer(meta));
+  out.push(footer(renderedMeta));
   return out.join("\n");
 }
 
@@ -149,7 +171,14 @@ export function renderJson(
 ): string {
   const v = verdict(diff, meta.failOn);
   return JSON.stringify(
-    { failing: v.failing, headline: v.headline, meta, warnings, diff, current },
+    {
+      failing: v.failing,
+      headline: v.headline,
+      meta: metaWithHeuristic(diff, meta),
+      warnings,
+      diff,
+      current,
+    },
     null,
     2
   );

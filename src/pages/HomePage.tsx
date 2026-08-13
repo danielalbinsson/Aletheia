@@ -29,7 +29,7 @@ export function HomePage() {
             agent and it renders a <strong>self-portrait</strong>: a first-person page where the
             agent lays out its capabilities, its reach, what it does unprompted, and the powers it
             has given up. An <strong>authority diff</strong> shows how that authority changed over
-            time. It never runs, edits, or deploys the agent. It only makes it legible.
+            time. It never runs or deploys the agent. It only makes it legible.
           </p>
           <p className="home-tagline">A first-person portrait from the agent's own files.</p>
           <div className="home-cta">

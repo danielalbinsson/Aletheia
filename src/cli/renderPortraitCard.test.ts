@@ -66,4 +66,51 @@ describe("buildPortraitCard", () => {
     expect(text).toContain("run shell commands (`bash` disabled)");
     expect(text).toContain("# support-bot");
   });
+
+  it("omits sandbox and delegation when those compiled fields were absent", () => {
+    const card = buildPortraitCard(facts, bust, meta);
+    expect(card.sandbox).toBeUndefined();
+    expect(card.delegation).toBeUndefined();
+    const text = renderPortraitText(card);
+    expect(text).not.toMatch(/## Sandbox/);
+    expect(text).not.toMatch(/delegates:/);
+  });
+
+  it("renders verified sandbox presence and delegation edges from extra compiled fields", () => {
+    const extra: ManifestFacts = {
+      ...facts,
+      reach: [
+        { label: "slack", kind: "channel", detail: "slack" },
+        {
+          label: "linear",
+          kind: "api",
+          detail: "MCP · https://mcp.linear.app · Vercel Connect (oauth/mcp-linear-app)",
+        },
+      ],
+      sandbox: { present: true, workspaceCount: 1 },
+      subagents: [{ name: "Auditor", capabilities: [], reach: [] }],
+      delegation: [{ parent: "support-bot", child: "Auditor" }],
+    };
+    const card = buildPortraitCard(extra, bust, meta);
+    expect(card.canTouch).toEqual([
+      "slack · slack",
+      "linear · MCP · https://mcp.linear.app · Vercel Connect (oauth/mcp-linear-app)",
+    ]);
+    expect(card.sandbox).toBe("An authored sandbox is configured. 1 sandbox workspace folder.");
+    expect(card.delegation).toEqual(["support-bot → Auditor"]);
+    const text = renderPortraitText(card);
+    expect(text).toContain("## Sandbox");
+    expect(text).toContain("_verified from build_");
+    expect(text).toContain("An authored sandbox is configured.");
+  });
+
+  it("renders unverified sandbox provenance from the card flag", () => {
+    const extra: ManifestFacts = {
+      ...facts,
+      sandbox: { present: true },
+    };
+    const text = renderPortraitText(buildPortraitCard(extra, bust, { ...meta, verified: false }));
+    expect(text).toContain("from source — build to verify");
+    expect(text).not.toContain("_verified from build_");
+  });
 });

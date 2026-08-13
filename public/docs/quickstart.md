@@ -1,8 +1,8 @@
 # Quickstart — Aletheia for eve agents
 
-Aletheia is a local-first trust tool for [eve (Vercel)](https://eve.dev) agents. It reads an agent's files (and optionally the compiled eve manifest) and renders a **self-portrait** plus an **authority diff**. It never runs, edits, or deploys the agent.
+Aletheia is a local-first trust tool for [eve (Vercel)](https://eve.dev) agents. It reads an agent's files (and optionally the compiled eve manifest) and renders a **self-portrait** plus an **authority diff**. It never runs or deploys the agent. `init` and `snapshot` write Aletheia inspection files; they do not edit agent source.
 
-The CLI (`diff`, `portrait`, `passport`, `snapshot`) invokes `eve build` by default so its facts can read *verified from build* — pass `--no-build` to skip it. That writes eve's own output under `.eve/` and leaves your agent source untouched. Browsing in the web UI never builds.
+The CLI (`diff`, `portrait`, `passport`, `snapshot`, `init`) invokes `eve build` by default so its facts can read *verified from build*. Pass `--no-build` to skip the build and reuse an existing compiled manifest (exits `2` if none exists; it does not produce from-source facts). That writes eve's own output under `.eve/` and leaves your agent source untouched. Browsing in the web UI never builds.
 
 **Requirements:** Node 24+ and pnpm.
 
@@ -14,9 +14,9 @@ npx @danielalbinsson/aletheia-cli diff --baseline git:main
 npx @danielalbinsson/aletheia-cli snapshot   # after intentional expansion; commit the file
 ```
 
-Exit `0` = ok, `1` = authority expanded, `2` = error. After an intentional expansion: label `capability-change-ack`, run `snapshot`, and commit `agent/.aletheia/deployed-capabilities.json` on the same PR.
+The published npm package is **0.4.0** and does not include `init` or `build:<ref>`. Those commands, and the remote Action, are source/unreleased until the next publish. From this repo: `pnpm build:cli && node bin/aletheia.mjs <command>`.
 
-From this repo: `pnpm build:cli && node bin/aletheia.mjs <command>`.
+Exit `0` = ok, `1` = authority expanded, `2` = error. After an intentional expansion: label `capability-change-ack`, run `snapshot`, and commit `agent/.aletheia/deployed-capabilities.json` on the same PR.
 
 Ship `.github/workflows/capability-review.yml` as a required check.
 

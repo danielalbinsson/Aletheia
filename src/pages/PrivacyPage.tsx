@@ -37,7 +37,7 @@ export function PrivacyPage() {
           <p>
             The local Aletheia server reads eve agent files from folders you choose on your machine.
             That data stays on your computer. It is not uploaded to this website or to Aletheia's
-            authors. Aletheia does not run, edit, or deploy your agents.
+            authors. Aletheia does not run or deploy your agents.
           </p>
           <p>
             The dev server may persist your last scan root in{" "}

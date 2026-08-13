@@ -3,6 +3,7 @@ import {
   snapshotFromModel,
   snapshotFromFacts,
   diffSnapshots,
+  parseCapabilitySnapshot,
   type CapabilitySnapshot,
 } from "./capabilityDiff";
 import type { AgentModel } from "../model";
@@ -37,6 +38,21 @@ const base: CapabilitySnapshot = snapshotFromModel(
   }),
   "2026-06-01T00:00:00Z"
 );
+
+describe("parseCapabilitySnapshot", () => {
+  it("accepts a legacy snapshot and rejects a truncated payload", () => {
+    const ok = parseCapabilitySnapshot({
+      capturedAt: "2026-06-01T00:00:00Z",
+      name: "agent",
+      capabilities: [],
+      reach: [],
+      autonomy: [],
+      subagents: ["Auditor"],
+    });
+    expect(ok.subagents).toEqual(["Auditor"]);
+    expect(() => parseCapabilitySnapshot({ name: "x" })).toThrow(/not a valid capability snapshot/);
+  });
+});
 
 describe("diffSnapshots", () => {
   it("flags the first deploy as initial with no entries", () => {
@@ -98,6 +114,21 @@ describe("diffSnapshots", () => {
     const a = d.entries.find((e) => e.kind === "autonomy");
     expect(a?.risk).toBe("elevated");
     expect(d.entries[0].risk).toBe("elevated"); // elevated sorted first
+  });
+
+  it("escalates a source-only schedule with unknown consent instead of calling it asks-first", () => {
+    const next = snapshotFromModel(
+      model({
+        capabilities: snapCaps(),
+        reach: [{ label: "Zendesk", kind: "api", access: "read" }],
+        autonomy: [{ does: "Nightly reconcile", when: "0 2 * * *" }],
+      })
+    );
+    const d = diffSnapshots(base, next);
+    const a = d.entries.find((e) => e.kind === "autonomy");
+    expect(a?.risk).toBe("elevated");
+    expect(a?.summary).toMatch(/consent unknown/);
+    expect(a?.summary).not.toMatch(/asks first/);
   });
 
   it("reports a new capability as routine", () => {
@@ -224,6 +255,97 @@ describe("diffSnapshots", () => {
     );
     const d = diffSnapshots(prev, next);
     expect(d.entries.some((e) => e.kind === "restriction")).toBe(false);
+  });
+
+  it("escalates a same-label reach whose endpoint changed", () => {
+    const prev = snapshotFromFacts({
+      capabilities: [],
+      reach: [{ label: "slack", kind: "api", id: "connections/slack.ts", detail: "MCP · https://old.example" }],
+      autonomy: [],
+      subagents: [],
+    });
+    const next = snapshotFromFacts({
+      capabilities: [],
+      reach: [{ label: "slack", kind: "api", id: "connections/slack.ts", detail: "MCP · https://new.example" }],
+      autonomy: [],
+      subagents: [],
+    });
+    const d = diffSnapshots(prev, next);
+    const changed = d.entries.find((e) => e.kind === "reach" && e.change === "changed");
+    expect(changed?.risk).toBe("elevated");
+    expect(changed?.summary).toMatch(/endpoint or connector/i);
+  });
+
+  it("escalates sandbox removal and new delegation edges", () => {
+    const prev = snapshotFromFacts({
+      capabilities: [],
+      reach: [],
+      autonomy: [],
+      subagents: [{ name: "Auditor", capabilities: [], reach: [] }],
+      sandbox: { present: true, workspaceCount: 1 },
+      delegation: [{ parent: "root", child: "Auditor", parentId: "__root__", childId: "sub:a" }],
+    });
+    const next = snapshotFromFacts({
+      capabilities: [],
+      reach: [],
+      autonomy: [],
+      subagents: [{ name: "Auditor", capabilities: [], reach: [] }],
+      sandbox: { present: false, workspaceCount: 0 },
+      delegation: [],
+    });
+    const d = diffSnapshots(prev, next);
+    expect(d.entries.find((e) => e.kind === "sandbox")?.risk).toBe("elevated");
+    expect(d.entries.find((e) => e.kind === "delegation")?.change).toBe("removed");
+  });
+
+  it("escalates a nested subagent gaining a tool when the baseline stored slices", () => {
+    const prev = snapshotFromFacts({
+      capabilities: [],
+      reach: [],
+      autonomy: [],
+      subagents: [{ name: "Auditor", id: "sub:a", capabilities: [], reach: [] }],
+    });
+    const next = snapshotFromFacts({
+      capabilities: [],
+      reach: [],
+      autonomy: [],
+      subagents: [
+        {
+          name: "Auditor",
+          id: "sub:a",
+          capabilities: [{ label: "Run axe", detail: "", origin: "tool", source: "tools/run-axe.ts" }],
+          reach: [],
+        },
+      ],
+    });
+    const d = diffSnapshots(prev, next);
+    const nested = d.entries.find((e) => e.kind === "capability" && e.summary.includes("Auditor"));
+    expect(nested?.risk).toBe("elevated");
+  });
+
+  it("does not nested-diff subagents when the baseline only stored names", () => {
+    const prev: CapabilitySnapshot = {
+      capturedAt: "2026-06-01T00:00:00Z",
+      name: "agent",
+      capabilities: [],
+      reach: [],
+      autonomy: [],
+      subagents: ["Auditor"],
+    };
+    const next = snapshotFromFacts({
+      capabilities: [],
+      reach: [],
+      autonomy: [],
+      subagents: [
+        {
+          name: "Auditor",
+          capabilities: [{ label: "Run axe", detail: "", origin: "tool", source: "tools/run-axe.ts" }],
+          reach: [],
+        },
+      ],
+    });
+    const d = diffSnapshots(prev, next);
+    expect(d.entries.some((e) => e.kind === "capability")).toBe(false);
   });
 });
 

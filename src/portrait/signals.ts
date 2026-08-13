@@ -42,13 +42,20 @@ export function deriveSignals(agent: AgentModel): PortraitSignals {
   ).length;
   const reach = saturate(allReach.length + writes, 4);
 
-  // autonomy: how much it acts on its own vs. asks first.
+  // autonomy: missing consent (from-source schedules) is unknown. Counting it
+  // as zero made an unbuilt clone look like it never runs on its own. Unknown
+  // schedules contribute the same visual weight as acts-on-its-own without
+  // claiming verified consent.
   const acts = agent.autonomy.filter((a) => a.consent === "acts-on-its-own").length;
   const asks = agent.autonomy.filter((a) => a.consent === "asks-first").length;
-  const ownership = (acts + asks) === 0 ? 0 : acts / (acts + asks + 1);
+  const unknown = agent.autonomy.filter(
+    (a) => a.consent !== "acts-on-its-own" && a.consent !== "asks-first"
+  ).length;
+  const ownish = acts + unknown;
+  const ownership = ownish + asks === 0 ? 0 : ownish / (ownish + asks + 1);
   const autonomy = Math.max(
     0,
-    Math.min(1, ownership * 0.6 + Math.min(acts, 3) / 3 * 0.4)
+    Math.min(1, ownership * 0.6 + Math.min(ownish, 3) / 3 * 0.4)
   );
 
   // range: breadth of capabilities — the agent's own plus everything its

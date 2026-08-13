@@ -32,13 +32,13 @@ Call it the **honesty contract**. It's the whole thing.
 
 ## The question is not just "what," but "what changed"
 
-Agents update. They gain a tool, reach a new system, start acting on a schedule, swap a model, quietly drop an approval gate. Any of those can expand what the agent is allowed to do — and an expansion of authority is exactly the moment a human should be asked to look.
+Agents update. They gain a tool, reach a new system, start acting on a schedule, swap a model, drop an approval gate. Any of those can expand what the agent is allowed to do — and an expansion of authority is exactly the moment a human should be asked to look.
 
 So legibility has a time axis. The most important view isn't the snapshot; it's the **diff**: *this version gives the agent more power than the last one — review required.* Routine changes should pass without a flag. Authority changes should stop and ask.
 
 ## Aletheia
 
-Aletheia is the proof. Point it at any [eve](https://eve.dev) agent and it renders that self-portrait and that authority diff. It reads; it never runs, edits, or deploys. It shows verified facts where it can and marks the rest honestly. It makes an agent you didn't write understandable in the time it takes to read a paragraph.
+Aletheia is the proof. Point it at any [eve](https://eve.dev) agent and it renders that self-portrait and that authority diff. It reads; it never runs or deploys. It shows verified facts where it can and marks the rest honestly. It makes an agent you didn't write understandable in the time it takes to read a paragraph.
 
 It's deliberately small. It's not trying to be a platform. It's an argument, made in working software, for a way of designing.
 

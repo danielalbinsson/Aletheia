@@ -242,7 +242,7 @@ export function projectApiPlugin(agentRoot: string, workspaceRoot: string): Plug
                 built: false,
                 error:
                   manifest.error ??
-                  "This agent has no compiled manifest — build it (in its own project) to review verified capability changes.",
+                  "This agent has no compiled manifest — build it (in its own project) to review verified authority changes.",
               });
             }
             const prev = await readDeployedSnapshot(inspectAgent);
