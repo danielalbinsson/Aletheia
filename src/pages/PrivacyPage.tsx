@@ -13,35 +13,29 @@ export function PrivacyPage() {
         <section>
           <h2>What this site collects</h2>
           <p>
-            The hosted Aletheia showcase does <strong>not</strong> use analytics, advertising
-            trackers, accounts, or cookies set by this application. We do not collect personal data
-            through forms or sign-in on this site.
+            The hosted showcase does <strong>not</strong> use analytics, advertising trackers,
+            accounts, cookies, or forms that collect personal data.
           </p>
         </section>
 
         <section>
           <h2>Third-party fonts</h2>
           <p>
-            Pages load the Archivo typeface from{" "}
+            Pages load Archivo from{" "}
             <a href="https://fonts.google.com" target="_blank" rel="noreferrer">
               Google Fonts
             </a>
-            . When your browser requests those files, Google may receive your IP address and basic
-            request metadata under Google's own privacy policy. If you prefer to avoid that, use the
-            local dev build or block third-party font requests in your browser.
+            . Google may receive your IP address and request metadata. Use the local build or
+            block third-party fonts to avoid that.
           </p>
         </section>
 
         <section>
           <h2>Local tool (when you run <code>pnpm dev</code>)</h2>
           <p>
-            The local Aletheia server reads eve agent files from folders you choose on your machine.
-            That data stays on your computer. It is not uploaded to this website or to Aletheia's
-            authors. Aletheia does not run or deploy your agents.
-          </p>
-          <p>
-            The dev server may persist your last scan root in{" "}
-            <code>~/.aletheia/workspaces.json</code> on your machine for convenience.
+            The local server reads folders you choose. That data stays on your computer; it is not
+            uploaded. The last scan root may be saved in{" "}
+            <code>~/.aletheia/workspaces.json</code>.
           </p>
         </section>
 

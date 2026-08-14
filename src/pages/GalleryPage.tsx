@@ -23,19 +23,19 @@ const ENTRIES: Entry[] = [
     name: "support-bot",
     src: portraitSupportBot,
     caption:
-      "Customer support with real reach: looks up customers and orders, escalates to a human, and asks approval before issuing a refund, because that tool charges the payment method.",
+      "Looks up customers and orders, escalates to a human, and asks approval before issuing a refund.",
   },
   {
     name: "code-reviewer",
     src: portraitCodeReviewer,
     caption:
-      "Reviews code changes: reads a git diff, runs a security checklist, submits structured feedback. Reaches nothing outside itself.",
+      "Reviews code changes and reaches nothing outside itself.",
   },
   {
     name: "research-assistant",
     src: portraitResearch,
     caption:
-      "Gathers and weighs sources: search, fetch, compare, and evaluate credibility before citing. Acts only when asked.",
+      "Gathers sources and evaluates credibility; acts only when asked.",
   },
 ];
 
@@ -47,9 +47,8 @@ export function GalleryPage() {
       <header className="gallery-intro">
         <h1>Four agents, read by Aletheia</h1>
         <p>
-          Example portraits captured from compiled manifests at build time. These
-          are illustrative screenshots from the inspector UI, not live renders.
-          For generated portraits you can fetch and verify, see the{" "}
+          Screenshots of example portraits, not live renders. Generated portraits
+          you can fetch and verify:{" "}
           <a href="https://agentic-kit.dev/gallery">Agentic Kit gallery</a>.
         </p>
       </header>
@@ -62,9 +61,8 @@ export function GalleryPage() {
         />
         <figcaption className="gallery-cap">
           <span className="gallery-name">Authority expanded</span>
-          Agents change. When a new version gains external reach, a delegation, or drops an
-          approval gate, the authority diff says so: <em>authority expanded, review required</em>.
-          A human has to look. Routine changes pass without a flag.
+          When a new version gains reach, a delegation, or drops an approval gate, the
+          authority diff flags it.
         </figcaption>
       </figure>
 

@@ -45,11 +45,18 @@ export function PortraitPage() {
         center={apiAvailable ? <WorkspaceSwitcher /> : undefined}
       />
 
+      {!apiAvailable && (
+        <p className="portrait-demo-note">
+          Bundled demo, labeled <em>from source</em>. Inspect your own agents with the CLI or a
+          local inspector.
+        </p>
+      )}
+
       <SelfPortrait agent={model} verified={verified} key={model.id} />
 
       <footer className="footer">
         <span>
-          Read from <code>agent/</code>. The files are the source of this portrait.
+          Read from <code>agent/</code>.
         </span>
       </footer>
       <AppFooter />

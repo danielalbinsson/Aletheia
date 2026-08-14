@@ -4,17 +4,15 @@ Last updated: July 2026
 
 ## What this site collects
 
-The hosted Aletheia showcase does **not** use analytics, advertising trackers, accounts, or cookies set by this application. We do not collect personal data through forms or sign-in on this site.
+The hosted showcase does **not** use analytics, advertising trackers, accounts, cookies, or forms that collect personal data.
 
 ## Third-party fonts
 
-Pages may load the Archivo typeface from Google Fonts. When your browser requests those files, Google may receive your IP address and basic request metadata under Google's own privacy policy.
+Pages load Archivo from Google Fonts. Google may receive your IP address and request metadata. Use the local build or block third-party fonts to avoid that.
 
 ## Local tool (`pnpm dev`)
 
-The local Aletheia server reads eve agent files from folders you choose on your machine. That data stays on your computer — it is not uploaded to this website or to Aletheia's authors. Aletheia does not run or deploy your agents.
-
-The dev server may persist your last scan root in `~/.aletheia/workspaces.json` on your machine for convenience.
+The local server reads folders you choose. That data stays on your computer; it is not uploaded. The last scan root may be saved in `~/.aletheia/workspaces.json`.
 
 ## Hosting
 

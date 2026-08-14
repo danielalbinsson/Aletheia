@@ -409,18 +409,21 @@ code { font-family: var(--sans); color: var(--muted); }
 
 .home-hero { margin-bottom: 8px; }
 
-.home-epigraph {
-  font-size: 15px !important;
-  color: var(--muted) !important;
-  margin-bottom: 28px !important;
-}
-
 .home-lede { font-size: 18px !important; }
 
-.home-tagline {
-  font-size: 16px !important;
-  color: var(--muted) !important;
-  font-style: italic;
+.home-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 40px;
+  margin: 28px 0 8px;
+}
+
+.home-split h2 {
+  margin-top: 0;
+}
+
+.home-split ul {
+  margin-bottom: 0;
 }
 
 .home-cta {
@@ -460,15 +463,6 @@ code { font-family: var(--sans); color: var(--muted); }
   white-space: pre;
 }
 
-.home-routes {
-  list-style: none;
-  padding: 0;
-}
-
-.home-routes li {
-  margin: 0 0 10px;
-}
-
 .privacy-updated {
   font-size: 14px !important;
   color: var(--muted) !important;
@@ -504,6 +498,13 @@ code { font-family: var(--sans); color: var(--muted); }
   margin: 0 0 20px;
 }
 .review-note { color: var(--muted); font-size: 14px; }
+
+.portrait-demo-note {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 0 0 28px;
+  max-width: 42em;
+}
 .review-error { color: color-mix(in srgb, var(--accent) 70%, #e0654f); }
 .review-verdict {
   font-family: var(--sans);
@@ -853,6 +854,7 @@ code { font-family: var(--sans); color: var(--muted); }
 /* ── Responsive ─────────────────────────────────────────────────────── */
 @media (max-width: 860px) {
   .app { padding: 0 22px 64px; }
+  .home-split { grid-template-columns: 1fr; }
   .self-portrait { grid-template-columns: 1fr; gap: 40px; }
   .portrait-col { position: static; }
   .agent-name { font-size: 42px; }

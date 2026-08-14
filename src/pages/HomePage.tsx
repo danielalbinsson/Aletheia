@@ -3,6 +3,8 @@ import { AppFooter } from "../components/AppFooter";
 import { AppNav } from "../components/AppNav";
 import { useProjectStore } from "../store/ProjectStore";
 
+const DOCS_QUICKSTART = `${import.meta.env.BASE_URL}docs/quickstart.md`;
+
 export function HomePage() {
   const { apiAvailable } = useProjectStore();
 
@@ -12,145 +14,76 @@ export function HomePage() {
 
       <article className="home prose">
         <header className="home-hero">
-          <p className="home-epigraph">
-            <em>Aletheia (ἀλήθεια): truth as unconcealment — bringing what is hidden into the open.</em>
-          </p>
           <h1>See what an agent can do</h1>
           <p className="home-lede">
-            You cloned an eve (Vercel) agent you didn't write. Before you run it, you need to know
-            what it can touch, what it does on its own, what it asks permission for, and what it is{" "}
-            <em>forbidden</em> from doing. Today the only way to answer that is to read the source.
-          </p>
-          <p className="home-lede">
-            <strong>Aletheia reads it for you.</strong> Point it at any{" "}
+            Aletheia is a local inspector for{" "}
             <a href="https://eve.dev" target="_blank" rel="noreferrer">
               eve
             </a>{" "}
-            agent and it renders a <strong>self-portrait</strong>: a first-person page where the
-            agent lays out its capabilities, its reach, what it does unprompted, and the powers it
-            has given up. An <strong>authority diff</strong> shows how that authority changed over
-            time. It never runs or deploys the agent. It only makes it legible.
+            (Vercel) agents. It reads the agent's files and shows a first-person{" "}
+            <strong>self-portrait</strong> — what it can do, touch, do on its own, and cannot — and
+            an <strong>authority diff</strong> when that changes.
           </p>
-          <p className="home-tagline">A first-person portrait from the agent's own files.</p>
-          <div className="home-cta">
-            <Link to="/portrait" className="btn-primary">
-              View demo portrait
-            </Link>
-            <Link to="/gallery" className="btn-ghost">
-              Gallery
-            </Link>
-          </div>
         </header>
 
+        <div className="home-split">
+          <section>
+            <h2>What it is</h2>
+            <ul>
+              <li>
+                An inspector. Reads <code>agent/</code> and, when present, eve's compiled manifest.
+              </li>
+              <li>Local-first. The full tool runs on your machine. This site is a demo.</li>
+              <li>
+                Labeled. Facts from a build are <em>verified from build</em>. Everything else is{" "}
+                <em>from source — build to verify</em>.
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h2>What it is not</h2>
+            <ul>
+              <li>A runtime. It never runs, edits, or deploys the agent.</li>
+              <li>This website. Browsers cannot read your disk.</li>
+              <li>
+                A guess. Where eve does not expose a fact — approval gates, connection read/write —
+                Aletheia leaves a gap.
+              </li>
+            </ul>
+          </section>
+        </div>
+
+        <div className="home-cta">
+          <Link to="/portrait" className="btn-primary">
+            View demo portrait
+          </Link>
+          <Link to="/gallery" className="btn-ghost">
+            Gallery
+          </Link>
+        </div>
+
         <section>
-          <h2>This site vs the local tool</h2>
+          <h2>Use it</h2>
+          <p>In the eve agent directory (Node 24+):</p>
+          <pre className="home-code">
+            <code>{`npx @danielalbinsson/aletheia-cli portrait
+npx @danielalbinsson/aletheia-cli diff --baseline git:main
+npx @danielalbinsson/aletheia-cli snapshot`}</code>
+          </pre>
           <p>
-            You're on the <strong>hosted showcase</strong>: manifesto, gallery, and a bundled demo
-            portrait rendered <em>from source</em>. The full inspector (browse any folder on your
-            machine, read compiled manifests, switch agents) runs locally because browsers cannot
-            read your disk.
+            Visual inspector and PR gate:{" "}
+            <a href={DOCS_QUICKSTART}>quickstart</a>
+            {" · "}
+            <a href="https://github.com/danielalbinsson/Aletheia" target="_blank" rel="noreferrer">
+              source
+            </a>
           </p>
           {apiAvailable ? (
             <p className="home-note home-note-ok">
               Dev server detected. Folder browsing and verified manifests are available in this
               session.
             </p>
-          ) : (
-            <p className="home-note">
-              To inspect your own agents, run{" "}
-              <code>npx @danielalbinsson/aletheia-cli portrait</code> in the agent
-              directory. For the visual inspector, clone the repo and run{" "}
-              <code>pnpm install && pnpm dev</code>.
-            </p>
-          )}
-        </section>
-
-        <section>
-          <h2>Quickstart for eve builders</h2>
-          <p>Default path: run the CLI in your eve agent directory (Node 24+).</p>
-          <pre className="home-code">
-            <code>{`npx @danielalbinsson/aletheia-cli portrait
-npx @danielalbinsson/aletheia-cli diff --baseline git:main
-npx @danielalbinsson/aletheia-cli snapshot   # after intentional expansion; commit the file`}</code>
-          </pre>
-          <p>
-            After an intentional authority expansion, acknowledge with{" "}
-            <code>capability-change-ack</code>, run <code>snapshot</code>, and commit{" "}
-            <code>agent/.aletheia/deployed-capabilities.json</code> on the same PR.
-          </p>
-          <p>
-            <strong>Visual inspector:</strong> clone this repo for the Browse-folder UI.
-          </p>
-          <pre className="home-code">
-            <code>{`git clone https://github.com/danielalbinsson/Aletheia.git
-cd Aletheia
-pnpm install
-pnpm dev            # http://localhost:5173`}</code>
-          </pre>
-          <p>
-            Click <strong>Browse folder…</strong> and pick a directory. Aletheia scans for eve agents
-            (any folder containing <code>agent/agent.ts</code>) and lists them in the Agent
-            dropdown. Pick one; its portrait and authority diff render for that agent.
-          </p>
-          <p>
-            For a fixed target, set <code>ALETHEIA_WORKSPACE</code> in <code>.env.local</code>.
-            Requires Node 24+ and pnpm.
-          </p>
-        </section>
-
-        <section>
-          <h2>The honesty contract</h2>
-          <p>
-            A trust tool that lies is worse than none. Aletheia never presents a guess as a fact.
-            Every claim carries its provenance:
-          </p>
-          <ul>
-            <li>
-              <strong>Verified from build.</strong> When the agent has a compiled manifest (
-              <code>.eve/compile/compiled-agent-manifest.json</code>), the portrait reads eve's
-              own record: tools, reach, schedules, disabled framework tools, subagents. Labelled{" "}
-              <em>verified from build</em>.
-            </li>
-            <li>
-              <strong>From source.</strong> Without a manifest, Aletheia falls back to a tolerant
-              read of <code>agent/</code> and labels it <em>from source — build to verify</em>.
-            </li>
-            <li>
-              <strong>Consent, honestly.</strong> Approval gates come from{" "}
-              <code>agent/.aletheia/consent.json</code> when present. Always{" "}
-              <em>source-declared</em>, never build-verified until eve serializes them.
-            </li>
-          </ul>
-        </section>
-
-        <section>
-          <h2>Authority diff: trust over time</h2>
-          <p>
-            New external reach, a new schedule, a new delegation, a lifted restriction, or a model
-            swap are flagged <em>needs your attention</em>. Routine changes pass without a flag.
-            The same diff runs headless as <code>aletheia diff</code> on pull requests.
-          </p>
-          <p>
-            <Link to="/review">Open the authority diff</Link>
-          </p>
-        </section>
-
-        <section>
-          <h2>Explore</h2>
-          <ul className="home-routes">
-            <li>
-              <Link to="/portrait">Portrait</Link>: the agent's self-portrait
-            </li>
-            <li>
-              <Link to="/review">Authority diff</Link>: how its authority changed
-            </li>
-            <li>
-              <Link to="/gallery">Gallery</Link>: example agents read by Aletheia
-            </li>
-            <li>
-              <Link to="/manifesto">Manifesto</Link>: the POV behind the project
-            </li>
-          </ul>
+          ) : null}
         </section>
       </article>
 
