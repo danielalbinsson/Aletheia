@@ -31,7 +31,7 @@ export function PortraitPage() {
         </p>
         <p className="empty-cta">
           <Link to="/" className="btn-ghost">
-            ← About
+            About
           </Link>
         </p>
       </main>

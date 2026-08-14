@@ -1,6 +1,6 @@
 # Privacy
 
-Last updated: July 2026
+Last updated: August 2026
 
 ## What this site collects
 
@@ -16,7 +16,7 @@ The local server reads folders you choose. That data stays on your computer; it 
 
 ## Hosting
 
-The showcase may be deployed on Vercel. Standard web server logs (IP, user agent, requested URL) may be retained by the host as part of normal operation.
+This showcase is deployed on Vercel. Standard web server logs (IP, user agent, requested URL) may be retained by the host as part of normal operation.
 
 ## Contact
 

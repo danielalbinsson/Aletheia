@@ -31,11 +31,11 @@ export function HomePage() {
             <h2>What it is</h2>
             <ul>
               <li>
-                An inspector. Reads <code>agent/</code> and, when present, eve's compiled manifest.
+                Inspector. Reads <code>agent/</code> and, when present, eve's compiled manifest.
               </li>
               <li>Local-first. The full tool runs on your machine. This site is a demo.</li>
               <li>
-                Labeled. Facts from a build are <em>verified from build</em>. Everything else is{" "}
+                Provenance. Facts from a build are <em>verified from build</em>. Everything else is{" "}
                 <em>from source — build to verify</em>.
               </li>
             </ul>
@@ -43,11 +43,11 @@ export function HomePage() {
           <section>
             <h2>What it is not</h2>
             <ul>
-              <li>A runtime. It never runs, edits, or deploys the agent.</li>
-              <li>This website. Browsers cannot read your disk.</li>
+              <li>It never runs, edits, or deploys the agent.</li>
+              <li>This website cannot read your disk.</li>
               <li>
-                A guess. Where eve does not expose a fact — approval gates, connection read/write —
-                Aletheia leaves a gap.
+                Where eve does not expose a fact (approval gates, connection read/write), it leaves a
+                gap.
               </li>
             </ul>
           </section>
@@ -58,7 +58,7 @@ export function HomePage() {
             View demo portrait
           </Link>
           <Link to="/gallery" className="btn-ghost">
-            Gallery
+            See examples
           </Link>
         </div>
 
@@ -71,8 +71,7 @@ npx @danielalbinsson/aletheia-cli diff --baseline git:main
 npx @danielalbinsson/aletheia-cli snapshot`}</code>
           </pre>
           <p>
-            Visual inspector and PR gate:{" "}
-            <a href={DOCS_QUICKSTART}>quickstart</a>
+            <a href={DOCS_QUICKSTART}>Visual inspector and PR gate</a>
             {" · "}
             <a href="https://github.com/danielalbinsson/Aletheia" target="_blank" rel="noreferrer">
               source

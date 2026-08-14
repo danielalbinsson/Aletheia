@@ -1,23 +1,14 @@
 # Aletheia — see what an agent can do
 
-*Aletheia (ἀλήθεια): truth as unconcealment — bringing what is hidden into the open.*
-
 [![Agent skill](https://img.shields.io/badge/skill-aletheia--eve--trust-111)](./skills/aletheia-eve-trust/SKILL.md)
 [![llms.txt](https://img.shields.io/badge/llms.txt-ready-111)](./public/llms.txt)
 [![AGENTS.md](https://img.shields.io/badge/AGENTS.md-ready-111)](./AGENTS.md)
 
-You cloned an eve (Vercel) agent you didn't write. Before you run it, you'd like to know:
-what can it touch? What does it do on its own? What does it ask permission for?
-What is it *forbidden* from doing? Today the only way to answer that is to read
-the source.
-
-**Aletheia reads it for you.** Point it at any [eve](https://eve.dev) agent and it
-renders a **self-portrait** — a first-person page where the agent lays out its
-capabilities, its reach into the outside world, the things it does unprompted,
-and the powers it has given up — plus an **authority diff** that shows how that
-authority has changed over time. It never runs the agent, never deploys it.
-`init` and `snapshot` write Aletheia inspection files; they do not edit agent
-source. It only makes the agent legible.
+Aletheia is a local inspector for [eve](https://eve.dev) (Vercel) agents. It reads
+the agent's files and shows a first-person **self-portrait** — what it can do,
+touch, do on its own, and cannot — and an **authority diff** when that changes.
+It never runs, edits, or deploys the agent. `init` and `snapshot` write Aletheia
+inspection files; they do not edit agent source.
 
 Product shell + Kit Certified gallery: **[agentic-kit.dev](https://agentic-kit.dev)**
 (golden path, CI docs, paid [Capability Review](https://agentic-kit.dev/review)).
@@ -102,7 +93,7 @@ A trust tool that lies is worse than none. So Aletheia is built around one rule:
   the connections and channels it reaches, with protocol and URL; the schedules
   by which it acts on its own; the framework tools it has **disabled** (verifiable
   "cannots"); and, for orchestrators, each **subagent** it delegates to, recursed
-  from the nested manifests. Labelled *verified from build*.
+  from the nested manifests. Labeled *verified from build*.
 - **From source.** Without a manifest — which is the common case for an agent you
   just cloned — Aletheia falls back to a tolerant read of `agent/` and labels it
   *from source — build to verify*.

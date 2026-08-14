@@ -1,6 +1,6 @@
 # Quickstart — Aletheia for eve agents
 
-Aletheia is a local-first trust tool for [eve (Vercel)](https://eve.dev) agents. It reads an agent's files (and optionally the compiled eve manifest) and renders a **self-portrait** plus an **authority diff**. It never runs or deploys the agent. `init` and `snapshot` write Aletheia inspection files; they do not edit agent source.
+Aletheia is a local-first inspector for [eve (Vercel)](https://eve.dev) agents. It reads an agent's files (and optionally the compiled eve manifest) and renders a **self-portrait** plus an **authority diff**. It never runs or deploys the agent. `init` and `snapshot` write Aletheia inspection files; they do not edit agent source.
 
 The CLI (`diff`, `portrait`, `passport`, `snapshot`, `init`) invokes `eve build` by default so its facts can read *verified from build*. Pass `--no-build` to skip the build and reuse an existing compiled manifest (exits `2` if none exists; it does not produce from-source facts). That writes eve's own output under `.eve/` and leaves your agent source untouched. Browsing in the web UI never builds.
 
@@ -47,7 +47,7 @@ npx skills add danielalbinsson/Aletheia --skill aletheia-eve-trust
 ## What "verified" means
 
 - **Verified from build** — facts from `.eve/compile/compiled-agent-manifest.json` after `eve build`
-- **From source** — tolerant read of `agent/` when no manifest exists; labelled honestly
+- **From source** — tolerant read of `agent/` when no manifest exists; labeled honestly
 - Aletheia never invents approval or read/write semantics that eve does not expose
 
 See [honesty-contract.md](./honesty-contract.md) and [capability-review.md](./capability-review.md).

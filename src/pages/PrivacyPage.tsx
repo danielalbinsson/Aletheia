@@ -8,7 +8,7 @@ export function PrivacyPage() {
 
       <article className="prose privacy">
         <h1>Privacy</h1>
-        <p className="privacy-updated">Last updated: July 2026</p>
+        <p className="privacy-updated">Last updated: August 2026</p>
 
         <section>
           <h2>What this site collects</h2>

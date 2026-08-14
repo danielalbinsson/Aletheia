@@ -5,7 +5,7 @@ what an agent can do / reach / do unprompted against a baseline and fails CI whe
 authority expands.
 
 Part of [Aletheia](https://github.com/danielalbinsson/Aletheia) — the local-first
-trust tool for eve agent legibility.
+inspector for eve agent legibility.
 
 ## Install
 

@@ -1,12 +1,7 @@
 # Gallery
 
-Four eve agents, read by Aletheia. Each portrait is **generated** by
-`aletheia portrait` from the agent's compiled manifest — most facts are
-*verified from build*; the one exception, "asks first" approval, is source-declared
-because eve does not serialize approval into the manifest.
+Live portraits (fetchable JSON) are on **[agentic-kit.dev/gallery](https://agentic-kit.dev/gallery)**. The Aletheia SPA `/gallery` is screenshots, not live renders.
 
-These portraits are rendered live (and are individually fetchable as
-`aletheia.portrait/v1` JSON) at **[agentic-kit.dev/gallery](https://agentic-kit.dev/gallery)**.
 Generate one yourself:
 
 ```bash
@@ -14,10 +9,7 @@ eve build
 aletheia portrait --format text     # or --format json
 ```
 
-> Static screenshots were removed on purpose: a picture can't stay true. One
-> earlier JPEG showed a "Mock git diff" tool under a *verified from build*
-> heading after that tool had been deleted. The portrait is now an artifact of
-> the current build, not a snapshot.
+Most facts are *verified from build*; "asks first" is source-declared because eve does not serialize approval into the manifest.
 
 ## Authority expanded
 

@@ -22,7 +22,7 @@ A **self-portrait**: here is what I can do, here is what I can touch, here is wh
 
 This is the line I will not cross: **never present a guess as a fact.** A trust tool that flatters you with false confidence is worse than no tool at all.
 
-Every claim carries its provenance. Proven from the build, I show as verified. Inferred from source, I label as inferred. Where the framework won't expose something, I refuse to render it. The honest gap is the feature. Call it the **honesty contract**.
+Every claim carries its provenance: *verified from build*, or *from source — build to verify*. Where the framework won't expose something, I refuse to render it. The honest gap is the feature. Call it the **honesty contract**.
 
 ## What changed
 

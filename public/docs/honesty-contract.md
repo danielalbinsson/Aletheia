@@ -12,7 +12,7 @@ When the agent has a compiled manifest (`.eve/compile/compiled-agent-manifest.js
 - Framework tools the agent has **disabled** (verifiable "cannots")
 - Subagents (orchestrators), recursed from nested manifests
 
-These facts are labelled **verified from build**.
+These facts are labeled **verified from build**.
 
 ## From source
 

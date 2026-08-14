@@ -1,6 +1,6 @@
 # Aletheia
 
-> Local-first trust tool for [eve (Vercel)](https://eve.dev) agents. Renders a verified self-portrait and an authority diff. Never runs or deploys the agent. `init`/`snapshot` write Aletheia inspection files. Honesty contract: never present a guess as a fact.
+> Local-first inspector for [eve (Vercel)](https://eve.dev) agents. Renders a self-portrait and an authority diff, labeled *verified from build* or *from source — build to verify*. Never runs or deploys the agent. `init`/`snapshot` write Aletheia inspection files. Honesty contract: never present a guess as a fact.
 
 This file is the agent-facing index. Prefer the Markdown links below over HTML SPA routes.
 

@@ -4,7 +4,7 @@
   "version": "0.2.0",
   "license": "MIT",
   "type": "module",
-  "description": "Local-first trust tool for Vercel eve agents — verified self-portrait and authority diff (agent legibility).",
+  "description": "Local-first inspector for Vercel eve agents — self-portrait and authority diff.",
   "keywords": [
     "eve",
     "vercel-eve",
