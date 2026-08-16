@@ -4,9 +4,9 @@
   --bg-deep: #0a0a0a;
   --bg-elevated: #141414;
   --ink: #ece6dc;        /* warm off-white — headings */
-  --ink-soft: #cbc4b8;   /* body */
-  --muted: #8f877c;      /* labels, secondary */
-  --faint: #96897a;      /* captions — dim but ≥4.5:1 on --bg (text only; borders use --hair) */
+  --ink-soft: #d8d2c6;   /* body */
+  --muted: #b0a89c;      /* labels, secondary */
+  --faint: #a39b8f;      /* captions — dimmer than muted, still ≥4.5:1 on --bg */
   --hair: rgba(236, 230, 220, 0.1);
   --hair-strong: rgba(236, 230, 220, 0.18);
   --accent: #d9a368;     /* warm amber, used sparingly */
@@ -664,6 +664,9 @@ code { font-family: var(--sans); color: var(--muted); }
   font-weight: 400;
 }
 
+.intro-body {
+  margin-bottom: 8px;
+}
 .intro-body p {
   font-size: var(--text-base);
   line-height: 1.62;
@@ -768,7 +771,7 @@ code { font-family: var(--sans); color: var(--muted); }
 .cap-takes {
   font-family: var(--sans);
   font-size: var(--text-xs);
-  color: var(--faint);
+  color: var(--accent);
 }
 .cap-consent {
   margin-left: 9px;
@@ -843,10 +846,9 @@ code { font-family: var(--sans); color: var(--muted); }
 
 /* Who I delegate to */
 .can-do-none { font-size: var(--text-sm); color: var(--muted); margin: 0; }
-.subagents { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; }
+.subagents { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
 .subagent {
-  padding-left: 14px;
-  border-left: 1px solid var(--hair, var(--accent-dim));
+  padding: 32px 0;
 }
 .subagent-head {
   display: flex;
@@ -855,7 +857,7 @@ code { font-family: var(--sans); color: var(--muted); }
   flex-wrap: wrap;
 }
 .subagent-name {
-  font-size: var(--text-sm);
+  font-size: var(--text-md);
   color: var(--ink);
   letter-spacing: 0.01em;
 }
@@ -880,9 +882,19 @@ code { font-family: var(--sans); color: var(--muted); }
   display: grid;
   gap: 5px;
 }
-.subagent-caps li { display: flex; align-items: baseline; gap: 8px; }
-.subagent-caps .cap-label { font-size: var(--text-sm); }
-.subagent-caps .cap-detail { font-size: var(--text-xs); }
+.subagent-caps li {
+  display: grid;
+  grid-template-columns: 11.5rem 1fr;
+  column-gap: 12px;
+  align-items: baseline;
+}
+.subagent-caps .cap-label {
+  font-size: var(--text-sm);
+}
+.subagent-caps .cap-detail {
+  font-size: var(--text-xs);
+  min-width: 0;
+}
 .subagent-reach { list-style: none; margin: 9px 0 0; padding: 0; display: grid; gap: 6px; }
 .subagent-reach .reach-label { font-size: var(--text-sm); }
 .sandbox-line {
@@ -895,9 +907,9 @@ code { font-family: var(--sans); color: var(--muted); }
   margin: 0 0 14px;
   padding: 0;
   display: grid;
-  gap: 6px;
-  font-size: var(--text-sm);
-  color: var(--muted);
+  gap: 8px;
+  font-size: var(--text-md);
+  color: var(--ink);
 }
 
 /* ── Footer ─────────────────────────────────────────────────────────── */

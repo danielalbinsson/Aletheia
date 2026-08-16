@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type {
   AgentModel,
   Autonomy,
@@ -29,6 +30,7 @@ export function SelfPortrait({
   );
   const sandboxLine = agent.sandbox ? sandboxPortraitLine(agent.sandbox) : undefined;
   const delegation = agent.delegation ?? [];
+  const composition = compositionLine(agent);
 
   return (
     <article className="self-portrait">
@@ -40,7 +42,6 @@ export function SelfPortrait({
       <div className="intro-col">
         <header className="intro-head">
           <h1 className="agent-name">{agent.name}</h1>
-          <p className="essence">{agent.essence}</p>
         </header>
 
         <div className="intro-body">
@@ -48,6 +49,12 @@ export function SelfPortrait({
             <p key={i}>{p}</p>
           ))}
         </div>
+
+        {composition ? (
+          <p className="essence">{composition}</p>
+        ) : agent.essence ? (
+          <p className="essence">{agent.essence}</p>
+        ) : null}
 
         <Section
           label="What I can do"
@@ -200,6 +207,44 @@ function Section({
   );
 }
 
+function compositionLine(agent: AgentModel): ReactNode | null {
+  const bits: { lead: string; em: string }[] = [];
+  const nTools = agent.capabilities.length;
+  const nApps = agent.reach.length;
+  const nSubs = agent.subagents.length;
+
+  if (nTools > 0) {
+    bits.push({ lead: "uses", em: nTools === 1 ? "1 tool" : `${nTools} tools` });
+  }
+  if (nApps > 0) {
+    bits.push({
+      lead: "reaches",
+      em: nApps === 1 ? "1 external app" : `${nApps} external apps`,
+    });
+  }
+  if (nSubs > 0) {
+    bits.push({
+      lead: "delegates to",
+      em: nSubs === 1 ? "1 subagent" : `${nSubs} subagents`,
+    });
+  }
+  if (bits.length === 0) return null;
+
+  return bits.map((bit, i) => {
+    const lead =
+      i === 0
+        ? bit.lead.charAt(0).toUpperCase() + bit.lead.slice(1)
+        : i === bits.length - 1
+          ? `, and ${bit.lead}`
+          : `, ${bit.lead}`;
+    return (
+      <span key={bit.em}>
+        {lead} <em>{bit.em}</em>
+      </span>
+    );
+  });
+}
+
 function CapabilityItem({ cap }: { cap: Capability }) {
   return (
     <li>
@@ -216,7 +261,7 @@ function CapabilityItem({ cap }: { cap: Capability }) {
       </span>
       <span className="cap-detail">{cap.detail}</span>
       {cap.consentReason && <span className="cap-consent-why">{cap.consentReason}</span>}
-      {cap.takes && <span className="cap-takes">takes: {cap.takes}</span>}
+      {cap.takes && <span className="cap-takes">Parameters: {cap.takes}</span>}
     </li>
   );
 }
