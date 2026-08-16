@@ -61,7 +61,7 @@ function renderMarkdown(md: string): ReactNode[] {
 export function ManifestoPage() {
   return (
     <main className="app manifesto-app">
-      <AppNav subtitle="manifesto" />
+      <AppNav />
       <article className="manifesto">{renderMarkdown(manifestoMd)}</article>
       <AppFooter />
     </main>

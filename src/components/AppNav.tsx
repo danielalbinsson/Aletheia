@@ -11,20 +11,17 @@ const ROUTES = [
 ] as const;
 
 interface AppNavProps {
-  /** Short label beside the wordmark, e.g. "gallery". */
-  subtitle?: string;
   /** Center slot — workspace switcher on portrait/review when the dev API is up. */
   center?: ReactNode;
 }
 
-export function AppNav({ subtitle, center }: AppNavProps) {
+export function AppNav({ center }: AppNavProps) {
   return (
     <nav className="topbar" aria-label="Main">
       <div className="wordmark">
         <Link to="/" className="wordmark-link">
           Aletheia
         </Link>
-        {subtitle ? <span className="wordmark-sub">{subtitle}</span> : null}
       </div>
       {center ? <div className="topbar-center">{center}</div> : null}
       <div className="topbar-nav">

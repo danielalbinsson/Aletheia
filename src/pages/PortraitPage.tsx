@@ -15,7 +15,7 @@ export function PortraitPage() {
   if (loading) {
     return (
       <main className="app empty">
-        <AppNav subtitle="portrait" />
+        <AppNav />
         <p>Loading agent…</p>
       </main>
     );
@@ -24,7 +24,7 @@ export function PortraitPage() {
   if (!model) {
     return (
       <main className="app empty">
-        <AppNav subtitle="portrait" />
+        <AppNav />
         <p>
           No agent found. Point Aletheia at a folder containing an eve agent (
           <code>agent/agent.ts</code>).
@@ -41,7 +41,6 @@ export function PortraitPage() {
   return (
     <main className="app">
       <AppNav
-        subtitle="portrait"
         center={apiAvailable ? <WorkspaceSwitcher /> : undefined}
       />
 

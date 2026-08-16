@@ -42,7 +42,7 @@ const ENTRIES: Entry[] = [
 export function GalleryPage() {
   return (
     <main className="app gallery-app">
-      <AppNav subtitle="gallery" />
+      <AppNav />
 
       <header className="gallery-intro">
         <h1>Four agents, read by Aletheia</h1>

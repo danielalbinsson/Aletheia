@@ -4,7 +4,7 @@ import { AppNav } from "../components/AppNav";
 export function PrivacyPage() {
   return (
     <main className="app privacy-app">
-      <AppNav subtitle="privacy" />
+      <AppNav />
 
       <article className="prose privacy">
         <h1>Privacy</h1>

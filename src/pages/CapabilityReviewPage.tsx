@@ -64,7 +64,6 @@ export function CapabilityReviewPage() {
   return (
     <main className="app review-app">
       <AppNav
-        subtitle="authority"
         center={apiAvailable ? <WorkspaceSwitcher /> : undefined}
       />
 
