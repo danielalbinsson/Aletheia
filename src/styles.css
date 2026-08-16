@@ -532,17 +532,17 @@ code { font-family: var(--sans); color: var(--muted); }
 }
 
 .site-footer {
-  max-width: 680px;
-  margin: 0 auto;
+  margin: 0;
   padding: 24px 0 64px;
   border-top: 1px solid var(--hair);
   font-size: var(--text-sm);
-  color: var(--faint);
+  color: color-mix(in srgb, var(--faint) 70%, var(--bg));
   letter-spacing: 0.04em;
+  text-align: right;
 }
 
 .site-footer a {
-  color: var(--muted);
+  color: inherit;
   text-decoration: none;
 }
 
@@ -870,22 +870,23 @@ code { font-family: var(--sans); color: var(--muted); }
   border-radius: 999px;
 }
 .subagent-desc {
-  margin: 4px 0 0;
+  margin: 12px 0 0;
   font-size: var(--text-sm);
-  line-height: 1.5;
+  line-height: 1.6;
   color: var(--muted);
 }
 .subagent-caps {
   list-style: none;
-  margin: 9px 0 0;
+  margin: 18px 0 0;
   padding: 0;
   display: grid;
-  gap: 5px;
+  gap: 14px;
 }
 .subagent-caps li {
   display: grid;
   grid-template-columns: 11.5rem 1fr;
   column-gap: 12px;
+  row-gap: 4px;
   align-items: baseline;
 }
 .subagent-caps .cap-label {
@@ -893,14 +894,29 @@ code { font-family: var(--sans); color: var(--muted); }
 }
 .subagent-caps .cap-detail {
   font-size: var(--text-xs);
+  line-height: 1.55;
   min-width: 0;
 }
-.subagent-reach { list-style: none; margin: 9px 0 0; padding: 0; display: grid; gap: 6px; }
+.subagent-reach {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
 .subagent-reach .reach-label { font-size: var(--text-sm); }
 .sandbox-line {
   margin: 0;
   font-size: var(--text-sm);
   color: var(--muted);
+}
+.delegation-note {
+  margin: 0 0 16px;
+  font-family: var(--sans);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--muted);
+  max-width: 42em;
 }
 .delegation-edges {
   list-style: none;
@@ -915,12 +931,15 @@ code { font-family: var(--sans); color: var(--muted); }
 /* ── Footer ─────────────────────────────────────────────────────────── */
 .footer {
   margin-top: 80px;
-  padding-top: 22px;
+  padding: 22px 0;
   border-top: 1px solid var(--hair);
   font-family: var(--sans);
   font-size: var(--text-xs);
   letter-spacing: 0.06em;
   color: var(--faint);
+  display: flex;
+  align-items: center;
+  min-height: 0;
 }
 
 .app.empty { padding-top: 120px; text-align: center; color: var(--muted); }

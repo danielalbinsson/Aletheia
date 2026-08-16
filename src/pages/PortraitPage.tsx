@@ -55,7 +55,8 @@ export function PortraitPage() {
 
       <footer className="footer">
         <span>
-          Read from <code>agent/</code>.
+          Every claim here is read from the agent&apos;s files under{" "}
+          <code>agent/</code> — not guessed.
         </span>
       </footer>
       <AppFooter />

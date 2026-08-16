@@ -164,6 +164,10 @@ export function SelfPortrait({
             label="Who I delegate to"
             note={verified ? "verified from build" : "from source — build to verify"}
           >
+            <p className="delegation-note">
+              Shows who can call whom — not the order of work. Any required sequence
+              lives in instructions or runtime, not in the build manifest.
+            </p>
             {delegation.length > 0 && (
               <ul className="delegation-edges">
                 {delegation.map((e) => (
