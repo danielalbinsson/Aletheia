@@ -149,7 +149,6 @@ code { font-family: var(--sans); color: var(--muted); }
   font-family: var(--sans);
   font-size: var(--text-xs);
   letter-spacing: 0.06em;
-  text-transform: lowercase;
   padding: 10px 14px;
   border-radius: 999px;
   border: 1px solid transparent;
@@ -173,7 +172,6 @@ code { font-family: var(--sans); color: var(--muted); }
   font-family: var(--sans);
   font-size: var(--text-md);
   letter-spacing: 0.14em;
-  text-transform: lowercase;
   color: var(--ink);
 }
 .agent-tabs { display: flex; gap: 4px; }

@@ -4,7 +4,15 @@ export function AppFooter() {
   return (
     <footer className="site-footer">
       <span>
-        MIT License ·{" "}
+        <a
+          href="https://github.com/danielalbinsson/Aletheia/blob/main/LICENSE"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="MIT License (opens in a new tab)"
+        >
+          MIT License
+        </a>
+        {" · "}
         <Link to="/privacy">Privacy</Link>
         {" · "}
         <a
