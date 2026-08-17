@@ -7,7 +7,12 @@ export function AppFooter() {
         MIT License ·{" "}
         <Link to="/privacy">Privacy</Link>
         {" · "}
-        <a href="https://github.com/danielalbinsson/Aletheia" target="_blank" rel="noreferrer">
+        <a
+          href="https://github.com/danielalbinsson/Aletheia"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Source (opens in a new tab)"
+        >
           Source
         </a>
       </span>

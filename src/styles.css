@@ -119,7 +119,7 @@ code { font-family: var(--sans); color: var(--muted); }
 
 .topbar {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 16px 24px;
@@ -137,16 +137,20 @@ code { font-family: var(--sans); color: var(--muted); }
   display: flex;
   flex-wrap: wrap;
   gap: 4px 6px;
-  align-items: baseline;
+  align-items: center;
 }
 
 .topbar-nav-link {
   appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
   font-family: var(--sans);
   font-size: var(--text-xs);
   letter-spacing: 0.06em;
   text-transform: lowercase;
-  padding: 6px 12px;
+  padding: 10px 14px;
   border-radius: 999px;
   border: 1px solid transparent;
   color: var(--muted);
@@ -536,12 +540,16 @@ code { font-family: var(--sans); color: var(--muted); }
   padding: 24px 0 64px;
   border-top: 1px solid var(--hair);
   font-size: var(--text-sm);
-  color: color-mix(in srgb, var(--faint) 70%, var(--bg));
+  color: var(--muted);
   letter-spacing: 0.04em;
   text-align: right;
 }
 
 .site-footer a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 4px;
   color: inherit;
   text-decoration: none;
 }
@@ -560,6 +568,9 @@ code { font-family: var(--sans); color: var(--muted); }
   margin: 0 0 20px;
 }
 .review-note { color: var(--muted); font-size: var(--text-sm); }
+.review-status { margin: 0 0 24px; }
+.review-status .review-verdict { margin-bottom: 0; }
+.review-status .review-note { margin: 0; }
 
 .portrait-demo-note {
   color: var(--muted);
@@ -591,15 +602,31 @@ code { font-family: var(--sans); color: var(--muted); }
   margin: 0 0 10px;
 }
 .review-elevated-head { color: var(--accent) !important; }
-.review-list { list-style: none; margin: 0; padding: 0; }
+.review-list {
+  list-style: disc;
+  margin: 0 0 20px;
+  padding: 0 0 0 1.25em;
+}
 .review-list li {
   color: var(--ink-soft);
   font-family: var(--sans);
   font-size: var(--text-sm);
-  padding: 7px 0;
-  border-bottom: 1px solid var(--hair);
+  line-height: 1.5;
+  padding: 3px 0;
 }
+.review-list-execute { color: var(--ink); }
+.review-list-execute li { color: var(--ink); }
+.review-list-execute ::marker { color: var(--accent); }
 .review-glyph { color: var(--muted); margin-right: 6px; }
+.review-next {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: 1.55;
+}
+.review-next-code { margin: 12px 0; }
+.review-next-links { margin: 0; }
+.review-next-links a { color: var(--ink-soft); }
 
 /* ── The self-portrait ──────────────────────────────────────────────── */
 .self-portrait {
@@ -960,6 +987,9 @@ code { font-family: var(--sans); color: var(--muted); }
 
 /* ── Links & buttons ─────────────────────────────────────────────────── */
 .wordmark-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   color: inherit;
   text-decoration: none;
 }

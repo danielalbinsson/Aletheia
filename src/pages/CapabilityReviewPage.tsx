@@ -5,12 +5,22 @@ import { WorkspaceSwitcher } from "../components/WorkspaceSwitcher";
 import { fetchReview, type CapabilityReviewResponse } from "../api/projectClient";
 import { useProjectStore } from "../store/ProjectStore";
 import type { DiffEntry } from "../parser/capabilityDiff";
+import {
+  delegateDisplayName,
+  executeAndReachHeading,
+  groupCapabilities,
+  type InventoryCap,
+  type InventoryReach,
+} from "./inventoryGroups";
 
 const GLYPH: Record<DiffEntry["change"], string> = {
   added: "＋",
   removed: "－",
   changed: "～",
 };
+
+const CLI_DIFF = "npx @danielalbinsson/aletheia-cli diff --baseline git:main";
+const DOCS_QUICKSTART = `${import.meta.env.BASE_URL}docs/quickstart.md`;
 
 function verdictLine(r: CapabilityReviewResponse): { headline: string; tone: string } {
   if (!r.diff) return { headline: "No authority changes to show.", tone: "routine" };
@@ -24,6 +34,90 @@ function verdictLine(r: CapabilityReviewResponse): { headline: string; tone: str
     return { headline: "Authority expanded: review required.", tone: "elevated" };
   }
   return { headline: "Routine authority changes only.", tone: "routine" };
+}
+
+function provenanceSuffix(label: string): string {
+  return `${label} (from source)`;
+}
+
+function CapabilityInventory({
+  capabilities,
+  reach,
+  fromSource,
+}: {
+  capabilities: InventoryCap[];
+  reach: InventoryReach[];
+  fromSource: boolean;
+}) {
+  const { delegates, writeShell, other } = groupCapabilities(capabilities);
+  const heading = (label: string) => (fromSource ? provenanceSuffix(label) : label);
+  const executeHeading = executeAndReachHeading(writeShell.length, reach.length);
+
+  return (
+    <div className="review-group">
+      {delegates.length > 0 && (
+        <>
+          <h2>{heading("Delegates")}</h2>
+          <ul className="review-list">
+            {delegates.map((c, i) => (
+              <li key={c.source ?? `delegate-${i}`}>{delegateDisplayName(c.label)}</li>
+            ))}
+          </ul>
+        </>
+      )}
+      {other.length > 0 && (
+        <>
+          <h2>{heading("It can")}</h2>
+          <ul className="review-list">
+            {other.map((c, i) => (
+              <li key={c.source ?? `other-${i}`}>{c.label}</li>
+            ))}
+          </ul>
+        </>
+      )}
+      {(writeShell.length > 0 || reach.length > 0) && (
+        <>
+          <h2 className="review-elevated-head">{heading(executeHeading)}</h2>
+          <ul className="review-list review-list-execute">
+            {writeShell.map((c, i) => (
+              <li key={c.source ?? `exec-${i}`}>{c.label}</li>
+            ))}
+            {reach.map((r, i) => (
+              <li key={r.label + i}>
+                {r.label}
+                {r.detail ? ` (${r.detail})` : ""}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
+  );
+}
+
+function InspectNextSteps() {
+  return (
+    <div className="review-next">
+      <p>To see how authority changed, run this in the eve agent directory:</p>
+      <pre className="home-code review-next-code">
+        <code>{CLI_DIFF}</code>
+      </pre>
+      <p className="review-next-links">
+        <a href={DOCS_QUICKSTART}>CLI and PR gate</a>
+        {" · "}
+        Local inspector:{" "}
+        <a
+          href="https://github.com/danielalbinsson/Aletheia"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Clone Aletheia (opens in a new tab)"
+        >
+          clone the repo
+        </a>
+        , then <code>pnpm dev</code>
+      </p>
+    </div>
+  );
 }
 
 export function CapabilityReviewPage() {
@@ -41,14 +135,13 @@ export function CapabilityReviewPage() {
     setError(null);
     try {
       if (!apiAvailable) {
-        // Hosted demo: show the bundled agent from source, same as an unbuilt
-        // local agent. Full authority diffs need `pnpm dev`.
+        // Hosted demo: current capabilities from source, not a change review.
         setReview({ ok: false, built: false });
         return;
       }
       setReview(await fetchReview());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not load authority diff");
+      setError(err instanceof Error ? err.message : "Could not load the review");
     } finally {
       setLoading(false);
     }
@@ -60,6 +153,26 @@ export function CapabilityReviewPage() {
 
   const elevated = review?.diff?.entries.filter((e) => e.risk === "elevated") ?? [];
   const routine = review?.diff?.entries.filter((e) => e.risk === "routine") ?? [];
+  const showingDiff = Boolean(apiAvailable && review?.ok && review.diff);
+  const showingSnapshot = Boolean(review && !loading && !review.built);
+  const titleJob = showingDiff ? "how its authority changed" : "current capabilities";
+
+  const loadingCopy = storeLoading
+    ? "Loading…"
+    : apiAvailable
+      ? "Loading authority diff…"
+      : "Loading capabilities…";
+
+  const snapshotVerdict = !apiAvailable
+    ? {
+        headline: "Current snapshot from source — not a change since a baseline.",
+        tone: "routine",
+      }
+    : {
+        headline:
+          "No compiled manifest yet. Showing capabilities from source. Build the agent (in its own project) to verify these and diff authority changes.",
+        tone: "routine",
+      };
 
   return (
     <main className="app review-app">
@@ -69,108 +182,67 @@ export function CapabilityReviewPage() {
 
       <section className="review-body">
         <h1 className="review-title">
-          {model ? model.name : "Agent"}: how its authority changed
+          {model ? model.name : "Agent"}: {titleJob}
         </h1>
 
-        {!apiAvailable && !storeLoading && (
-          <p className="review-note">
-            Authority diffs need the local inspector (run <code>pnpm dev</code>).
-            Showing this agent&apos;s capabilities from source.
-          </p>
-        )}
-        {loading && <p className="review-note">Loading authority diff…</p>}
-        {error && <p className="review-note review-error">{error}</p>}
-
-        {review && !loading && !review.built && (
-          <div className="review-group">
-            {apiAvailable && (
-              <p className="review-verdict tone-routine">
-                No compiled manifest yet. Showing capabilities <strong>from source</strong>.
-                Build the agent (in its own project) to verify these and diff authority changes.
-              </p>
-            )}
-            {model && model.capabilities.length > 0 && (
-              <>
-                <h2>It can (from source)</h2>
-                <ul className="review-list">
-                  {model.capabilities.map((c, i) => (
-                    <li key={i}>{c.label}</li>
-                  ))}
-                </ul>
-              </>
-            )}
-            {model && model.reach.length > 0 && (
-              <>
-                <h2>And reach (from source)</h2>
-                <ul className="review-list">
-                  {model.reach.map((r, i) => (
-                    <li key={i}>
-                      {r.label}
-                      {r.detail ? ` (${r.detail})` : ""}
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-          </div>
-        )}
-
-        {review?.ok && review.diff && (
-          <>
+        <div className="review-status" role="status" aria-live="polite" aria-atomic="true">
+          {loading && <p className="review-note">{loadingCopy}</p>}
+          {error && <p className="review-note review-error">{error}</p>}
+          {showingSnapshot && (
+            <p className={`review-verdict tone-${snapshotVerdict.tone}`}>
+              {snapshotVerdict.headline}
+            </p>
+          )}
+          {showingDiff && review && (
             <p className={`review-verdict tone-${verdictLine(review).tone}`}>
               {verdictLine(review).headline}
             </p>
+          )}
+        </div>
 
-            {review.diff.isInitial && review.current && (
-              <div className="review-group">
-                <h2>It will be able to</h2>
-                <ul className="review-list">
-                  {review.current.capabilities.map((c, i) => (
-                    <li key={i}>{c.label}</li>
-                  ))}
-                </ul>
-                {review.current.reach.length > 0 && (
-                  <>
-                    <h2>And reach</h2>
-                    <ul className="review-list">
-                      {review.current.reach.map((r, i) => (
-                        <li key={i}>
-                          {r.label}
-                          {r.detail ? ` (${r.detail})` : ""}
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-              </div>
-            )}
-
-            {elevated.length > 0 && (
-              <div className="review-group">
-                <h2 className="review-elevated-head">Needs your attention</h2>
-                <ul className="review-list">
-                  {elevated.map((e, i) => (
-                    <li key={i}>
-                      <span className="review-glyph">{GLYPH[e.change]}</span> {e.summary}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {routine.length > 0 && (
-              <div className="review-group">
-                <h2>Other changes</h2>
-                <ul className="review-list">
-                  {routine.map((e, i) => (
-                    <li key={i}>
-                      <span className="review-glyph">{GLYPH[e.change]}</span> {e.summary}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+        {showingSnapshot && model && (
+          <>
+            <CapabilityInventory
+              capabilities={model.capabilities}
+              reach={model.reach}
+              fromSource
+            />
+            {!apiAvailable && <InspectNextSteps />}
           </>
+        )}
+
+        {showingDiff && review?.diff?.isInitial && review.current && (
+          <CapabilityInventory
+            capabilities={review.current.capabilities}
+            reach={review.current.reach}
+            fromSource={false}
+          />
+        )}
+
+        {showingDiff && elevated.length > 0 && (
+          <div className="review-group">
+            <h2 className="review-elevated-head">Needs your attention</h2>
+            <ul className="review-list review-list-execute">
+              {elevated.map((e, i) => (
+                <li key={i}>
+                  <span className="review-glyph">{GLYPH[e.change]}</span> {e.summary}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {showingDiff && routine.length > 0 && (
+          <div className="review-group">
+            <h2>Other changes</h2>
+            <ul className="review-list">
+              {routine.map((e, i) => (
+                <li key={i}>
+                  <span className="review-glyph">{GLYPH[e.change]}</span> {e.summary}
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </section>
       <AppFooter />
